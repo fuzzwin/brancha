@@ -39,7 +39,7 @@ test('Pele mindmaps stay bounded for dense projects and labels cannot inject dia
 
 test('every project automatically exports a dashboard, native Pele map, analytic SVG and reusable templates',()=>{
  const w=demo(),before=JSON.stringify(w),files=obsidianFiles(w);
- for(const p of w.projects){assert(files['Dashboards/'+p.id+'.md'].includes('![[Diagrams/'+p.id+'-mindmap.svg]]'));assert(files['Diagrams/'+p.id+'-mindmap.svg'].includes('pele-mindmap'));assert(files['Diagrams/'+p.id+'-dashboard.svg'].includes('Last 14 days'));assert(files['Projects/'+p.id+'.md'].includes('Open project dashboard'));}
+ for(const p of w.projects){assert(new RegExp('!\\[\\[Diagrams/'+p.id+'-mindmap-[a-f0-9]{16}\\.svg\\]\\]').test(files['Dashboards/'+p.id+'.md']));assert(files['Diagrams/'+p.id+'-mindmap.svg'].includes('pele-mindmap'));assert(files['Diagrams/'+p.id+'-dashboard.svg'].includes('Last 14 days'));assert(files['Projects/'+p.id+'.md'].includes('Open project dashboard'));}
  for(const title of ['Check-in','Decision','Evidence review'])assert(files['Templates/'+title+'.md']);
  for(const [name,contents]of Object.entries(files).filter(([name])=>name.startsWith('Dashboards/')&&name.endsWith('.md')))for(const link of contents.matchAll(/\[\[([^|\]]+)/g)){const target=link[1].replace(/\\$/,'');assert(files[target]||files[target+'.md']||files[target+'.canvas'],'Missing '+target+' in '+name);}
  assert.equal(JSON.stringify(w),before);
@@ -49,4 +49,13 @@ test('the bounded mindmap prioritises the newest decision instead of hiding it b
  const {w,node}=fixture();for(let i=0;i<4;i++)w.nodes.push(node('old-choice-'+i,'decision','active'));
  const latest=node('obsidian-priority','decision','active',{title:'Obsidian is the primary workspace'});w.nodes.push(latest);event(w,'project','Changed the primary workspace',latest.id);
  const map=projectMindmap(w,'project');assert(map.nodeIds.includes(latest.id));assert(!map.nodeIds.includes('old-choice-0'));
+});
+
+
+test('native diagrams get new content addresses when evidence or activity changes',()=>{
+ const {w}=fixture(),one=obsidianFiles(w),before=one['Dashboards/project.md'];
+ event(w,'project','A meaningful new update','ready');w.nodes.find(n=>n.id==='ready').title='A changed task title';
+ const two=obsidianFiles(w),after=two['Dashboards/project.md'];
+ const refs=text=>[...text.matchAll(/!\[\[(Diagrams\/[^\]]+\.svg)\]\]/g)].map(m=>m[1]);
+ const old=refs(before),next=refs(after);assert.equal(old.length,2);assert.equal(next.length,2);assert.notDeepEqual(old,next);for(const name of next)assert(two[name]);assert.deepEqual(refs(obsidianFiles(w)['Dashboards/project.md']),next);
 });

@@ -19,3 +19,5 @@ Analytics count saved records. Source reports do not inflate work-item totals, p
 Pele is bundled locally. Native Obsidian dashboards embed generated SVGs, with scoped light/dark styling, without requiring an Obsidian community plugin. Portable Markdown exports include standard Mermaid source as a fallback. The style installer creates backups and changes only the generated Brancha classes and its named CSS snippet. Personal notes and unrelated themes/settings remain intact.
 
 Validation uses fictional fixtures for analytics, timezone boundaries, dense mindmaps, template scope and generated links. Native Obsidian and browser checks are recorded separately. No claim is made that every Obsidian theme, narrow window or external client has been tested.
+
+Diagram references change when their rendered content changes, so Obsidian displays fresh SVGs automatically. The companion writes new assets before updating note references, then prunes obsolete assets listed in its own generated-assets manifest. Unrelated files are preserved. Stable latest-image aliases remain available for manual links.

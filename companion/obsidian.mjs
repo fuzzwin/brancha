@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 import {render} from '../dist/vendor/pele-1.7.0.mjs';
 import {dashboardSvg} from './dashboard-svg.mjs';
 import {vaultFiles,statusLabel,projectMindmap,projectAnalytics} from '../dist/core.mjs';
@@ -10,7 +11,9 @@ export function obsidianFiles(w){
   const theme='<style>svg{--pele-bg:transparent;--pele-fg:#294236;--pele-border:#9daf95;--pele-surface:#f0f5e9;--pele-radius:9px;--pele-series-1:#7c9b6f;--pele-series-2:#b29564;--pele-series-3:#7896a4;--pele-series-4:#a78db5;--pele-series-5:#b5927d;--pele-series-6:#7d9d91}@media(prefers-color-scheme:dark){svg{--pele-fg:#dce8d7;--pele-surface:#29372d;--pele-border:#7c9375}}</style>';
   files[`Diagrams/${p.id}-mindmap.svg`]=rendered.svg.replace(/(<svg[^>]*>)/,'$1'+theme);
   files[`Diagrams/${p.id}-dashboard.svg`]=dashboardSvg(a);
-  files[`Dashboards/${p.id}.md`]=files[`Dashboards/${p.id}.md`].replace(/```mermaid\n[\s\S]*?\n```/,`![[Diagrams/${p.id}-mindmap.svg]]`).replace('## At a glance\n\n',`## At a glance\n\n![[Diagrams/${p.id}-dashboard.svg]]\n\n`);
+  const asset=(kind,svg)=>{const name=`Diagrams/${p.id}-${kind}-${createHash('sha256').update(svg).digest('hex').slice(0,16)}.svg`;files[name]=svg;return name;};
+  const mindmapAsset=asset('mindmap',files[`Diagrams/${p.id}-mindmap.svg`]),chartAsset=asset('dashboard',files[`Diagrams/${p.id}-dashboard.svg`]);
+  files[`Dashboards/${p.id}.md`]=files[`Dashboards/${p.id}.md`].replace(/```mermaid\n[\s\S]*?\n```/,`![[${mindmapAsset}]]`).replace('## At a glance\n\n',`## At a glance\n\n![[${chartAsset}]]\n\n`);
   files[`Dashboards/${p.id}.md`]=files[`Dashboards/${p.id}.md`].replace(/(## At a glance[\s\S]*?)(## Project mindmap[\s\S]*?)(## Work rhythm)/,'$2\n$1\n$3').replace(/\| Goals with evidence \| Work ready \| Waiting on prerequisites \| Reports to review \|\n\| --- \| --- \| --- \| --- \|\n\|[^\n]+\n/,'').replace(/\| Date \| Updates \|\n\| --- \| --- \|\n(?:\| \d{4}-[^\n]+\n)+/,'');
  }
  for(const p of w.projects){
@@ -22,7 +25,8 @@ export function obsidianFiles(w){
   svg=svg.replace(/(<svg[^>]*>)/,'$1'+theme);
   for(const n of nodes)svg=svg.replace(`data-id="${n.id}" transform=`,`data-id="${n.id}" data-status="${n.status}" transform=`);
   files[`Diagrams/${p.id}.svg`]=svg;
-  files[`Maps/${p.id}.md`]=`---\ncssclasses: brancha-map\n---\n# ${p.title}\n\n![[Diagrams/${p.id}.svg]]\n\nDependencies flow left to right. Dotted lines add context; branches keep offshoots visible.\n\n[[Maps/${p.id}.canvas|Open the editable Canvas →]] · [[Projects/${p.id}|Original brief and progress]]\n\n## Details behind the map\n${nodes.map(n=>`- [[Items/${n.id}|${short(n)}]] — ${statusLabel(n.status)}`).join('\n')}\n`;
+  const flowAsset=`Diagrams/${p.id}-flow-${createHash('sha256').update(svg).digest('hex').slice(0,16)}.svg`;files[flowAsset]=svg;
+  files[`Maps/${p.id}.md`]=`---\ncssclasses: brancha-map\n---\n# ${p.title}\n\n![[${flowAsset}]]\n\nDependencies flow left to right. Dotted lines add context; branches keep offshoots visible.\n\n[[Maps/${p.id}.canvas|Open the editable Canvas →]] · [[Projects/${p.id}|Original brief and progress]]\n\n## Details behind the map\n${nodes.map(n=>`- [[Items/${n.id}|${short(n)}]] — ${statusLabel(n.status)}`).join('\n')}\n`;
   const centres=new Map();for(const m of diagram.svg.matchAll(/<g class="pele-node [^"]*" data-id="([^"]+)" transform="translate\(([-\d.]+),([-\d.]+)\)"/g))centres.set(m[1],{x:Number(m[2]),y:Number(m[3])});
   if(centres.size===nodes.length){
    let scale=1.4;const width=290,height=160;
