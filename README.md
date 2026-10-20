@@ -11,6 +11,8 @@ Brancha is a local Node.js companion, browser workspace and portable skill. It r
 
 An optional approved bridge appends new ChatGPT checkpoints to the local map and Obsidian. Local Codex captures stay local. See [ChatGPT setup and connection boundaries](cloud/README.md).
 
+In the app, **Use with ChatGPT** explains both entry points and gives you a starter for the selected project. Activate Brancha in that ChatGPT task, then save a first checkpoint to verify the connection. The local capture bar reports the cloud bridge separately from Codex capture.
+
 ## Quick start
 
 Requires Node.js 22+ and local Codex session files. Obsidian is optional. No packages, model API keys or paid API requests are required by the capture adapter.
