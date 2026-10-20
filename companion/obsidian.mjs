@@ -5,6 +5,7 @@ import {interactiveProject} from './interactive.mjs';
 import {statusKey,statusSvg,statusSvgStyle,statusGuide} from './status.mjs';
 import {homeData} from './home.mjs';
 import {chatFiles} from './chats.mjs';
+import {gitBranchFiles} from './git-branches.mjs';
 import {projectTimeline} from './timeline.mjs';
 import {vaultFiles,statusLabel,projectMindmap,projectAnalytics,flowLabel} from '../dist/core.mjs';
 const short=n=>(n.capture?'Report · '+n.title.replace(/^Codex · /,''):n.title).replace(/[*`]/g,'').slice(0,58);
@@ -100,6 +101,8 @@ export function obsidianFiles(w,{chatTitles={}}={}){
   files[`Dashboards/${p.id}-static.md`]=files[`Dashboards/${p.id}.md`];
   files[`Dashboards/${p.id}.md`]=`---\ncssclasses: [brancha-dashboard, brancha-interactive]\nbrancha_title: ${JSON.stringify(p.title)}\nbrancha_project: ${JSON.stringify(p.id)}\n---\n\`\`\`brancha-interactive\n${p.id}\n\`\`\`\n\n[[Dashboards/${p.id}-static|Portable dashboard and full notes]] · [[Dashboards/index|All projects]]\n\nRequires the local **Brancha Interactive** Obsidian plugin. The portable dashboard works without it.\n`;
  }
+ Object.assign(files,gitBranchFiles(w,{chatTitles}));
+ for(const p of w.projects)files[`Dashboards/${p.id}.md`]=files[`Dashboards/${p.id}.md`].replace('```brancha-interactive','[[Branches/'+p.id+'|Git branch history]]\n\n```brancha-interactive');
  Object.assign(files,chatFiles(w,{chatTitles}));
  files['Interactive/home.json']=JSON.stringify(homeData(w,{chatTitles}));
  files['Interactive/chats.json']=JSON.stringify(homeData(w,{chatTitles,chatLimit:1000}));

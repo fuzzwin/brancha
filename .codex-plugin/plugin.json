@@ -1,6 +1,6 @@
 {
   "name": "brancha",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Obsidian-first project maps and automatic checkpoints for enabled local Work and Codex chats.",
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json"

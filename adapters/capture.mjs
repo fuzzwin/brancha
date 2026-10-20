@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {observeGit} from './git-context.mjs';
 import {chatAllowed,chatPermissions} from './chat-privacy.mjs';
 import {validate,event,uid,blank,redactText} from '../dist/core.mjs';
 import {atomic} from '../skills/brancha/scripts/storage.mjs';
@@ -42,8 +43,9 @@ export function capture(config,input){
   const first=text.split('\n').map(t=>t.replace(/^[#>*\s]+/,'').trim()).find(Boolean);
   const title=first.replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/[*`_]/g,'').split(/(?<=[.!?])\s/)[0].slice(0,100);
   const next=(text.match(/(?:^|\n)(?:#{1,3}\s*)?(?:next(?: steps?| actions?)?|continue from here)\s*[:—-]?\s*\n?([^\n]+)/i)?.[1]||'Review this captured report, then choose the next action.').slice(0,500);
+  const git=input.git===undefined?observeGit(config,input):input.git;
   const nodeId='codex_'+digest(input.sessionId).slice(0,24);let node=w.nodes.find(n=>n.id===nodeId);
-  const data={id:nodeId,projectId,title:'Codex · '+title.slice(0,140),type:'source',status:'active',detail:'AUTOMATIC CHECKPOINT — assistant-reported; task completion and evidence are not independently verified.\n\n'+text.slice(0,12000)+(text.length>12000?'\n[abridged; open the Codex chat for the full result]':''),evidence:`Codex completed turn at ${at}. Session ${input.sessionId}; turn ${input.turnId}. Adapter: ${input.adapter||'hook'}.`,next,criteria:[],rationale:'',alternatives:'',consequence:'',capture:{provider:'codex',sessionId:input.sessionId,turnId:input.turnId,at,...(input.request?{request:redact(input.request).slice(0,6000)}:{}),...(typeof input.cwd==='string'?{cwd:input.cwd.slice(0,1000)}:{})}};
+  const data={id:nodeId,projectId,title:'Codex · '+title.slice(0,140),type:'source',status:'active',detail:'AUTOMATIC CHECKPOINT — assistant-reported; task completion and evidence are not independently verified.\n\n'+text.slice(0,12000)+(text.length>12000?'\n[abridged; open the Codex chat for the full result]':''),evidence:`Codex completed turn at ${at}. Session ${input.sessionId}; turn ${input.turnId}. Adapter: ${input.adapter||'hook'}.`,next,criteria:[],rationale:'',alternatives:'',consequence:'',capture:{provider:'codex',sessionId:input.sessionId,turnId:input.turnId,at,...(git?{git}:{}),...(input.request?{request:redact(input.request).slice(0,6000)}:{}),...(typeof input.cwd==='string'?{cwd:input.cwd.slice(0,1000)}:{})}};
   if(node)Object.assign(node,data);else{w.nodes.push(data);node=data;const goal=w.nodes.find(n=>n.projectId===projectId&&n.type==='goal');if(goal)w.edges.push({id:uid(),from:goal.id,to:node.id,type:'informs'});}
   event(w,projectId,'Codex checkpoint: '+title,node.id);Object.assign(w.events.at(-1),{at,captureId,capture:structuredClone(data)});
   validate(w);const raw=JSON.stringify(w,null,2)+'\n';if(Buffer.byteLength(raw)>8*1024*1024)throw Error('Workspace reached 8 MB; export/archive old checkpoints before continuing capture.');

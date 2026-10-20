@@ -1,3 +1,4 @@
+import {observeGit} from './git-context.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {capture,atomic,paths,status,redact,controls,sessionAllowed} from './capture.mjs';
@@ -42,7 +43,7 @@ export class CodexWatcher{
      if(r.type!=='event_msg')continue;
      if(v.type==='task_started'){cursor.turnId=v.turn_id;cursor.userMessages=[];cursor.mapperExcludedTurn=false;cursor.maintenanceTurn=false;}
      if(v.type==='task_complete'&&cursor.maintenanceTurn){cursor.userMessages=[];continue;}
-     if(v.type==='task_complete'&&cursor.sessionId&&v.last_agent_message){const turnId=v.turn_id||cursor.turnId;if(!turnId)continue;this.data.queue.push({sessionId:cursor.sessionId,turnId,cwd:cursor.cwd,message:redact(v.last_agent_message).slice(0,14000),request:(cursor.userMessages||[]).map(m=>m.text).join('\n\n').slice(-6000),at:v.completed_at||r.timestamp,adapter:'codex-session-watch',...(this.mapper?{mapperExcluded:cursor.mapperExcludedTurn===true,messages:[...(cursor.userMessages||[]),{role:'assistant',text:redact(v.last_agent_message).slice(0,8000)}]}:{})});cursor.userMessages=[];}
+     if(v.type==='task_complete'&&cursor.sessionId&&v.last_agent_message){const turnId=v.turn_id||cursor.turnId;if(!turnId)continue;this.data.queue.push({sessionId:cursor.sessionId,turnId,cwd:cursor.cwd,git:observeGit(this.config,{sessionId:cursor.sessionId,cwd:cursor.cwd}),message:redact(v.last_agent_message).slice(0,14000),request:(cursor.userMessages||[]).map(m=>m.text).join('\n\n').slice(-6000),at:v.completed_at||r.timestamp,adapter:'codex-session-watch',...(this.mapper?{mapperExcluded:cursor.mapperExcludedTurn===true,messages:[...(cursor.userMessages||[]),{role:'assistant',text:redact(v.last_agent_message).slice(0,8000)}]}:{})});cursor.userMessages=[];}
     }
    }finally{fs.closeSync(fd);}
   }

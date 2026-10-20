@@ -23,6 +23,9 @@ export function loadConfig(file = process.env.BRANCHA_CONFIG || defaultConfigPat
   if (!Number.isInteger(config.pollMs) || config.pollMs < 25) throw Error('pollMs must be at least 25.');
   config.sessionProjects ??= {};
   config.directoryProjects ??= [];
+  config.projectRepositories ??= {};
+  if(typeof config.projectRepositories!=='object'||Array.isArray(config.projectRepositories)||!config.projectRepositories)throw Error('projectRepositories must map project IDs to local repository paths.');
+  config.projectRepositories=Object.fromEntries(Object.entries(config.projectRepositories).map(([id,repo])=>[id,absolutePath(repo,base)]));
   if (!Array.isArray(config.directoryProjects) || !config.sessionProjects || typeof config.sessionProjects !== 'object' || Array.isArray(config.sessionProjects)) throw Error('Invalid project routes.');
   config.directoryProjects = config.directoryProjects.map(r => ({...r, directory: absolutePath(r.directory, base)}));
   if (config.cloud?.connectionFile) config.cloud = {...config.cloud, connectionFile: absolutePath(config.cloud.connectionFile, base)};

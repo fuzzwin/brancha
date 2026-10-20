@@ -47,3 +47,11 @@ The Chrome extension remains an optional adapter for people who choose ChatGPT o
 A ChatGPT Site can present Brancha's dashboard and use the hosted connector's supported project checkpoints. Hosting a Site does not let it read unrelated ChatGPT conversations, desktop apps or a local vault. Cloud and local records need their configured, authenticated bridge; publishing a dashboard is not proof of automatic capture or synchronization.
 
 References: [OpenAI plugin hooks and execution requirements](https://developers.openai.com/plugins/build/plugins), [hook review and trust](https://learn.chatgpt.com/docs/hooks).
+
+## Automatic Git branch tracking
+
+For enabled local repository chats, Brancha observes the active repository, branch and commit when it collects a completed response. The snapshot includes its observation time; it is not a reconstruction of historical Git state. New captures and their Obsidian source indexes retain those values after branch changes or queue retries. Project dashboards link to **Git branch history**, with branch-grouped links back to the saved work. Non-repository chats still work normally; detached HEAD and repositories without a commit are labelled explicitly.
+
+This uses local read-only Git commands. It does not read diffs, copy remote URLs or infer ancestry, merges, pushes, uncommitted contents or task completion. It does not create a Git branch. Brancha's decision/offshoot maps remain separate, source-linked interpretations. Older captures without branch metadata remain unlabelled.
+
+When a chat opens in a shared folder outside its repository, bind that project's repository once in the private config: `"projectRepositories": {"PROJECT_ID": "/absolute/path/to/repository"}`. The exact chat's existing project binding selects it. A configured but unavailable repository stays unknown; it is not replaced with another repository or inferred from similar names. This mapping contains local paths and must stay out of GitHub.

@@ -5,3 +5,7 @@ Desktop-first capture now has an additive installer for local-only Work and Code
 This release also packages the current source-linked chat dashboards, interactive project/chat maps and timelines, workstream/status summaries, daily recaps, bounded Luna extraction and incremental catch-up. The local JSON record remains canonical; AI suggestions do not complete goals automatically. Optional Claude Code and Chrome adapters feed the same local intake. Hosted checkpoints and Sites remain separate from passive desktop capture.
 
 130 automated tests passed, including exact-chat privacy, lock recovery, stable receipt replay, source linking, dates, navigation and generated views. These tests do not establish delivery from a particular ChatGPT/Claude desktop session. Verify a real trusted local Work response in the source index and Obsidian before assuming coverage. Private vaults, recap simulations, source registries, credentials and machine configuration are not included in this repository.
+
+## 0.15.1 — automatic Git context
+
+Enabled local repository chats now retain the observed branch and commit with each saved response. Obsidian project dashboards link to branch-grouped saved work; source indexes show branch/commit values. Explicit project repository mappings support shared chat folders. Observations are captured before queue retries, never backfilled into old history, and do not imply Git ancestry, merges, pushes or task completion. 133 regression tests passed, including real temporary repositories and branch switches.

@@ -1,3 +1,4 @@
+import {observeGit} from './git-context.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -32,7 +33,7 @@ export function desktopHook(config,input){
  }
  if(input.stop_hook_active||!input.last_assistant_message)return {captured:false,reason:'not a main completed response'};
  let request='';try{request=JSON.parse(fs.readFileSync(promptFile,'utf8')).request||'';}catch(e){if(e.code!=='ENOENT')throw e;}
- const packet={sessionId:input.session_id,turnId:input.turn_id,cwd:input.cwd,message:redact(input.last_assistant_message).slice(0,14000),request,adapter:'desktop-stop-hook',at:new Date().toISOString()};
+ const packet={sessionId:input.session_id,turnId:input.turn_id,cwd:input.cwd,git:observeGit(config,{sessionId:input.session_id,cwd:input.cwd}),message:redact(input.last_assistant_message).slice(0,14000),request,adapter:'desktop-stop-hook',at:new Date().toISOString()};
  const folder=path.join(root,'desktop-inbox'),file=path.join(folder,key+'.json');fs.mkdirSync(folder,{recursive:true});
  // A completed turn is durable before attempting the shared canonical lock.
  if(!fs.existsSync(file))try{fs.writeFileSync(file,JSON.stringify(packet),{flag:'wx',mode:0o600});}catch(e){if(e.code!=='EEXIST')throw e;}
