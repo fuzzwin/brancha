@@ -1,5 +1,4 @@
 import {blank,demo,validate,uid,now,event,progress,prerequisites,contextBrief,mermaid,vaultFiles,layout,TYPES,STATUSES,RELATIONS,label} from './core.mjs';
-import {addRealProjects} from './personal.mjs';
 import {zip} from './zip.mjs';
 import {mount as mountPele, render as renderPele} from './vendor/pele-1.7.0.mjs';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -8,7 +7,7 @@ const KEY='brancha.workspace.v1';let w,storageOK=true,readRaw=null,etag=null,sav
 const localToken=document.querySelector('meta[name="brancha-local-token"]')?.content;
 const seed=validate(await (await fetch('./starter-workspace.json')).json());
 async function readLive(){const r=await fetch('/api/workspace',{headers:{'X-Brancha-Token':localToken}});if(!r.ok)throw Error('Local companion unavailable');return r.json();}
-try{if(localToken){const r=await readLive();w=validate(r.workspace);etag=r.etag;captureState=r.capture;}else{readRaw=localStorage.getItem(KEY);w=readRaw?addRealProjects(validate(JSON.parse(readRaw)),seed):structuredClone(seed);if(JSON.stringify(w)!==readRaw){if(readRaw)localStorage.setItem(KEY+'.before-real-projects',readRaw);readRaw=JSON.stringify(w);localStorage.setItem(KEY,readRaw);}}}catch(e){w=blank();storageOK=false;setTimeout(()=>toast('Workspace could not be loaded. '+e.message),200);}
+try{if(localToken){const r=await readLive();w=validate(r.workspace);etag=r.etag;captureState=r.capture;}else{readRaw=localStorage.getItem(KEY);w=readRaw?validate(JSON.parse(readRaw)):structuredClone(seed);if(JSON.stringify(w)!==readRaw){if(readRaw)localStorage.setItem(KEY+'.before-real-projects',readRaw);readRaw=JSON.stringify(w);localStorage.setItem(KEY,readRaw);}}}catch(e){w=blank();storageOK=false;setTimeout(()=>toast('Workspace could not be loaded. '+e.message),200);}
 let projectId=w.projects[0]?.id||null,selected=w.nodes.find(n=>n.projectId===projectId&&n.status==='active'&&n.type==='task')?.id||w.nodes[0]?.id,view='map',overview=true,zoom=.82,activityFilter='all';let mapMount=null,modalMount=null;
 const icons={goal:'◎',task:'▤',decision:'◇',branch:'⑂',output:'▧',source:'↗'};
 const project=()=>w.projects.find(p=>p.id===projectId);

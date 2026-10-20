@@ -17,7 +17,7 @@ npm start
 
 Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Brancha`) and then `Generated/Brancha.canvas`.
 
-Setup writes a private connection to `~/.config/brancha/config.json`. Choose another vault with `npm run setup -- --vault /absolute/path/to/vault`. Existing configs are preserved. A fresh installation starts with fictional examples; create your own projects in the app. Unmatched automatic captures appear in **Codex Inbox**.
+Setup writes a private connection to `~/.config/brancha/config.json`. Choose another vault with `npm run setup -- --vault /absolute/path/to/vault`. Existing configs are preserved. A fresh installation starts with fictional examples; creating your first project or receiving the first automatic checkpoint starts your real workspace. Unmatched automatic captures appear in **Codex Inbox**.
 
 ## Automatic capture
 

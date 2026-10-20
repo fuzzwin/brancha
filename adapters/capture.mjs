@@ -25,7 +25,8 @@ export function capture(config,input){
  if(!input.sessionId||!input.turnId)throw Error('Capture requires session and turn IDs.');
  fs.mkdirSync(p.vault,{recursive:true});let fd;try{fd=fs.openSync(p.file+'.lock','wx');}catch(e){if(e.code==='EEXIST')return {captured:false,retry:true,reason:'locked'};throw e;}
  try{
-  const w=fs.existsSync(p.file)?validate(JSON.parse(fs.readFileSync(p.file,'utf8'))):blank();
+  let w=fs.existsSync(p.file)?validate(JSON.parse(fs.readFileSync(p.file,'utf8'))):blank();
+  if(w.demo)w=blank();
   const captureId=digest('codex:'+input.sessionId+':'+input.turnId);
   if(w.events.some(e=>e.captureId===captureId))return {captured:false,reason:'duplicate'};
   const projectId=route(config,input,w),at=input.at&&!isNaN(Date.parse(input.at))?new Date(input.at).toISOString():new Date().toISOString();
