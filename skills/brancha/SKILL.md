@@ -17,6 +17,8 @@ Run `node scripts/brancha.mjs brief WORKSPACE PROJECT_ID [FOCUS_ID]` from this s
 
 At the end of requested project work, record the meaningful result, evidence, decisions and next action. Keep notes compact. Use `check` to obtain current IDs and revision, then `apply` with one incremental operation JSON. A conflict requires a fresh read, not a blind revision increase.
 
+Within a Brancha-activated chat, save meaningful unsaved work before switching projects, then resume the explicitly named project without another confirmation when the match is clear. Keep active-project selection local to the chat; parallel instances must reread the current revision before writing. Automatic local completion capture continues independently. A new ChatGPT chat needs the connected Brancha plugin selected or activated; this local skill does not grant background access to other chats.
+
 ```json
 {"expectedRevision":1,"op":"add-node","projectId":"PROJECT_ID","title":"A concrete result","type":"output","status":"active","detail":"What changed","evidence":"What was checked; link to its source","next":"The next action","criteria":[]}
 ```
