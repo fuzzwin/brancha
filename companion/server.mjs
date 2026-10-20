@@ -18,10 +18,11 @@ const file=path.join(vault,'brancha.json'),port=Number(options.port||51207);
 fs.mkdirSync(vault,{recursive:true});
 if(!fs.existsSync(file))fs.copyFileSync(path.join(base,'dist/starter-workspace.json'),file,fs.constants.COPYFILE_EXCL);
 const captureConfig=options.config||null;
+const listen=options.listen??(captureConfig?.view!=='obsidian');
 function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=JSON.parse(fs.readFileSync(capturePaths(captureConfig).status,'utf8'));}catch{}return {...latest,paused:controls(captureConfig).paused===true};}
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 let lastHash='',lastDay='',lastError='',lastNavigation='',viewNames=new Set(),navigationNames=new Set();
-const identity={name:path.basename(vault),vault,localUrl:'http://127.0.0.1:'+port,obsidianHome:'obsidian://open?path='+encodeURIComponent(path.join(vault,'Generated/Navigation/Home.md'))};
+const identity={name:path.basename(vault),vault,localUrl:listen?'http://127.0.0.1:'+port:null,obsidianHome:'obsidian://open?path='+encodeURIComponent(path.join(vault,'Generated/Navigation/Home.md'))};
 function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');const canonical=validate(JSON.parse(raw)),w=captureConfig?privacyView(captureConfig,canonical):canonical;return {raw,canonical,w,etag:hash(raw),viewKey:hash(raw+JSON.stringify(captureConfig?chatPermissions(captureConfig):{}))};}
 function refreshNavigation(r){
  const guide=fs.existsSync(path.join(vault,'Notes','Brancha guide.md')),names=fs.existsSync(path.join(vault,'Notes','Brancha name ideas.md'));
@@ -54,7 +55,7 @@ function refresh(){const r=read(),day=new Date().toLocaleDateString('en-CA');if(
  }
  try{const previous=JSON.parse(fs.readFileSync(assetManifest,'utf8'));if(previous.version===1&&Array.isArray(previous.files))priorAssets=previous.files.filter(name=>typeof name==='string'&&assetPattern.test(name));}catch{}
  for(const [name,original]of Object.entries(views).sort(([a],[b])=>Number(!a.endsWith('.svg'))-Number(!b.endsWith('.svg')))){if(name==='brancha.json')continue;let content=name.endsWith('.md')?original.replaceAll('[[','[[Generated/'):original;if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}const target=path.join(generated,name);if(name.endsWith('.md')&&content.includes('```brancha-')&&fs.existsSync(target)&&fs.readFileSync(target,'utf8')===content)continue;atomicText(target,content);}
- atomicText(path.join(generated,'START HERE.md'),'---\ncssclasses: brancha-dashboard\n---\n# Pick up the thread\n\n[[Generated/Navigation/Home|Open Brancha Home →]]\n\n[[Generated/Navigation/Today|Today and yesterday]] · [[Generated/Dashboards/index|All projects]] · [[Generated/Navigation/Review|Needs a look]] · [[Generated/Navigation/Connections|Connections and freshness]] · [[Generated/Navigation/How to use|How to use]]\n\nHome brings together the goal, next action, dashboards, maps and resume briefs. These pages update while the companion runs. Keep personal writing in Notes; generated pages are refreshed.');
+ atomicText(path.join(generated,'START HERE.md'),'---\ncssclasses: [brancha-page, brancha-dashboard]\n---\n# Pick up the thread\n\n[[Generated/Navigation/Home|Open Branchi Home →]]\n\n[[Generated/Navigation/Today|Today and yesterday]] · [[Generated/Dashboards/index|All projects]] · [[Generated/Navigation/Review|Needs a look]] · [[Generated/Navigation/Connections|Connections and freshness]] · [[Generated/Navigation/How to use|How to use]]\n\nHome brings together the goal, next action, dashboards, maps and resume briefs. These pages update while the companion runs. Keep personal writing in Notes; generated pages are refreshed.');
  const retained=[];for(const name of priorAssets)if(!assets.includes(name)){try{fs.unlinkSync(path.join(generated,name));}catch(e){if(e.code!=='ENOENT')retained.push(name);}}
  atomic(assetManifest,{version:1,files:[...new Set([...assets,...retained])]});
  const names=Object.keys(views).filter(n=>n!=='brancha.json'),retainedPages=[];
@@ -108,14 +109,15 @@ const server=http.createServer(async(req,res)=>{res.setHeader('Cache-Control','n
   if(shared[url.pathname]){res.writeHead(200,{'Content-Type':url.pathname.endsWith('.css')?'text/css':'text/javascript'});return res.end(fs.readFileSync(path.join(base,shared[url.pathname])));}
   const relative=url.pathname==='/'?'live.html':url.pathname==='/editor'?'index.html':decodeURIComponent(url.pathname).slice(1);
   const dest=path.resolve(base,'dist',relative);if(!dest.startsWith(path.join(base,'dist')+path.sep))return send(403,{error:'Invalid path'});
-  let data=fs.readFileSync(dest);if(['index.html','live.html'].includes(relative))data=Buffer.from(data.toString().replace('<head>',`<head><meta name="brancha-local-token" content="${token}">`).replace('<body>',relative==='index.html'?'<body><div style="padding:12px 24px;background:#e9eee4;color:#263a31">Record editor · same live workspace · <a href="/">Return to Brancha Home →</a></div>':'<body>'));
+  let data=fs.readFileSync(dest);if(['index.html','live.html'].includes(relative))data=Buffer.from(data.toString().replace('<head>',`<head><meta name="brancha-local-token" content="${token}">`).replace('<body>',relative==='index.html'?'<body><div style="padding:12px 24px;background:#e9eee4;color:#263a31">Record editor · same live workspace · <a href="/">Return to Branchi Home →</a></div>':'<body>'));
   res.writeHead(200,{'Content-Type':({'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml'})[path.extname(dest)]||'text/plain'});res.end(data);
  }catch(e){send(e.code==='ENOENT'?404:400,{error:e.message});}
 });
 const timer=setInterval(()=>{try{refresh();}catch(e){lastError=e.message;}},1000);
 server.on('error',e=>{clearInterval(timer);console.error(e.message);process.exitCode=1;});
-server.listen(port,'127.0.0.1',()=>console.log(`Brancha live: ${origin}\nVault: ${vault}\nKeep this process running. Ctrl+C stops live updates.`));
-function stop(){clearInterval(timer);server.close();}
+if(listen)server.listen(port,'127.0.0.1',()=>console.log(`Branchi live: ${origin}\nVault: ${vault}\nKeep this process running. Ctrl+C stops live updates.`));
+else console.log('Branchi Obsidian: saved pages are refreshing. Localhost is disabled.');
+function stop(){clearInterval(timer);if(server.listening)server.close();}
 return {server,stop};
 }
 if(process.argv[1]&&pathToFileURL(path.resolve(process.argv[1])).href===import.meta.url){

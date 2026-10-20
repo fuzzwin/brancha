@@ -1,6 +1,6 @@
-# Brancha Connect for ChatGPT
+# Branchi Connect for ChatGPT
 
-This is the private cloud entry point for Brancha, alongside the existing Codex Local service. It exposes four MCP tools: list projects, resume, create a project and save a checkpoint. Its skill supports checkpoints during a user-activated project task. It does not passively monitor all ChatGPT conversations.
+This is the private cloud entry point for Branchi, alongside the existing Codex Local service. It exposes four MCP tools: list projects, resume, create a project and save a checkpoint. Its skill supports checkpoints during a user-activated project task. It does not passively monitor all ChatGPT conversations.
 
 ## Hosting
 

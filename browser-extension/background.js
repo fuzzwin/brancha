@@ -16,7 +16,7 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
    const packet={op:'capture',url,turnKey:String(message.turnKey||'').slice(0,300),request:String(message.request||'').slice(0,6000),summary:String(message.summary||'').slice(0,12000)};
    try{const result=await native(packet);if(!result.retry)return result;}catch{}
    // Persistent local-only outbox, serialised by the service worker message queue.
-   const {outbox=[]}=await chrome.storage.local.get('outbox');if(outbox.length>=100)throw Error('Local delivery queue is full; open Brancha before continuing capture.');
+   const {outbox=[]}=await chrome.storage.local.get('outbox');if(outbox.length>=100)throw Error('Local delivery queue is full; open Branchi before continuing capture.');
    if(!outbox.some(p=>p.url===packet.url&&p.turnKey===packet.turnKey&&p.summary===packet.summary))outbox.push(packet);
    await chrome.storage.local.set({outbox});return {queued:true};
   }

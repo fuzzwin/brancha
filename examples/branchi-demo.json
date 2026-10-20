@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "revision": 12,
+  "demo": true,
+  "projects": [
+    {
+      "id": "branchi_demo",
+      "title": "Branchi — fictional example",
+      "prompt": "FICTIONAL WALKTHROUGH: plan a friendly project companion called Branchi. Keep the purpose clear, compare simple setup options, and help a new user pick up where they left off. This example contains no real user projects or captured conversations.",
+      "createdAt": "2026-10-20T09:00:00.000Z",
+      "templateId": "build",
+      "criteria": [
+        {
+          "id": "simple",
+          "text": "Explain the purpose in everyday language"
+        },
+        {
+          "id": "map",
+          "text": "Show connected work and alternative ideas"
+        },
+        {
+          "id": "start",
+          "text": "Make the first five minutes easy to follow"
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "demo_goal",
+      "projectId": "branchi_demo",
+      "title": "Make it easy to pick up a project",
+      "type": "goal",
+      "status": "active",
+      "detail": "Keep the original goal, useful decisions and one next action together.",
+      "next": "Try the first-project walkthrough.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_purpose",
+      "projectId": "branchi_demo",
+      "title": "Explain Branchi in one sentence",
+      "type": "output",
+      "status": "done",
+      "detail": "A memory and a visual map for projects you work on with AI.",
+      "next": "Keep this explanation visible in the introduction.",
+      "evidence": "Fictional demo acceptance: the example introduction uses everyday language.",
+      "criteria": [
+        "simple"
+      ],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_audience",
+      "projectId": "branchi_demo",
+      "title": "Start with people juggling several projects",
+      "type": "decision",
+      "status": "active",
+      "detail": "Focus the introduction on returning to work after a break.",
+      "next": "Use one small example before describing integrations.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "A returning user needs the goal and next step before technical detail.",
+      "alternatives": "Lead with a technical feature list.",
+      "consequence": "Purpose and everyday examples appear first."
+    },
+    {
+      "id": "demo_setup",
+      "projectId": "branchi_demo",
+      "title": "Choose the simplest first setup",
+      "type": "decision",
+      "status": "active",
+      "detail": "Start in a local browser with manual records. Add AI connections later.",
+      "next": "Walk through creating one project.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "A small manual trial lets someone understand the organiser before connecting tools.",
+      "alternatives": "Configure every integration at the start.",
+      "consequence": "One project, a few records and a clear next action make the first trial."
+    },
+    {
+      "id": "demo_walkthrough",
+      "projectId": "branchi_demo",
+      "title": "Try the first five minutes",
+      "type": "task",
+      "status": "active",
+      "detail": "Create a project, save a choice, add a task and read the handover.",
+      "next": "Create the first example project.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_diagram",
+      "projectId": "branchi_demo",
+      "title": "Connect tasks and decisions",
+      "type": "task",
+      "status": "active",
+      "detail": "Use the project map to show how work fits together.",
+      "next": "Explore the map and open a decision.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_copy",
+      "projectId": "branchi_demo",
+      "title": "Draft the welcome guide",
+      "type": "output",
+      "status": "reported_done",
+      "detail": "A short draft explains what Branchi does and offers examples.",
+      "next": "Ask a new reader whether the wording is clear.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_check",
+      "projectId": "branchi_demo",
+      "title": "Check the welcome guide with a new reader",
+      "type": "task",
+      "status": "planned",
+      "detail": "Confirm that the first steps make sense without technical knowledge.",
+      "next": "Observe the trial and record what needs improving.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_later",
+      "projectId": "branchi_demo",
+      "title": "Explore a simpler welcome screen",
+      "type": "branch",
+      "status": "parked",
+      "detail": "A possible later direction: fewer choices when opening a new project.",
+      "next": "Return after the basic walkthrough has been tried.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_notebook",
+      "projectId": "branchi_demo",
+      "title": "Explore a notebook view",
+      "type": "branch",
+      "status": "planned",
+      "detail": "An optional way to read the same project through linked notes.",
+      "next": "Compare it after the browser trial.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_brief",
+      "projectId": "branchi_demo",
+      "title": "Keep a useful handover",
+      "type": "task",
+      "status": "active",
+      "detail": "Summarise the goal, selected approach and next action.",
+      "next": "Leave the next step as: create the first example project.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_source",
+      "projectId": "branchi_demo",
+      "title": "Example reader feedback",
+      "type": "source",
+      "status": "active",
+      "detail": "Fictional feedback: show me one small project before explaining all the settings.",
+      "next": "Use this as context for the welcome guide.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "demo_result",
+      "projectId": "branchi_demo",
+      "title": "Save the reason behind the choice",
+      "type": "output",
+      "status": "active",
+      "detail": "The decision record keeps the choice, alternatives and consequences together.",
+      "next": "Open the setup decision to see the recorded reasoning.",
+      "evidence": "Fictional demonstration record; not a real project result.",
+      "criteria": [],
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    }
+  ],
+  "edges": [
+    {
+      "id": "d1",
+      "from": "demo_goal",
+      "to": "demo_purpose",
+      "type": "implements"
+    },
+    {
+      "id": "d2",
+      "from": "demo_goal",
+      "to": "demo_walkthrough",
+      "type": "implements"
+    },
+    {
+      "id": "d3",
+      "from": "demo_goal",
+      "to": "demo_diagram",
+      "type": "implements"
+    },
+    {
+      "id": "d4",
+      "from": "demo_source",
+      "to": "demo_audience",
+      "type": "informs"
+    },
+    {
+      "id": "d5",
+      "from": "demo_audience",
+      "to": "demo_copy",
+      "type": "informs"
+    },
+    {
+      "id": "d6",
+      "from": "demo_setup",
+      "to": "demo_walkthrough",
+      "type": "depends_on"
+    },
+    {
+      "id": "d7",
+      "from": "demo_copy",
+      "to": "demo_check",
+      "type": "depends_on"
+    },
+    {
+      "id": "d8",
+      "from": "demo_walkthrough",
+      "to": "demo_later",
+      "type": "branches_from"
+    },
+    {
+      "id": "d9",
+      "from": "demo_setup",
+      "to": "demo_notebook",
+      "type": "branches_from"
+    },
+    {
+      "id": "d10",
+      "from": "demo_setup",
+      "to": "demo_result",
+      "type": "informs"
+    },
+    {
+      "id": "d11",
+      "from": "demo_goal",
+      "to": "demo_brief",
+      "type": "implements"
+    }
+  ],
+  "events": [
+    {
+      "id": "demo_event_1",
+      "projectId": "branchi_demo",
+      "at": "2026-10-20T09:00:00.000Z",
+      "nodeId": "demo_goal",
+      "text": "Fictional example: recorded the original goal."
+    },
+    {
+      "id": "demo_event_2",
+      "projectId": "branchi_demo",
+      "at": "2026-10-20T09:15:00.000Z",
+      "nodeId": "demo_purpose",
+      "text": "Fictional example: agreed a plain-language purpose."
+    },
+    {
+      "id": "demo_event_3",
+      "projectId": "branchi_demo",
+      "at": "2026-10-20T09:30:00.000Z",
+      "nodeId": "demo_setup",
+      "text": "Fictional example: chose a browser-first manual trial."
+    },
+    {
+      "id": "demo_event_4",
+      "projectId": "branchi_demo",
+      "at": "2026-10-20T09:45:00.000Z",
+      "nodeId": "demo_later",
+      "text": "Fictional example: parked an optional welcome-screen idea."
+    }
+  ]
+}

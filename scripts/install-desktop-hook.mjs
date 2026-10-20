@@ -11,7 +11,7 @@ export function installDesktopHooks(target,{root=path.resolve(path.dirname(fileU
  for(const event of ['UserPromptSubmit','Stop']){
   if(config.hooks[event]!==undefined&&!Array.isArray(config.hooks[event]))throw Error('Invalid '+event+' hook groups; no changes made.');
   config.hooks[event]??=[];
-  if(!config.hooks[event].some(group=>group.hooks?.some(h=>h.command===command))){config.hooks[event].push({hooks:[{type:'command',command,timeout:10,statusMessage:'Updating Brancha locally'}]});changed=true;}
+  if(!config.hooks[event].some(group=>group.hooks?.some(h=>h.command===command))){config.hooks[event].push({hooks:[{type:'command',command,timeout:10,statusMessage:'Updating Branchi locally'}]});changed=true;}
  }
  let backup=null;if(changed){if(fs.existsSync(target)){backup=target+'.'+Date.now()+'.backup';fs.copyFileSync(target,backup,fs.constants.COPYFILE_EXCL);}atomic(target,config);}
  return {installed:true,changed,command,events:['UserPromptSubmit','Stop'],trustRequired:true,...(backup?{backup}:{}),note:'Review both exact definitions with /hooks before use. No trust bypass, chat activation, browser extension or model call was performed.'};

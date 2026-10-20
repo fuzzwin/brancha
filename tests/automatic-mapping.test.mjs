@@ -59,7 +59,7 @@ test('capture MCP receipt uses exact privacy and source identities with replay-s
 
 test('new setup makes mapping primary, permits explicit no-AI, and never includes chats in bulk',()=>{
  const f=fixture(),one=path.join(f.dir,'default.json'),two=path.join(f.dir,'no-ai.json');
- execFileSync(process.execPath,['scripts/setup.mjs','--config',one,'--vault',f.config.vault,'--no-codex'],{cwd:root});const enabled=JSON.parse(fs.readFileSync(one));assert.equal(enabled.mapper.enabled,true);assert.equal(enabled.reviewer.enabled,true);assert.deepEqual(enabled.capturePolicy.approvedSessionIds,[]);
+ execFileSync(process.execPath,['scripts/setup.mjs','--config',one,'--vault',f.config.vault,'--no-codex'],{cwd:root});const enabled=JSON.parse(fs.readFileSync(one));assert.equal(enabled.mapper.enabled,true);assert.equal(enabled.reviewer.enabled,true);assert.equal(enabled.reviewer.autoCheckMs,900000);assert.deepEqual(enabled.capturePolicy.approvedSessionIds,[]);
  execFileSync(process.execPath,['scripts/setup.mjs','--config',two,'--vault',f.config.vault,'--no-ai'],{cwd:root});const disabled=JSON.parse(fs.readFileSync(two));assert.equal(disabled.mapper.enabled,false);assert.equal(disabled.reviewer.enabled,false);
 });
 

@@ -1,5 +1,5 @@
-.bi { --bi-green:#315447; --bi-soft:#e9eee4; --bi-line:#dce3d9; --bi-muted:#637368; color:#263a31; font-family:var(--font-interface); }
-.theme-dark .bi { --bi-green:#b2cf9e; --bi-soft:#26382f; --bi-line:#3b4c42; --bi-muted:#acbbaf; color:#e0e9df; }
+.bi { --bi-green:var(--interactive-accent); --bi-soft:var(--background-secondary); --bi-line:var(--background-modifier-border); --bi-muted:var(--text-muted); color:var(--text-normal); font-family:var(--font-interface); }
+.theme-dark .bi { --bi-green:var(--interactive-accent); --bi-soft:var(--background-secondary); --bi-line:var(--background-modifier-border); --bi-muted:var(--text-muted); color:var(--text-normal); }
 .bi * { box-sizing:border-box; }
 .bi h1 { font-size:32px; margin:0!important; }
 .bi h2 { font-size:23px; line-height:1.25; margin:0 0 20px!important; }
@@ -24,21 +24,21 @@
 .bi-card:first-child { background:var(--bi-soft); }
 .bi-card strong { font-size:38px; line-height:1.1; font-weight:650; }
 .bi-card>span { font-weight:600; }
-.bi-resume { border-radius:18px; padding:26px 30px; background:#254036; color:#edf4e8; margin-bottom:24px; }
-.bi-resume small { color:#bad19f; letter-spacing:.15em; font-weight:700; }
+.bi-resume { border-radius:18px; padding:26px 30px; background:var(--background-secondary); color:var(--text-normal); margin-bottom:24px; }
+.bi-resume small { color:var(--text-muted); letter-spacing:.15em; font-weight:700; }
 .bi-resume p { font-size:21px; margin:14px 0; }
-.bi-resume button { background:#e7eede; color:#294236; }
-.bi-resume .bi-handover-hint { display:block; margin-top:12px; letter-spacing:normal; font-weight:400; color:#c6d7c8; }
+.bi-resume button { background:var(--interactive-accent); color:var(--text-on-accent); }
+.bi-resume .bi-handover-hint { display:block; margin-top:12px; letter-spacing:normal; font-weight:400; color:var(--text-muted); }
 .bi-panel { border:1px solid var(--bi-line); border-radius:18px; padding:24px; margin-bottom:24px; background:var(--background-primary); min-width:0; }
 .bi-panel-head h2 { margin-right:auto!important; margin-bottom:0!important; }
 .bi-tools { margin:18px 0 12px; }
 .bi-tools>span { margin-right:auto; }
 .bi-map-scroll { overflow:auto; max-height:680px; padding:10px 0; }
-.bi-map svg { display:block; max-width:none; --pele-bg:transparent; --pele-fg:#294236; --pele-surface:#edf2e7; --pele-border:#8ea286; --pele-line:#809689; --pele-radius:10px; }
+.bi-map svg { display:block; max-width:none; --pele-bg:transparent; --pele-fg:var(--text-normal); --pele-surface:var(--background-secondary); --pele-border:var(--text-faint); --pele-line:var(--text-muted); --pele-radius:10px; }
 .bi-map svg { font:18px sans-serif; --_bg:var(--pele-bg); --_fg:var(--pele-fg); --_m:var(--bi-muted); --_l:var(--pele-line); --_s:var(--pele-surface); --_a:var(--bi-soft); --_b:var(--pele-border); --_c:var(--bi-green); --_r:10px; --pele-series-1:#7c9b6f; --pele-series-2:#b29564; --pele-series-3:#7896a4; --pele-series-4:#a78db5; --pele-series-5:#b5927d; --pele-series-6:#7d9d91; }
 .bi-map svg rect { rx:10px; }
 .bi-map svg .pele-edge-label rect { fill:var(--background-primary); rx:3px; }
-.theme-dark .bi-map svg { --pele-fg:#e0e9df; --pele-surface:#2a3a30; --pele-border:#8da486; --pele-line:#97ac9b; }
+.theme-dark .bi-map svg { --pele-fg:var(--text-normal); --pele-surface:var(--background-secondary); --pele-border:var(--text-faint); --pele-line:var(--text-muted); }
 .bi-click { cursor:pointer; }
 .bi-click:hover { filter:brightness(1.15); }
 .bi-chips { padding-top:12px; border-top:1px solid var(--bi-line); }
@@ -54,7 +54,7 @@
 .bi-stream-count { font-variant-numeric:tabular-nums; color:var(--bi-green); }
 .bi-stream progress { grid-column:1/-1; width:100%; height:10px; accent-color:#86a478; border:0; }
 .bi-stream progress::-webkit-progress-bar { background:var(--bi-soft); border-radius:8px; }
-.bi-stream progress::-webkit-progress-value { background:#86a478; border-radius:8px; }
+.bi-stream progress::-webkit-progress-value { background:var(--interactive-accent); border-radius:8px; }
 .bi-stream small { grid-column:1/-1; }
 .bi-timeline-filters { display:flex; flex-wrap:wrap; gap:14px; margin:18px 0; }
 .bi-timeline-filters label { display:flex; flex-direction:column; gap:6px; color:var(--bi-muted); font-size:13px; }
@@ -97,12 +97,12 @@
 .bi-status { display:grid; grid-template-columns:1fr auto; gap:9px; margin:20px 0; }
 .bi-status progress { grid-column:1/-1; width:100%; height:9px; accent-color:#86a478; border:0; }
 .bi-status progress::-webkit-progress-bar { background:var(--bi-soft); border-radius:8px; }
-.bi-status progress::-webkit-progress-value { background:#86a478; border-radius:8px; }
+.bi-status progress::-webkit-progress-value { background:var(--interactive-accent); border-radius:8px; }
 .bi-chart { display:grid; grid-template-columns:repeat(14,minmax(0,1fr)); gap:5px; margin-top:20px; }
 .bi-chart>div { text-align:center; }
 .bi-chart small { display:block; height:22px; font-size:11px; }
 .bi-track { height:130px; background:var(--bi-soft); border-radius:6px; display:flex; align-items:flex-end; margin:5px 0 10px; overflow:hidden; }
-.bi-track>div { width:100%; background:#8eaa7d; min-height:0; border-radius:6px; }
+.bi-track>div { width:100%; background:var(--interactive-accent); min-height:0; border-radius:6px; }
 .bi-records { margin-top:20px; }
 .bi-record { padding:14px 0; border-top:1px solid var(--bi-line); }
 .bi-record>button:first-child { font-weight:650; text-align:left; }
@@ -133,9 +133,9 @@
 .bi-status progress { accent-color:var(--bi-state-stroke); }
 .bi-status progress::-webkit-progress-value { background:var(--bi-state-stroke); }
 @container (max-width:480px) { .bi-legend dl { grid-template-columns:1fr; } .bi-legend dd { margin-bottom:8px; } }
-/* Override Obsidian's progress[value] accent only inside Brancha panels. */
+/* Override Obsidian's progress[value] accent only inside Branchi panels. */
 .bi .bi-status progress[value]::-webkit-progress-value { background-color:var(--bi-state-stroke); }
-.bi .bi-stream progress[value]::-webkit-progress-value { background-color:#86a478; }
+.bi .bi-stream progress[value]::-webkit-progress-value { background-color:var(--interactive-accent); }
 
 .bi-chat-preview { color:var(--bi-muted); font-size:14px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .bi-chat .bi-nav { margin-top:20px; }
@@ -149,7 +149,7 @@
 .bi-chat-artifacts { max-height:380px; overflow:auto; padding-right:14px; }
 .bi-chat-reports { max-height:650px; overflow:auto; }
 
-/* Comfortable desktop density, scoped to Brancha rather than app-wide zoom. */
+/* Comfortable desktop density, scoped to Branchi rather than app-wide zoom. */
 .bi { font-size:14px; line-height:1.45; }
 .bi h1 { font-size:26px; line-height:1.2; }
 .bi h2 { font-size:19px; margin-bottom:12px!important; }
@@ -363,6 +363,28 @@
 .bi-auto-state { flex-basis:100%; margin:2px 0; }
 .bi-chat-map { width:100%; }
 
+/* The shared renderer follows the host theme on every page. Status colours
+   retain their meaning; surfaces, text, borders and controls use host tokens. */
+.bi { container-type:inline-size;container-name:brancha-page; }
+.bi h1 { font-size:30px;line-height:1.25; }
+.bi h2 { font-size:21px;margin-bottom:14px!important; }
+.bi .bi-panel { border-radius:12px;padding:20px;margin-bottom:20px; }
+.bi .bi-card { min-height:100px;border-radius:10px; }
+.bi .bi-card strong { font-size:30px; }
+.bi .bi-nav { gap:7px; }
+.bi .bi-nav button { font-size:12px;padding:7px 11px;min-height:34px; }
+.bi a { color:var(--link-color,var(--interactive-accent)); }
+.bi .bi-resume { border:1px solid var(--bi-line);border-radius:12px;padding:16px 20px;margin-bottom:20px; }
+.bi .bi-resume>small:first-child { font-size:10px;letter-spacing:.1em; }
+.bi .bi-resume>p { font-size:18px;line-height:1.4;margin:8px 0 12px;max-width:85ch; }
+.bi .bi-resume .bi-handover-hint { font-size:11px;margin-top:8px; }
+.bi .bi-resume button { min-height:36px;font-size:12px;padding:8px 12px; }
+.bi .bi-home-status { color:var(--text-muted); }
+.bi .bi-gauge { background:conic-gradient(var(--interactive-accent) var(--bi-gauge),var(--bi-line) 0); }
+.bi .bi-gauge:before { background:var(--background-primary); }
+@container brancha-page (max-width:620px) { .bi .bi-panel { padding:16px; }.bi h1 { font-size:26px; }.bi .bi-resume { padding:14px 16px; } }
+
+
 /* Full-page explorer: every record remains reachable without changing truth. */
 .bi-explorer .bi-nav { margin-bottom:10px; padding-bottom:10px; }
 .bi-explorer .bi-top { margin-bottom:10px; }
@@ -407,3 +429,16 @@
 
 .bi-explorer .bi-auto-state { display:none; }
 .bi-explorer .bi-quick-switch select { max-width:210px; }
+
+/* Compact next action shared by all project and chat pages. */
+.bi .bi-compact-next { display:block;padding:0; }
+.bi-compact-next-row { display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 20px; }
+.bi-compact-next-copy { min-width:0; }
+.bi .bi-compact-next-copy>small { font-size:10px;letter-spacing:.1em;color:var(--text-muted); }
+.bi .bi-compact-next h2 { font-size:18px;line-height:1.4;margin:5px 0 0!important; }
+.bi .bi-compact-next-row>button { flex-shrink:0;margin:0; }
+.bi .bi-next-details { border:0;background:transparent;padding:0 20px 10px; }
+.bi .bi-next-details summary { font-size:11px;color:var(--text-muted);cursor:pointer;min-height:22px; }
+.bi .bi-next-details[open] { border-top:1px solid var(--bi-line);padding-top:12px; }
+.bi .bi-next-details p { font-size:13px;line-height:1.6;margin:8px 0; }
+@container brancha-page (max-width:620px) { .bi-compact-next-row { display:block;padding:14px 16px; }.bi .bi-compact-next-row>button { margin-top:12px; }.bi .bi-next-details { padding-inline:16px; } }

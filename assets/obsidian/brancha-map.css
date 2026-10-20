@@ -54,3 +54,23 @@
 .brancha-interactive .markdown-preview-section>.el-p:has(>p>a[data-href="Generated/Navigation/Home"]):has(+.el-pre .bi) { display:none; }
 .brancha-interactive { --file-margins:16px 24px; }
 .brancha-interactive .markdown-preview-sizer { padding-top:8px; }
+
+/* Shared foundation injected into every generated Markdown page, including
+   recaps, source replies, templates, branches and pages created later. */
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) { --file-line-width:1100px;--file-margins:20px 28px;color:var(--text-normal); }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) .markdown-preview-sizer { max-width:1100px;margin-inline:auto; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map):is(.brancha-dashboard,.brancha-map) .markdown-preview-sizer { max-width:none;width:100%; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) .inline-title,:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) .metadata-container { display:none!important; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) :is(h1,.HyperMD-header-1) { font-size:1.8em;line-height:1.25;margin-block:12px 18px; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) :is(h2,.HyperMD-header-2) { line-height:1.35;margin-block:26px 12px; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) p,:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) li { line-height:1.6; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) table { width:100%; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) :is(td,th) { vertical-align:top;overflow-wrap:anywhere; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) :is(pre,blockquote,.callout) { border-radius:9px; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) a { color:var(--link-color,var(--interactive-accent)); }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) .image-embed { max-width:100%;overflow:auto; }
+:is(.brancha-page,.brancha-record,.brancha-dashboard,.brancha-map) .image-embed img { max-width:100%;height:auto; }
+
+/* The program overview stays at a readable overview size, with Canvas for exploration. */
+.brancha-program .image-embed { display:flex;justify-content:center; }
+.brancha-program .image-embed img[src*="how-brancha-works"] { min-width:0!important;width:auto!important;max-width:100%!important;max-height:560px!important;object-fit:contain; }

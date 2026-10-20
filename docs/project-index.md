@@ -1,6 +1,6 @@
 # Local project index and deep dives
 
-Run `node scripts/project-index.mjs` from the companion checkout. This refreshes `Notes/Project index.md` and `.brancha/project-index/index.json` in the configured vault. It does not call a model or modify canonical project claims. The command works without a source registry; coverage is then limited to the Brancha record.
+Run `node scripts/project-index.mjs` from the companion checkout. This refreshes `Notes/Project index.md` and `.brancha/project-index/index.json` in the configured vault. It does not call a model or modify canonical project claims. The command works without a source registry; coverage is then limited to the Branchi record.
 
 Optionally register up to eight selected owning documents per project in `.brancha/project-index/sources.json`:
 

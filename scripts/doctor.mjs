@@ -18,6 +18,7 @@ try {
 add('node', Number(process.versions.node.split('.')[0]) >= 22 ? 'ok' : 'blocked', process.version);
 try {
   const {config} = loadConfig(process.argv[2]);
+  add('reading-surface','ok',config.view==='obsidian'?'Obsidian only; no localhost listener.':config.view==='localhost'?'Localhost; Obsidian is optional.':'Obsidian and localhost share the local record.');
   add('configuration', 'ok', 'Loaded without exposing paths, routing IDs or credentials.');
   let parent = config.vault;
   while (!fs.existsSync(parent) && path.dirname(parent) !== parent) parent = path.dirname(parent);
@@ -37,12 +38,12 @@ try {
   if (!config.captureEnabled) add('codex-capture', 'off', 'Optional adapter disabled; portable checkpoints remain available.');
   else add('codex-capture', readable(config.sessionsDirectory) ? 'ok' : 'warning', readable(config.sessionsDirectory) ? 'Session directory is readable; completion capture starts at EOF on first use.' : 'Session directory is unavailable; configure it or disable Codex capture.');
   add('automatic-mapping',config.mapper?.enabled?'ok':'off',config.mapper?.enabled?'Luna mapping enabled for allowed saved receipts; model access and backlog require runtime status.':'AI layer disabled. Captures and basic maps can still update.');
-  add('catch-up-review',config.reviewer?.enabled?'warning':'off',config.reviewer?.enabled?'High catch-up enabled. Configure a twice-daily desktop schedule separately; offline doctor cannot verify its runs.':'Catch-up reviewer disabled.');
+  add('catch-up-review',config.reviewer?.enabled?'warning':'off',config.reviewer?.enabled?(config.reviewer.autoCheckMs?'Companion automatic catch-up configured; offline doctor cannot verify its runs.':'High catch-up enabled; use companion autoCheckMs or a desktop schedule. Offline doctor cannot verify runs.'):'Catch-up reviewer disabled.');
   add('cloud-bridge', config.cloud?.connectionFile ? (readable(config.cloud.connectionFile) ? 'warning' : 'blocked') : 'off', config.cloud?.connectionFile ? 'Configured. This offline check does not authenticate or contact the service.' : 'Disabled. No cloud connection required.');
   const css=path.join(config.vault,'.obsidian','snippets','brancha-map.css'),appearance=path.join(config.vault,'.obsidian','appearance.json');
   const matches=readable(css)&&fs.readFileSync(css,'utf8')===fs.readFileSync(path.join(root,'assets','obsidian','brancha-map.css'),'utf8');
   let enabled=false;try{enabled=JSON.parse(fs.readFileSync(appearance,'utf8')).enabledCssSnippets?.includes('brancha-map')===true;}catch{}
-  add('obsidian-style',matches&&enabled?'ok':'warning',matches&&enabled?'Current scoped CSS is installed and enabled; native rendering still needs visual inspection.':'Optional scoped CSS is missing, different or disabled. Run npm run obsidian-style to install with backups.');
+  if(config.view!=='localhost')add('obsidian-style',matches&&enabled?'ok':'warning',matches&&enabled?'Current scoped CSS is installed and enabled; native rendering still needs visual inspection.':'Optional scoped CSS is missing, different or disabled. Run npm run obsidian-style to install with backups.');
 } catch {
   add('configuration', 'blocked', 'Missing or invalid config. Run npm run setup; check path fields and port.');
 }

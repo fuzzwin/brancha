@@ -10,9 +10,24 @@ const read=(file,fallback)=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file,
 const hash=value=>crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Melbourne',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 export class ProjectReviewer{
- constructor(config,{runner=runLuna}={}){this.config=config;this.runner=runner;this.root=path.join(paths(config).state,'reviewer');fs.mkdirSync(path.join(this.root,'runs'),{recursive:true});}
+ constructor(config,{runner=runLuna,clock=()=>Date.now()}={}){this.config=config;this.runner=runner;this.clock=clock;this.autoBusy=false;this.root=path.join(paths(config).state,'reviewer');fs.mkdirSync(path.join(this.root,'runs'),{recursive:true});}
  request(){atomic(path.join(this.root,'request.json'),{id:crypto.randomUUID(),requestedAt:new Date().toISOString()});}
- async tick(){const request=path.join(this.root,'request.json');if(!fs.existsSync(request)||!this.config.reviewer?.enabled||controls(this.config).paused)return;const job=read(request);const result=await this.run();if(!result.busy&&!String(result.skipped||'').startsWith('paused')&&read(request)?.id===job.id)fs.unlinkSync(request);return result;}
+ async tick(){
+  if(!this.config.reviewer?.enabled||controls(this.config).paused||this.autoBusy)return;
+  const request=path.join(this.root,'request.json');
+  if(fs.existsSync(request)){const job=read(request);const result=await this.run();if(!result.busy&&!String(result.skipped||'').startsWith('paused')&&read(request)?.id===job.id)fs.unlinkSync(request);return result;}
+  const interval=this.config.reviewer.autoCheckMs;if(!interval)return;
+  const file=path.join(this.root,'automatic.json'),previous=read(file,{});if(this.clock()<(previous.nextCheckAt||0))return;
+  this.autoBusy=true;
+  try{
+   const result=await this.run();
+   // Shared worker contention is not a model failure. Leave the due check pending.
+   if(result.busy||String(result.skipped||'').startsWith('paused'))return result;
+   const at=this.clock(),nextCheckAt=at+(result.backlog>0?Math.min(interval,60000):interval);
+   atomic(file,{checkedAt:new Date(at).toISOString(),nextCheckAt,result:{reviewed:result.reviewed||0,applied:result.applied||0,backlog:result.backlog||0,skipped:result.skipped||null,failed:!!result.failed}});
+   status(this.config,{reviewerAutomatic:true,reviewerAutoCheckedAt:new Date(at).toISOString(),reviewerNextCheckAt:new Date(nextCheckAt).toISOString()});return result;
+  }finally{this.autoBusy=false;}
+ }
  async run(){
   const cfg=this.config,root=this.root,lock=path.join(root,'worker.lock');
   if(!cfg.reviewer?.enabled)return {skipped:'disabled'};if(controls(cfg).paused)return {skipped:'paused'};
@@ -45,7 +60,7 @@ export class ProjectReviewer{
     const out=path.join(root,'runs',run.id+'.json');atomic(out,run);budget.calls++;atomic(budgetFile,budget);
     status(cfg,{reviewerState:'Luna High reviewing',reviewerBacklog:jobs.length,reviewerError:null});
     try{const result=await this.runner(packet,{effort:'high',directory:path.join(root,'runner'),executable:cfg.reviewer.executable||cfg.mapper?.executable||'codex',timeoutMs:cfg.reviewer.timeoutMs||120000});validateExtraction(result.value,packet);run.value=result.value;run.receipt=result.receipt;run.state='ready';atomic(out,run);}
-    catch(e){run.state='failed';run.error=redact(e.message).slice(0,1200);if(e.receipt)run.receipt=e.receipt;atomic(out,run);state.failed=[...new Set([...state.failed,...run.jobs.map(j=>j.id)])];atomic(stateFile,state);status(cfg,{reviewerState:'needs attention',reviewerError:run.error});return {failed:true,error:run.error};}
+    catch(e){run.state='failed';run.error=redact(e.message).slice(0,1200);if(e.receipt)run.receipt=e.receipt;atomic(out,run);state.failed=[...new Set([...state.failed,...run.jobs.map(j=>j.id)])];atomic(stateFile,state);status(cfg,{reviewerState:'needs attention',reviewerError:run.error});return {failed:true,error:run.error,backlog:run.backlog};}
    }
    if(controls(cfg).paused)return {skipped:'paused before update'};
    if(run.jobs.some(j=>!sessionAllowed(cfg,j.sessionId))){run.state='excluded';atomic(path.join(root,'runs',run.id+'.json'),run);return {skipped:'chat permission revoked'};}

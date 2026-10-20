@@ -9,6 +9,6 @@ try{
   const config=loadConfig(file).config,input=JSON.parse(fs.readFileSync(0,'utf8'));
   if(input.hook_event_name==='Stop'&&input.last_assistant_message)capture(config,{sessionId:input.session_id,turnId:input.turn_id,cwd:input.cwd,message:input.last_assistant_message,adapter:'codex-stop-hook'});
  }
-}catch(e){console.error('Brancha checkpoint was not saved: '+e.message);}
+}catch(e){console.error('Branchi checkpoint was not saved: '+e.message);}
 // Advisory only: never continue, block, or change the Codex turn.
 console.log('{}');

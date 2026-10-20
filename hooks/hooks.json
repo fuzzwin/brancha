@@ -1,5 +1,5 @@
 {
-  "description": "Automatic Brancha capture for individually enabled local Work and Codex chats. Requires exact hook trust.",
+  "description": "Automatic Branchi capture for individually enabled local Work and Codex chats. Requires exact hook trust.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -8,7 +8,7 @@
             "type": "command",
             "command": "node \"${PLUGIN_ROOT}/adapters/desktop-hook.mjs\"",
             "timeout": 10,
-            "statusMessage": "Updating Brancha locally"
+            "statusMessage": "Updating Branchi locally"
           }
         ]
       }
@@ -20,7 +20,7 @@
             "type": "command",
             "command": "node \"${PLUGIN_ROOT}/adapters/desktop-hook.mjs\"",
             "timeout": 10,
-            "statusMessage": "Updating Brancha locally"
+            "statusMessage": "Updating Branchi locally"
           }
         ]
       }

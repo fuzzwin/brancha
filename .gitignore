@@ -12,3 +12,6 @@ config.local.json
 .openai/
 
 cloud-built/
+
+# Local review provenance contains machine paths
+REVIEW-ORIGIN.json

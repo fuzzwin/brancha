@@ -1,6 +1,6 @@
 import fs from 'node:fs';import path from 'node:path';
 // Optional, observed Codex metadata adapter. It reads names only, and retains
-// only IDs already represented in this Brancha record; no transcript is read.
+// only IDs already represented in this Branchi record; no transcript is read.
 export function chatTitles(config,w){
  if(!config.sessionsDirectory)return {};
  const file=path.join(path.dirname(config.sessionsDirectory),'session_index.jsonl');

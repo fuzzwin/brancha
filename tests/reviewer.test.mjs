@@ -12,3 +12,23 @@ test('pause preserves a manual request, limits cap calls, and existing source qu
  const {paths}=await import('../adapters/capture.mjs');atomic(paths(f.config).control,{paused:true});assert.equal(await worker.tick(),undefined);assert(fs.existsSync(path.join(worker.root,'request.json')));atomic(paths(f.config).control,{paused:false});await worker.tick();assert(!fs.existsSync(path.join(worker.root,'request.json')));
  const next={...f.job,id:'job-2',turnId:'turn-2'};atomic(path.join(f.config.vault,'.brancha/mapper/jobs/job-2.json'),next);const r=await worker.run();assert.equal(r.applied,0);assert.equal(r.duplicates,1);assert.equal(f.read().nodes.filter(n=>n.mapper).length,1);
  atomic(path.join(f.config.vault,'.brancha/mapper/jobs/job-3.json'),{...next,id:'job-3',turnId:'turn-3'});assert.equal((await worker.run()).skipped,'daily limit');});
+
+test('companion automatic review needs no request, persists its due time, and skips unchanged input without a model call',async()=>{
+ const f=fixture();f.config.reviewer.autoCheckMs=900000;let now=Date.now(),calls=0;const runner=async p=>{calls++;return result(p);},worker=new ProjectReviewer(f.config,{runner,clock:()=>now});
+ assert.equal((await worker.tick()).applied,1);assert.equal(calls,1);assert(!fs.existsSync(path.join(worker.root,'request.json')));assert.equal(await worker.tick(),undefined);
+ const restarted=new ProjectReviewer(f.config,{runner,clock:()=>now});assert.equal(await restarted.tick(),undefined);now+=900001;assert.equal((await restarted.tick()).skipped,'unchanged');assert.equal(calls,1);
+});
+test('automatic catch-up shares pause, exact-chat privacy, failures and daily budgets',async()=>{
+ const f=fixture();f.config.reviewer.autoCheckMs=60000;f.config.reviewer.maxCallsPerDay=1;let now=Date.now(),calls=0;const worker=new ProjectReviewer(f.config,{runner:async p=>{calls++;return result(p);},clock:()=>now});
+ atomic(path.join(f.config.vault,'.brancha/control.json'),{paused:true});assert.equal(await worker.tick(),undefined);assert.equal(calls,0);atomic(path.join(f.config.vault,'.brancha/control.json'),{paused:false});f.config.capturePolicy.approvedSessionIds=[];assert.equal((await worker.tick()).skipped,'unchanged');assert.equal(calls,0);
+ f.config.capturePolicy.approvedSessionIds=['chat'];now+=60001;assert.equal((await worker.tick()).applied,1);atomic(path.join(f.config.vault,'.brancha/mapper/jobs/job-2.json'),{...f.job,id:'job-2',turnId:'turn-2'});now+=60001;assert.equal((await worker.tick()).skipped,'daily limit');assert.equal(calls,1);
+});
+test('automatic batch backlog schedules a bounded follow-up and shared locks prevent overlapping model calls',async()=>{
+ const f=fixture();f.config.reviewer.autoCheckMs=900000;let now=Date.now(),calls=0;for(let i=2;i<=9;i++)atomic(path.join(f.config.vault,'.brancha/mapper/jobs/job-'+i+'.json'),{...f.job,id:'job-'+i,turnId:'turn-'+i});
+ const worker=new ProjectReviewer(f.config,{runner:async p=>{calls++;assert.equal(await worker.tick(),undefined);return result(p);},clock:()=>now});const first=await worker.tick();assert.equal(first.reviewed,8);assert.equal(first.backlog,1);const state=JSON.parse(fs.readFileSync(path.join(worker.root,'automatic.json')));assert.equal(state.nextCheckAt,now+60000);now+=60001;assert.equal((await worker.tick()).reviewed,1);assert.equal(calls,2);
+});
+test('automatic polling does not retry a failed model extraction',async()=>{
+ const f=fixture();f.config.reviewer.autoCheckMs=60000;let now=Date.now(),calls=0;const worker=new ProjectReviewer(f.config,{runner:async p=>{calls++;const r=result(p);r.value.items[0].quote='Unfounded quotation';return r;},clock:()=>now});assert((await worker.tick()).failed);now+=60001;assert.equal((await worker.tick()).skipped,'unchanged');assert.equal(calls,1);
+});
+
+test('a rejected batch does not block other unreviewed projects or consume their data',async()=>{const f=fixture();f.config.reviewer.autoCheckMs=900000;let now=Date.now(),calls=0;const worker=new ProjectReviewer(f.config,{runner:async p=>{calls++;const r=result(p);r.value.items[0].detail='';return r;},clock:()=>now});assert((await worker.tick()).failed);assert.equal(f.read().nodes.length,1);const state=JSON.parse(fs.readFileSync(path.join(worker.root,'state.json')));assert(state.failed.includes(f.job.id));now+=900001;assert.equal((await worker.tick()).skipped,'unchanged');assert.equal(calls,1);});

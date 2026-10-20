@@ -7,5 +7,5 @@ const dir=path.join(path.dirname(configFile),'browser-host'),launcher=path.join(
 atomicText(launcher,'#!/bin/sh\nexec '+q(process.execPath)+' '+q(path.join(root,'scripts/browser-native-host.mjs'))+' '+q('--config='+configFile)+' "$@"\n');fs.chmodSync(launcher,0o700);
 const target=process.platform==='darwin'?path.join(os.homedir(),'Library/Application Support/Google/Chrome/NativeMessagingHosts/com.brancha.capture.json'):path.join(os.homedir(),'.config/google-chrome/NativeMessagingHosts/com.brancha.capture.json');
 if(fs.existsSync(target))fs.copyFileSync(target,target+'.'+Date.now()+'.backup',fs.constants.COPYFILE_EXCL);
-atomic(target,{name:'com.brancha.capture',description:'Local-only Brancha visible chat receipts',path:launcher,type:'stdio',allowed_origins:['chrome-extension://'+id+'/']});
+atomic(target,{name:'com.brancha.capture',description:'Local-only Branchi visible chat receipts',path:launcher,type:'stdio',allowed_origins:['chrome-extension://'+id+'/']});
 console.log(JSON.stringify({installedHost:true,extensionInstalled:false,extensionId:id,extensionDirectory:path.join(root,'browser-extension'),next:'Load this unpacked extension in Chrome, then activate an exact chat and project from its popup. No chat was enabled by this installer.'}));

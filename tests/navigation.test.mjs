@@ -26,7 +26,7 @@ test('bookmark installation is additive, preserves existing shortcuts and discov
  const installed=first.map(x=>({type:'file',value:x.file,title:x.title}));
  assert.equal(bookmarkPlan(w,installed).length,0);assert.equal(JSON.stringify(w),before);
  w.projects.push({...w.projects[0],id:'fresh',title:'Fresh project'});
- assert.deepEqual(bookmarkPlan(w,installed),[{file:'Generated/Dashboards/fresh.md',title:'Brancha · Fresh project'}]);
+ assert.deepEqual(bookmarkPlan(w,installed),[{file:'Generated/Dashboards/fresh.md',title:'Branchi · Fresh project'}]);
  const pages=navigationFiles(w);
  assert(pages['Navigation/Home.md'].includes('Generated/Dashboards/fresh'));
 });
@@ -50,5 +50,5 @@ test('status pages distinguish observed freshness and the three different record
  assert(connections.includes('Paused'));assert(connections.includes('http://127.0.0.1:53000/'));
  assert(connections.includes('Local edits are not pushed back'));assert(connections.includes('browser-saved copy'));
  assert(!connections.includes('private-secret'));
- assert(files['Navigation/Home.md'].includes('Notes/Brancha guide'));
+ assert(files['Navigation/Home.md'].includes('Notes/Branchi guide'));
 });

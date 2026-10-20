@@ -16,7 +16,7 @@ const p=paths(config);fs.mkdirSync(p.state,{recursive:true});
 const mapper=config.mapper?.enabled?new ConversationMapper(config):null;
 status(config,{mapperEnabled:Boolean(mapper),mapperError:null});
 const reviewer=config.reviewer?.enabled?new ProjectReviewer(config):null;
-status(config,{reviewerEnabled:!!reviewer,reviewerState:reviewer?'ready':'disabled'});
+status(config,{reviewerEnabled:!!reviewer,reviewerState:reviewer?'ready':'disabled',reviewerAutomatic:!!(reviewer&&config.reviewer?.autoCheckMs)});
 const watcher=config.captureEnabled?new CodexWatcher(config,{mapper}):null;
 if(watcher)watcher.poll();else status(config,{enabled:false,adapter:'portable-checkpoint',error:null});
 const companion=startServer({vault:config.vault,port:config.port,config});
@@ -31,4 +31,4 @@ const reviewerTimer=setInterval(()=>{reviewer?.tick().catch(e=>status(config,{re
 companion.server.on('error',()=>{clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);status(config,{enabled:false,error:'Companion server could not start.'});});
 function stop(){if(exiting)return;exiting=true;clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);status(config,{enabled:false,stoppedAt:new Date().toISOString()});companion.stop();}
 process.on('SIGINT',stop);process.on('SIGTERM',stop);
-console.log('Brancha '+(watcher?'automatic Codex capture':'portable checkpoints')+' is active. Config: '+configFile);
+console.log('Branchi '+(watcher?'automatic Codex capture':'portable checkpoints')+' is active. Config: '+configFile);

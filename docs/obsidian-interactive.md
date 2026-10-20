@@ -1,6 +1,6 @@
 # Interactive Obsidian dashboards
 
-Brancha 0.8.6 includes the local **Brancha Interactive** plugin. It uses the same Pele renderer as the exported maps. It needs no API key, network access, model or extra Obsidian dependency.
+Branchi 0.8.6 includes the local **Branchi Interactive** plugin. It uses the same Pele renderer as the exported maps. It needs no API key, network access, model or extra Obsidian dependency.
 
 From the checkout, after connecting your vault:
 
@@ -8,7 +8,7 @@ From the checkout, after connecting your vault:
 npm run obsidian-interactive
 ```
 
-In that vault, enable community plugins and then **Brancha Interactive**. Restart the existing Brancha companion after upgrading its source so it generates `Generated/Interactive/*.json`. Open a project bookmark in Reading view or Live Preview. If the note was already open when the plugin was enabled, reopen it.
+In that vault, enable community plugins and then **Branchi Interactive**. Restart the existing Branchi companion after upgrading its source so it generates `Generated/Interactive/*.json`. Open a project bookmark in Reading view or Live Preview. If the note was already open when the plugin was enabled, reopen it.
 
 - **Switch project** changes dashboard.
 - Select a category in the mindmap, or its named button below, to see that category plus directly connected records.
@@ -45,7 +45,7 @@ Only source IDs saved with an event or a matching mapper job assign an event to 
 
 ## Home navigation (0.9.0)
 
-Use the house ribbon icon or Open Brancha Home command to reach your projects and recent chats. Home buttons on dashboards and timelines return to the same page. Previous map retraces a drill-down without leaving the project. Generated record notes include a Home link. Project lists and recent chat lists sit side by side on wide panes and stack in narrow panes. Search filters both lists. Recent chats prefer the latest actual saved checkpoint over later mapper housekeeping; the local Codex name index supplies existing chat names when available. It is an optional observed-format adapter, so missing names fall back to a saved report title. Check now requests one bounded High review through the local companion. [Review setup](hourly-review.md).
+Use the house ribbon icon or Open Branchi Home command to reach your projects and recent chats. Home buttons on dashboards and timelines return to the same page. Previous map retraces a drill-down without leaving the project. Generated record notes include a Home link. Project lists and recent chat lists sit side by side on wide panes and stack in narrow panes. Search filters both lists. Recent chats prefer the latest actual saved checkpoint over later mapper housekeeping; the local Codex name index supplies existing chat names when available. It is an optional observed-format adapter, so missing names fall back to a saved report title. Check now requests one bounded High review through the local companion. [Review setup](hourly-review.md).
 
 
 ### Built-in status key (v0.9.1)
@@ -59,7 +59,7 @@ Generated item frontmatter includes `brancha/status/<canonical-status>` and `bra
 
 ### Fit and screen space (v0.10.1)
 
-Brancha uses a compact note layout, independent of Obsidian’s app zoom: 26px project titles, 102px overview cards and tighter panel spacing. A redundant generated Home paragraph is hidden only when its interactive page renders successfully. The sidebar, other notes and the vault theme retain their existing settings.
+Branchi uses a compact note layout, independent of Obsidian’s app zoom: 26px project titles, 102px overview cards and tighter panel spacing. A redundant generated Home paragraph is hidden only when its interactive page renders successfully. The sidebar, other notes and the vault theme retain their existing settings.
 
 Maps fit their pane width and a bounded half-height frame, capped at 430 CSS pixels. Small maps are not magnified to fill a wide note. ResizeObserver recalculates the fit when the pane changes width. Very narrow or dense maps retain an 11px label floor and use scrolling. **Fit map** restores the overview; **Readable size** restores the renderer’s original label scale; plus/minus zoom relative to the selected mode. Wide panes share space between the map title, toolbar and status key; smaller panes stack these controls.
 

@@ -1,4 +1,6 @@
-# One live workspace, two views
+# One local workspace, your chosen views
+
+Choose Obsidian, localhost or both with `npm run setup -- --view MODE`. An existing config can use `npm run views -- MODE`, then restart. Obsidian-only keeps exporting without an HTTP listener; localhost-only installs no Obsidian settings. [Reading surface setup](reading-surfaces.md).
 
 The configured vault's brancha.json is the local record. Obsidian and the loopback companion read it; generated pages are projections. Localhost now opens a live workspace that uses the same project/chat renderer and generated data as the bundled Obsidian plugin. The previous browser record editor remains at /editor, with a return link to the live Home. No browser extension is needed to use either dashboard.
 

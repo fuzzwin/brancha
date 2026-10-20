@@ -87,6 +87,11 @@ class Dashboard extends MarkdownRenderChild{
   }
  }
  select(key){if(key==='mm_root'){this.focus=null;this.history=[];}else{if(key.startsWith('more_'))key=key.replace('more_','group_');if(!this.data.views[key])return;if(key!==this.focus)this.history.push(this.focus);this.focus=key;}this.zoom=1;this.readable=false;this.draw();this.containerEl.querySelector('.bi-map')?.scrollIntoView({block:'start',behavior:'smooth'});}
+ renderNextStep(root,{label,text,action,onAction,hint}){
+  const panel=this.el(root,'section',undefined,'bi-resume bi-compact-next'),row=this.el(panel,'div',undefined,'bi-compact-next-row'),copy=this.el(row,'div',undefined,'bi-compact-next-copy');
+  this.el(copy,'small',label);this.el(copy,'h2',String(text||'Choose the next recorded action.').split(/;\s*|\.\s+/)[0]);
+  this.button(row,action,onAction);const details=this.el(panel,'details',undefined,'bi-next-details');this.el(details,'summary','Full next step and guidance');this.el(details,'p',text);this.el(details,'small',hint,'bi-handover-hint');return panel;
+ }
  draw(){
   const root=this.containerEl,d=this.data,a=d.analytics;this.mapObserver?.disconnect();this.svg=null;root.replaceChildren();
   if(this.timelineOnly){this.el(root,'h1',`${this.timelineLocked?'Chat':'Project'} timeline · ${d.project.title}`);this.button(root,'← Home',()=>this.open('Generated/Navigation/Home'));this.button(root,'Project dashboard',()=>this.open(`Generated/Dashboards/${this.id}`));this.renderTimeline(root);return;}
@@ -106,7 +111,7 @@ class Dashboard extends MarkdownRenderChild{
   this.el(help,'summary','A simple way to pick up where you left off');
   const steps=this.el(help,'ol');
   for(const text of ['Look at the cards and map to see where this project stands.','Click a map box to explore. Use Previous map or Whole project to return.','Read “Your next step” below, then open the handover when you want to continue with AI.','Choose another project at the top whenever you switch work.'])this.el(steps,'li',text);
-  this.el(help,'p','New saved work appears here while Brancha’s local companion is running. Opening a box only changes your view; it does not complete work or accept an AI suggestion.','bi-muted');
+  this.el(help,'p','New saved work appears here while Branchi’s local companion is running. Opening a box only changes your view; it does not complete work or accept an AI suggestion.','bi-muted');
   const glance=this.el(root,'section',undefined,'bi-glance');
   this.el(glance,'h2','At a glance');
   this.el(glance,'p','Your progress and project map, together. Click a card or box to explore.','bi-intro');
@@ -188,9 +193,7 @@ class Dashboard extends MarkdownRenderChild{
   this.el(rhythm,'p',`${a.timeZone} · Recorded updates, not hours or productivity.`,'bi-caption');
   lower.append(streams);
   this.renderTimeline(glance);
-  const resume=this.el(root,'section',undefined,'bi-resume');this.el(resume,'small','YOUR NEXT STEP');this.el(resume,'p',a.next);
-  this.button(resume,'Continue with AI →',()=>this.open(`Generated/Resume/${this.id}`));
-  this.el(resume,'small','Opens a handover you can use in your AI chat.','bi-handover-hint');
+  const resume=this.renderNextStep(root,{label:'NEXT STEP',text:a.next,action:'Continue with AI →',onAction:()=>this.open(`Generated/Resume/${this.id}`),hint:'Opens a handover you can use in your AI chat.'});
   root.insertBefore(resume,glance);
   // Keep written detail below the visual overview and the next action.
   const recordList=root.querySelector('.bi-records');if(recordList)root.append(recordList);
@@ -204,7 +207,7 @@ class Dashboard extends MarkdownRenderChild{
   if(!rows.length)this.el(todo,'p','No records in this queue.');
   for(const n of rows){const row=this.el(todo,'div',undefined,'bi-record');this.button(row,n.title,()=>this.select('item_'+n.id));this.el(row,'p',n.next||'Review the linked record.');}
   const chatSection=this.el(root,'section',undefined,'bi-panel bi-project-chats');this.el(chatSection,'h2','Chats behind this project');
-  if(!d.chats?.length)this.el(chatSection,'p','No included chats with saved turns are linked here. Open the intended Codex chat and ask to include that exact chat in Brancha.');
+  if(!d.chats?.length)this.el(chatSection,'p','No included chats with saved turns are linked here. Open the intended Codex chat and ask to include that exact chat in Branchi.');
   this.button(chatSection,'Set up a chat',()=>this.open('Generated/Guides/Chat privacy'));
   for(const chat of d.chats||[]){const row=this.el(chatSection,'div',undefined,'bi-record');this.button(row,chat.title,()=>this.open('Generated/'+chat.path));this.el(row,'small',`${chat.reportCount} saved reports`);this.el(row,'p',chat.summary,'bi-chat-preview');}
   const recent=this.el(root,'details',undefined,'bi-panel');this.el(recent,'summary','Recent updates & review prompts');
@@ -296,7 +299,7 @@ class Dashboard extends MarkdownRenderChild{
    if(t.truncated&&!this.timelineArchive)this.el(history,'p',`${t.loaded} recent detail records loaded. Opening this dropdown loads the older saved details locally.`,'bi-caption');
   };
   paint();
-  this.el(panel,'p','Start means the beginning of Brancha’s saved record for this scope. Earlier uncaptured work is not reconstructed.','bi-caption');
+  this.el(panel,'p','Start means the beginning of Branchi’s saved record for this scope. Earlier uncaptured work is not reconstructed.','bi-caption');
   if(!this.timelineOnly)this.button(panel,'Open timeline page ↗',()=>this.open(`Generated/Timelines/${this.id}`));
  }
  scale(delta){
@@ -309,16 +312,17 @@ class Dashboard extends MarkdownRenderChild{
 class Home extends Dashboard{
  constructor(el,plugin,sourcePath,options={}){super(el,plugin,'home',sourcePath);this.search='';this.chatsOnly=!!options.chatsOnly;}
  get path(){return this.chatsOnly?'Generated/Interactive/chats.json':'Generated/Interactive/home.json';}
- async refresh(){try{const raw=await this.plugin.app.vault.adapter.read(this.path);if(this.dead||raw===this.previous)return;this.previous=raw;this.data=JSON.parse(raw);if(!Array.isArray(this.data.projects))throw Error('Invalid Home data');this.draw();}catch(e){if(!this.dead){this.containerEl.replaceChildren();this.el(this.containerEl,'p','Home is waiting for the Brancha companion. Open the plain project list below.');}}}
+ async refresh(){try{const raw=await this.plugin.app.vault.adapter.read(this.path);if(this.dead||raw===this.previous)return;this.previous=raw;this.data=JSON.parse(raw);if(!Array.isArray(this.data.projects))throw Error('Invalid Home data');this.draw();}catch(e){if(!this.dead){this.containerEl.replaceChildren();this.el(this.containerEl,'p','Home is waiting for the Branchi companion. Open the plain project list below.');}}}
  draw(){
   const root=this.containerEl,d=this.data,r=d.review;root.replaceChildren();root.classList.add('bi-home');
-  this.el(root,'h1',this.chatsOnly?'Your saved chats':'Brancha Home');if(d.workspace){const identity=this.el(root,'p',`LIVE · ${d.workspace.name} · revision ${d.revision}`,'bi-workspace-identity');identity.title=d.workspace.vault;const browser=this.el(identity,'a',' · Open localhost');browser.href=d.workspace.localUrl;}this.el(root,'p',this.chatsOnly?'Find what you worked on, what was saved, and where to continue.':'Choose a project, or pick up a recent chat.','bi-home-intro');const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,'← Back',()=>this.back());this.button(nav,this.chatsOnly?'← Home':'All saved chats',()=>this.open(this.chatsOnly?'Generated/Navigation/Home':'Generated/Chats/index'));this.button(nav,'Daily recap',()=>this.open('Generated/Recaps/index'));this.button(nav,'Set up another chat',()=>this.open('Generated/Guides/Chat privacy'));
+  this.el(root,'h1',this.chatsOnly?'Your saved chats':'Branchi Home');if(d.workspace){const identity=this.el(root,'p',`LIVE · ${d.workspace.name} · revision ${d.revision}`,'bi-workspace-identity');identity.title=d.workspace.vault;if(d.workspace.localUrl){const browser=this.el(identity,'a',' · Open localhost');browser.href=d.workspace.localUrl;}}this.el(root,'p',this.chatsOnly?'Find what you worked on, what was saved, and where to continue.':'Choose a project, or pick up a recent chat.','bi-home-intro');const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,'← Back',()=>this.back());this.button(nav,this.chatsOnly?'← Home':'All saved chats',()=>this.open(this.chatsOnly?'Generated/Navigation/Home':'Generated/Chats/index'));this.button(nav,'Start here',()=>this.open('Generated/Navigation/How to use'));this.button(nav,'Daily recap',()=>this.open('Generated/Recaps/index'));this.button(nav,'How Branchi works',()=>this.open('Generated/Guides/How Brancha works'));this.button(nav,'Set up another chat',()=>this.open('Generated/Guides/Chat privacy'));
   const setup=this.el(root,'div',undefined,'bi-chat-setup');this.el(setup,'span',d.privacy?`${d.privacy.includedSavedChats} included chat${d.privacy.includedSavedChats===1?'':'s'} · ${d.privacy.excludedSavedChats} previously saved chats excluded by your privacy settings.`:'Only individually included chats with saved turns appear here.');
   const bar=this.el(root,'div',undefined,'bi-home-bar'),input=this.el(bar,'input');input.type='search';input.placeholder='Find a project or chat…';input.setAttribute('aria-label','Find a project or chat');input.value=this.search;
-  const check=this.button(bar,'Check now',async()=>{check.disabled=true;try{const adapter=this.plugin.app.vault.adapter;for(const folder of ['.brancha','.brancha/reviewer'])if(!await adapter.exists(folder))await adapter.mkdir(folder);await adapter.write('.brancha/reviewer/request.json',JSON.stringify({id:Date.now()+'_'+Math.random().toString(16).slice(2),requestedAt:new Date().toISOString()}));new Notice('Check requested. Brancha will review new saved turns and update Obsidian.');check.textContent='Check requested';}catch(e){check.disabled=false;new Notice('Check could not be requested. Open Connection status for setup details.');}});
+  const check=this.button(bar,'Check now',async()=>{check.disabled=true;try{const adapter=this.plugin.app.vault.adapter;for(const folder of ['.brancha','.brancha/reviewer'])if(!await adapter.exists(folder))await adapter.mkdir(folder);await adapter.write('.brancha/reviewer/request.json',JSON.stringify({id:Date.now()+'_'+Math.random().toString(16).slice(2),requestedAt:new Date().toISOString()}));new Notice('Check requested. Branchi will review new saved turns and update Obsidian.');check.textContent='Check requested';}catch(e){check.disabled=false;new Notice('Check could not be requested. Open Connection status for setup details.');}});
   check.disabled=!r.enabled||r.paused||/reviewing|Updating/.test(r.state);
   const status=this.el(root,'div',undefined,'bi-home-status');this.el(status,'strong',r.paused?'Capture and review are paused':r.enabled?`Luna High review · ${r.state}`:'Automatic review is not configured');
   this.el(status,'span',r.lastAt?`Last completed ${new Date(r.lastAt).toLocaleString()}`:'No completed High review observed yet.');
+  if(r.automatic&&r.nextCheckAt)this.el(status,'span',`Automatic catch-up · next check ${new Date(r.nextCheckAt).toLocaleTimeString()}`);
   if(r.backlog)this.el(status,'span',`${r.backlog} saved turns waiting for a later batch.`);
   if(r.note)this.button(status,'Latest review',()=>this.open(r.note.replace(/\.md$/,'')));
   this.button(status,'Connection status',()=>this.open('Generated/Navigation/Connections'));
@@ -335,7 +339,7 @@ class Home extends Dashboard{
    this.button(actions,'Open project',()=>this.open(`Generated/Dashboards/${p.id}`));this.button(actions,'Timeline',()=>this.open(`Generated/Timelines/${p.id}`));this.button(actions,'AI handover',()=>this.open(`Generated/Resume/${p.id}`));
   }
   const chats=this.el(columns,'section',undefined,'bi-panel');this.el(chats,'h2',this.chatsOnly?`Saved chats · ${d.chatTotal??d.chats.length}`:'Recent chats');
-  if(!d.chats.length)this.el(chats,'p','Saved chats appear here once Brancha captures a source-chat ID. Your projects above are ready to open.');
+  if(!d.chats.length)this.el(chats,'p','Saved chats appear here once Branchi captures a source-chat ID. Your projects above are ready to open.');
   for(const c of d.chats){const row=this.el(chats,'div',undefined,'bi-home-chat');searchable.push({el:row,text:c.projectTitle+' '+c.title+' '+(c.summary||'')+' '+(c.find||'')});this.el(row,'small',`${c.projectTitle} · ${savedStamp(c.at)}`);
    this.button(row,c.title,()=>this.open(`Generated/Chats/${c.projectId}-${c.sessionId}`),'bi-home-chat-title');
    this.el(row,'p',c.summary||'Open this chat’s saved work.','bi-chat-preview');this.el(row,'small',`${c.reportCount||0} saved reports · ${c.verifiedCount||0} verified outcomes linked · ${c.artifactCount||0} file/web links`);this.el(row,'small','Open chat overview →');if(c.provider==='codex'){const link=this.el(row,'a','Continue in Codex ↗','external-link');link.href=`codex://threads/${c.sessionId}`;}
@@ -358,7 +362,7 @@ class Chat extends Dashboard{
   this.el(root,'p','Saved work from this chat, with a clear route back to the source. Reports describe what the assistant said; verified outcomes require separate evidence.','bi-muted');
   const cards=this.el(root,'div',undefined,'bi-cards');for(const [label,value]of [['Saved reports',d.reportCount],['Verified outcomes linked',d.verified.length],['AI suggestions to review',d.proposals.length],['File / web links',d.artifactTotal]]){const target=({'Saved reports':'.bi-chat-reports','Verified outcomes linked':'.bi-chat-outcomes','AI suggestions to review':'.bi-chat-choices','File / web links':'.bi-chat-artifacts'})[label];const card=this.button(cards,'',()=>{const section=root.querySelector(target);if(section?.tagName==='DETAILS')section.open=true;section?.scrollIntoView({block:'start',behavior:'smooth'});},'bi-card');this.el(card,'span',label);this.el(card,'strong',value);this.el(card,'small','Explore →');}
   this.renderChatMap(root);
-  const next=this.el(root,'section',undefined,'bi-resume');this.el(next,'small','PICK UP THIS CHAT');this.el(next,'p',d.next);this.button(next,'Chat handover →',()=>this.open(`Generated/Chats/${this.id}-${this.sessionId}-notes`));this.el(next,'small','Opens this chat’s saved overview and source links. Resume this chat above returns to the original Codex conversation.','bi-handover-hint');
+  this.renderNextStep(root,{label:'PICK UP THIS CHAT',text:d.next,action:'Chat handover →',onAction:()=>this.open(`Generated/Chats/${this.id}-${this.sessionId}-notes`),hint:'Opens this chat’s saved overview and source links. Resume this chat above returns to the original Codex conversation.'});
   root.insertBefore(next,cards);
   const latest=d.reports[0],summary=this.el(root,'section',undefined,'bi-panel');this.el(summary,'h2','What you worked on');
   if(latest?.request){this.el(summary,'h3','Latest captured request');this.el(summary,'p',latest.request,'bi-chat-request');}else this.el(summary,'p','The original user request was not captured for these older reports. Open the source chat for its full scope.','bi-muted');
@@ -369,7 +373,7 @@ class Chat extends Dashboard{
   const choices=this.el(outcomes,'details',undefined,'bi-chat-choices');this.el(choices,'summary',`${d.records.filter(n=>!d.verified.some(v=>v.id===n.id)).length} source-linked choices and records · expand to review`);
   for(const n of d.records.filter(n=>!d.verified.some(v=>v.id===n.id))){const row=this.el(choices,'div',undefined,'bi-record');this.button(row,n.title,()=>this.open(`Generated/Items/${n.id}`));this.el(row,'small',`${n.status} · ${n.type==='branch'?'Offshoot':n.type}${n.proposal?' · AI suggestion':''}`);}
   const artifacts=this.el(root,'section',undefined,'bi-panel');this.el(artifacts,'h2','Where to find the work');
-  this.el(artifacts,'p','Links found in saved reports. Brancha has not checked whether these files or pages still exist.','bi-muted');
+  this.el(artifacts,'p','Links found in saved reports. Branchi has not checked whether these files or pages still exist.','bi-muted');
   const list=this.el(artifacts,'ul',undefined,'bi-chat-artifacts');for(const item of d.artifacts){if(!/^(https?:\/\/|file:\/\/)/i.test(item.url)||/[\u0000-\u001f]/.test(item.url))continue;const li=this.el(list,'li'),a=this.el(li,'a',item.label||item.url,'external-link');a.href=item.url;this.el(li,'small',` · saved ${new Date(item.at).toLocaleDateString()}`);}
   if(!d.artifacts.length)this.el(artifacts,'p','No links were included in the captured reports. Open the source chat or project dashboard for more context.');if(d.artifactTotal>d.artifacts.length)this.el(artifacts,'p',`${d.artifacts.length} of ${d.artifactTotal} distinct links shown. Older links remain in saved reports.`,'bi-muted');
   if(latest?.cwd)this.el(artifacts,'p','Latest captured working folder: '+latest.cwd,'bi-chat-folder');
@@ -531,13 +535,13 @@ class MapExplorer extends Dashboard{
 
 class BranchaInteractive extends Plugin{
  onload(){this.registerMarkdownCodeBlockProcessor('brancha-map',(source,el,ctx)=>{const [id,sessionId]=source.trim().split(/\r?\n/).map(s=>s.trim());if(!valid(id)||sessionId&&!valid(sessionId)){el.textContent='Invalid map ID';return;}ctx.addChild(new MapExplorer(el,this,id,ctx.sourcePath,sessionId));});
-  this.registerMarkdownCodeBlockProcessor('brancha-interactive',(source,el,ctx)=>{const id=source.trim();if(!valid(id)){el.textContent='Invalid Brancha project ID';return;}ctx.addChild(new Dashboard(el,this,id,ctx.sourcePath));});
+  this.registerMarkdownCodeBlockProcessor('brancha-interactive',(source,el,ctx)=>{const id=source.trim();if(!valid(id)){el.textContent='Invalid Branchi project ID';return;}ctx.addChild(new Dashboard(el,this,id,ctx.sourcePath));});
   this.registerMarkdownCodeBlockProcessor('brancha-timeline',(source,el,ctx)=>{const [id,sessionId]=source.trim().split(/\r?\n/).map(s=>s.trim());if(!valid(id)||sessionId&&!valid(sessionId)){el.textContent='Invalid timeline ID';return;}ctx.addChild(new Dashboard(el,this,id,ctx.sourcePath,{timelineOnly:true,sessionId}));});
   this.registerMarkdownCodeBlockProcessor('brancha-home',(_source,el,ctx)=>ctx.addChild(new Home(el,this,ctx.sourcePath)));
   this.registerMarkdownCodeBlockProcessor('brancha-chats',(_source,el,ctx)=>ctx.addChild(new Home(el,this,ctx.sourcePath,{chatsOnly:true})));
   this.registerMarkdownCodeBlockProcessor('brancha-chat',(source,el,ctx)=>{const [id,sessionId]=source.trim().split(/\r?\n/).map(s=>s.trim());if(!valid(id)||!valid(sessionId)){el.textContent='Invalid chat ID';return;}ctx.addChild(new Chat(el,this,id,sessionId,ctx.sourcePath));});
   const home=()=>new Dashboard(document.createElement('div'),this,'home','').open('Generated/Navigation/Home');
-  this.addCommand({id:'open-home',name:'Open Brancha Home',callback:home});this.addRibbonIcon('house','Brancha Home',home);}
+  this.addCommand({id:'open-home',name:'Open Branchi Home',callback:home});this.addRibbonIcon('house','Branchi Home',home);}
 }
 if(typeof module!=='undefined'){module.exports=BranchaInteractive;module.exports.safeSvg=safeSvg;module.exports.mapSize=mapSize;module.exports.renderers={Dashboard,Home,Chat,MapExplorer};module.exports.explorer={model:explorerModel,mindmap:explorerMindmap,flow:explorerFlow};}
 else globalThis.BranchaRenderers={Dashboard,Home,Chat,MapExplorer,safeSvg};

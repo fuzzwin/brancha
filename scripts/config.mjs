@@ -13,6 +13,8 @@ export function loadConfig(file = process.env.BRANCHA_CONFIG || defaultConfigPat
   const configFile = absolutePath(file), base = path.dirname(configFile);
   const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
   config.vault = absolutePath(config.vault, base);
+  config.view ??= 'both';
+  if(!['obsidian','localhost','both'].includes(config.view))throw Error('view must be obsidian, localhost or both.');
   config.captureEnabled ??= true;
   if (typeof config.captureEnabled !== 'boolean') throw Error('captureEnabled must be true or false.');
   if (config.sessionsDirectory) config.sessionsDirectory = absolutePath(config.sessionsDirectory, base);
@@ -36,7 +38,7 @@ export function loadConfig(file = process.env.BRANCHA_CONFIG || defaultConfigPat
     for(const [key,min,max]of [['maxCallsPerDay',1,100],['maxHighPerDay',0,10],['debounceMs',0,300000],['timeoutMs',1000,180000]])if(m[key]!==undefined&&(!Number.isInteger(m[key])||m[key]<min||m[key]>max))throw Error('Invalid mapper '+key+'.');
     if(m.executable!==undefined&&(typeof m.executable!=='string'||!m.executable.trim()))throw Error('Invalid mapper executable.');
   }
-  if(config.reviewer){const r=config.reviewer;if(r.catchUpAfterMs!==undefined&&(!Number.isInteger(r.catchUpAfterMs)||r.catchUpAfterMs<0||r.catchUpAfterMs>86400000))throw Error('Invalid reviewer catchUpAfterMs.');if(typeof r.enabled!=='boolean')throw Error('reviewer.enabled must be true or false.');if(r.maxCallsPerDay!==undefined&&(!Number.isInteger(r.maxCallsPerDay)||r.maxCallsPerDay<1||r.maxCallsPerDay>24))throw Error('reviewer.maxCallsPerDay must be 1–24.');if(r.timeoutMs!==undefined&&(!Number.isInteger(r.timeoutMs)||r.timeoutMs<1000||r.timeoutMs>180000))throw Error('reviewer.timeoutMs must be 1000–180000.');}
+  if(config.reviewer){const r=config.reviewer;if(r.autoCheckMs!==undefined&&(!Number.isInteger(r.autoCheckMs)||r.autoCheckMs!==0&&(r.autoCheckMs<60000||r.autoCheckMs>86400000)))throw Error('reviewer.autoCheckMs must be 0 or 60000–86400000.');if(r.catchUpAfterMs!==undefined&&(!Number.isInteger(r.catchUpAfterMs)||r.catchUpAfterMs<0||r.catchUpAfterMs>86400000))throw Error('Invalid reviewer catchUpAfterMs.');if(typeof r.enabled!=='boolean')throw Error('reviewer.enabled must be true or false.');if(r.maxCallsPerDay!==undefined&&(!Number.isInteger(r.maxCallsPerDay)||r.maxCallsPerDay<1||r.maxCallsPerDay>24))throw Error('reviewer.maxCallsPerDay must be 1–24.');if(r.timeoutMs!==undefined&&(!Number.isInteger(r.timeoutMs)||r.timeoutMs<1000||r.timeoutMs>180000))throw Error('reviewer.timeoutMs must be 1000–180000.');}
   if (policy) {
     if (!['all', 'approved'].includes(policy.mode)) throw Error('capturePolicy.mode must be all or approved.');
     for (const key of ['approvedSessionIds', 'excludedSessionIds']) if (policy[key] && (!Array.isArray(policy[key]) || policy[key].some(x => typeof x !== 'string'))) throw Error('Invalid ' + key);
