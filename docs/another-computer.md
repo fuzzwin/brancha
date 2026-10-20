@@ -8,7 +8,7 @@ Install Git, Node.js 22 or later, and Obsidian. In Terminal or PowerShell:
 
 ```sh
 git clone https://github.com/fuzzwin/branchi.git
-cd brancha
+cd branchi
 npm run setup
 npm run obsidian-style
 npm start

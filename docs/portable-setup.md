@@ -20,7 +20,7 @@ Installing instructions or a connector does not create passive access to all cha
 
 ```sh
 git clone https://github.com/fuzzwin/branchi.git
-cd brancha
+cd branchi
 npm run setup -- --no-codex
 npm run doctor
 npm start

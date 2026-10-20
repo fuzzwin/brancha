@@ -1,6 +1,40 @@
 # Branchi
 
-Previously called Brancha. Branchi connects AI conversations, project decisions, evidence and next steps in a visual workspace. Existing installations continue to use the `brancha` configuration directory, `brancha.json`, plugin IDs and integration commands for compatibility; no vault migration is required.
+Branchi helps you pick up a project without starting from scratch. It keeps your original goal, saved conversations, decisions, useful links and next steps together in a visual map.
+
+Use it when your work stretches across several chats, you keep exploring different ideas, or you need to return after a break. You can add records by hand, or connect supported AI tools to save useful updates.
+
+## What could I use it for?
+
+| You want to… | Branchi helps you keep… |
+| --- | --- |
+| Plan a move or room makeover | Requirements, options, decisions and the next job |
+| Manage job applications | Role requirements, document links and follow-up tasks |
+| Learn something over several sessions | Questions, practice tasks, explanations and where to continue |
+| Build a craft project, prototype or app | Design choices, files, dependencies and actual test results |
+| Research a purchase or other decision | Requirements, sources, alternatives and reasons for your choice |
+| Develop a story, guide or business idea | Drafts, feedback, offshoots and next steps |
+
+These are example uses, not claims of completed work or guaranteed results.
+
+## Start here — no technical background needed
+
+**Already installed?** Open your local workspace, choose a project and read its next action. In the browser, choose **Start here** for examples and help, or **Edit records** to create a project and add items. In Obsidian, open Home → **Start here**. For a fresh setup, begin with the browser and manual records; Obsidian and AI connections can be added later.
+
+[Read the beginner guide: setup choices, your first five minutes and prompts to copy](docs/getting-started.md).
+
+A useful first project could be: **“Plan my room makeover within my budget.”** Save your requirements, compare two options, record your choice and leave one clear next action. When you return, the project dashboard and handover show the saved context.
+
+**What is automatic?** Maps and reading pages are generated from saved records while the local companion runs. Saving AI chat updates needs a supported connection and permission for the specific chat. Optional AI mapping proposes tasks and decisions; saved reports and proposals still need review. Basic manual use needs no AI account or model API key.
+
+<details>
+<summary>Existing Brancha installations</summary>
+
+Previously called Brancha. Existing installations continue to use the `brancha` configuration directory, `brancha.json`, plugin IDs and integration commands for compatibility; no vault migration is required.
+
+</details>
+
+## Technical setup and integration details
 
 **Automatic mapping is the main workflow:** work in an enabled chat → supported capture → Luna decisions/tasks/branches → source-linked Obsidian maps. Twice-daily incremental High catch-up is the safety net; the skill is the manual fallback. [Set up automatic mapping](docs/automatic-mapping.md). Local Codex is automatic; GPT/Claude coverage depends on a tested client integration.
 
