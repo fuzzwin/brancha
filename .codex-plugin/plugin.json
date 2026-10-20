@@ -1,0 +1,7 @@
+{
+  "name": "brancha",
+  "version": "0.4.0",
+  "description": "Keep project context, decisions and automatic local Codex checkpoints connected to an Obsidian vault.",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

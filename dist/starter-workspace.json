@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "demo": true,
+  "projects": [
+    {
+      "id": "example_launch",
+      "title": "Launch a small business",
+      "prompt": "Help me launch a small homewares business. I need a clear offer, a simple website and a realistic launch plan. Keep the first launch small and affordable.",
+      "createdAt": "2026-10-20T00:14:12.329Z",
+      "criteria": [
+        {
+          "id": "offer",
+          "text": "Define an offer people understand"
+        },
+        {
+          "id": "site",
+          "text": "Create and test a simple website"
+        },
+        {
+          "id": "launch",
+          "text": "Agree a practical launch plan"
+        }
+      ]
+    },
+    {
+      "id": "example_trip",
+      "title": "Plan a weekend away",
+      "prompt": "Plan a relaxed weekend away with a fixed budget, two route options and a final itinerary.",
+      "createdAt": "2026-10-20T00:14:12.330Z",
+      "criteria": [
+        {
+          "id": "route",
+          "text": "Choose a route and budget"
+        },
+        {
+          "id": "plan",
+          "text": "Confirm the itinerary"
+        }
+      ]
+    },
+    {
+      "id": "example_learning",
+      "title": "Learn something new",
+      "prompt": "Help me learn the basics of photography through short practical exercises.",
+      "createdAt": "2026-10-20T00:14:12.330Z",
+      "criteria": [
+        {
+          "id": "practice",
+          "text": "Finish three practical exercises"
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "launch_goal",
+      "projectId": "example_launch",
+      "title": "A small, considered launch",
+      "type": "goal",
+      "status": "active",
+      "detail": "The original goal: a clear offer, a working website and a practical plan.",
+      "criteria": [],
+      "evidence": "",
+      "next": "Finish the website checks before choosing a launch date.",
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "launch_offer",
+      "projectId": "example_launch",
+      "title": "One collection, three products",
+      "type": "decision",
+      "status": "done",
+      "detail": "Keep the initial offer small and explain what makes it useful.",
+      "criteria": [
+        "offer"
+      ],
+      "evidence": "Example evidence: approved one-page offer brief (fictional).",
+      "next": "",
+      "rationale": "A smaller range is easier to explain and fulfil.",
+      "alternatives": "Launch the full range; open with preorders.",
+      "consequence": "Other products remain parked until after the first launch."
+    },
+    {
+      "id": "launch_web",
+      "projectId": "example_launch",
+      "title": "Build the first website",
+      "type": "task",
+      "status": "active",
+      "detail": "The first draft is ready. Check the mobile layout and product information.",
+      "criteria": [
+        "site"
+      ],
+      "evidence": "",
+      "next": "Test the draft on a phone and record the result.",
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "launch_photos",
+      "projectId": "example_launch",
+      "title": "Product photos",
+      "type": "task",
+      "status": "blocked",
+      "detail": "The draft still uses placeholder product images.",
+      "criteria": [
+        "site"
+      ],
+      "evidence": "",
+      "next": "Photograph the three products in consistent light.",
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "launch_date",
+      "projectId": "example_launch",
+      "title": "Set the launch date",
+      "type": "decision",
+      "status": "planned",
+      "detail": "Choose the date after the site and photographs are ready.",
+      "criteria": [
+        "launch"
+      ],
+      "evidence": "",
+      "next": "Review readiness after the website checks.",
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "launch_branch",
+      "projectId": "example_launch",
+      "title": "A seasonal subscription?",
+      "type": "branch",
+      "status": "parked",
+      "detail": "An interesting offshoot for later. It is outside this first launch.",
+      "criteria": [],
+      "evidence": "",
+      "next": "Revisit after feedback from the first collection.",
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    },
+    {
+      "id": "trip_goal",
+      "projectId": "example_trip",
+      "title": "Choose coast or countryside",
+      "type": "decision",
+      "status": "active",
+      "detail": "Compare two routes against the same budget.",
+      "criteria": [
+        "route"
+      ],
+      "evidence": "",
+      "next": "Compare accommodation and total travel time.",
+      "rationale": "",
+      "alternatives": "Coast: more driving. Countryside: more walking.",
+      "consequence": ""
+    },
+    {
+      "id": "learn_goal",
+      "projectId": "example_learning",
+      "title": "Practise light and framing",
+      "type": "task",
+      "status": "planned",
+      "detail": "Try the first short photography exercise.",
+      "criteria": [
+        "practice"
+      ],
+      "evidence": "",
+      "next": "Take five photographs of the same subject from different angles.",
+      "rationale": "",
+      "alternatives": "",
+      "consequence": ""
+    }
+  ],
+  "edges": [
+    {
+      "id": "b70bad9c5c22d4e56922b1c1d58488e35",
+      "from": "launch_goal",
+      "to": "launch_offer",
+      "type": "implements"
+    },
+    {
+      "id": "b1653bf0adf734f2b8f26dc3f04e5e13f",
+      "from": "launch_offer",
+      "to": "launch_web",
+      "type": "depends_on"
+    },
+    {
+      "id": "beaf69b55790a490eb552615ac3a46e5f",
+      "from": "launch_photos",
+      "to": "launch_web",
+      "type": "depends_on"
+    },
+    {
+      "id": "bc87dd24ae8fd4b65890fb4747a53ce3c",
+      "from": "launch_web",
+      "to": "launch_date",
+      "type": "depends_on"
+    },
+    {
+      "id": "b11a73c70d0ab428abd529f1c41365ee7",
+      "from": "launch_offer",
+      "to": "launch_branch",
+      "type": "branches_from"
+    },
+    {
+      "id": "bf1b36cd0cd574bce98ca6cfc884fcf1f",
+      "from": "learn_goal",
+      "to": "launch_photos",
+      "type": "informs"
+    }
+  ],
+  "events": [
+    {
+      "id": "bade793bf7d484301947e612e89b7fd70",
+      "at": "2026-10-19T04:20:00.000Z",
+      "projectId": "example_launch",
+      "nodeId": "launch_offer",
+      "text": "Chose a three-product collection and recorded the tradeoff."
+    },
+    {
+      "id": "bf14da17faea74d7783efc2ea28556493",
+      "at": "2026-10-19T05:20:00.000Z",
+      "projectId": "example_trip",
+      "nodeId": "trip_goal",
+      "text": "Compared two weekend routes; budget check is next."
+    },
+    {
+      "id": "bed78e6903b4f4006a618cdb57f99ee64",
+      "at": "2026-10-19T06:20:00.000Z",
+      "projectId": "example_launch",
+      "nodeId": "launch_web",
+      "text": "Saved the first website draft. Mobile checks remain open."
+    },
+    {
+      "id": "bc903810628e04f70b96291fb79bb3ade",
+      "at": "2026-10-20T00:14:12.332Z",
+      "projectId": "example_launch",
+      "nodeId": "launch_branch",
+      "text": "Parked the subscription idea as a separate branch."
+    }
+  ]
+}

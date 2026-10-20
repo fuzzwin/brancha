@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+.env*
+!*.example
+vault/
+data/
+config.local.json
+*.log
+*.backup
+*.tmp
+*.lock
+.openai/

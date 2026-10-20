@@ -1,0 +1,10 @@
+{
+  "name": "brancha",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Local project memory, visual maps and automatic Codex checkpoints with Obsidian views",
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"test": "node --test tests/*.test.mjs", "start": "node companion/service.mjs", "setup": "node scripts/setup.mjs"},
+  "license": "MIT"
+}

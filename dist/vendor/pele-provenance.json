@@ -1,0 +1,11 @@
+{
+  "name": "pele",
+  "version": "1.7.0",
+  "license": "MIT",
+  "repository": {
+    "url": "git+https://github.com/obsidianmd/pele.git",
+    "type": "git"
+  },
+  "integrity": "sha512-nkYb5VnxsTgwD4NThF6j4pJEC4AhGLJ9ptiL4q/vIzGr9q6ZtoRE3hFr94LgHpZ/xy56d1pw42UAQGaZkjM5XA==",
+  "tarball": "https://registry.npmjs.org/pele/-/pele-1.7.0.tgz"
+}
