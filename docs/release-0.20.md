@@ -4,11 +4,11 @@ Home, project dashboards, saved chats, timelines and full-page maps share Obsidi
 
 Existing project/map controls remain available: project/chat switching, map previews and drill-down, full-page mindmap and dependency modes, expansion, search, zoom/fit/readable size, selected-record sources, timeline filters, work queues and AI handovers. Viewing these pages does not change project records or accept AI proposals.
 
-Home keeps all saved chats searchable, while initially showing four recent chats. Automation and setup details remain available on demand. This release also fixes a chat dashboard rendering error after the next-action panel.
+Home defaults to a compact project list, with an optional Cards view. All saved chats remain searchable, with Show more chats on Home. Project maps now sit beside their existing work queues and linked chats. Automation and setup details remain available on demand. This release also fixes a chat dashboard rendering error after the next-action panel.
 
 ## Validation
 
-- 166 local Node tests passed on macOS, including navigation destinations, history, map modes, expansion, model preservation, search and source actions.
+- 168 local Node tests passed on macOS, including navigation destinations, history, map modes, expansion, model preservation, search and source actions.
 - Main Obsidian vault: Quantum Clock dashboard and full-page map rendered; sticky navigation checked in a scrolled reading view.
 - Cross-platform CI is configured for Node 22 on macOS, Windows and Linux. A local macOS run does not establish Windows/Linux UI behaviour or a completed CI run.
 - Plugin files are backed up before replacement. This visual update does not require a service restart or changes to chat inclusion or model settings.

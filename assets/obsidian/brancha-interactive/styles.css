@@ -613,3 +613,96 @@
    Without the plugin, the original Markdown navigation remains available. */
 .brancha-interactive .markdown-preview-section>.el-p:has(>p>a[data-href="Generated/Navigation/Home"]):has(+.el-p+.el-pre .bi-page-v3),
 .brancha-interactive .markdown-preview-section>.el-p:has(>p>a[data-href^="Generated/Branches/"]):has(+.el-pre .bi-page-v3) { display:none; }
+
+/* Dense workspace: preserve detail and actions while fitting more ongoing work. */
+.bi-home-v3 .bi-home-header { margin:0;gap:15px; }
+.bi-home-v3 .bi-home-eyebrow { font-size:10px;margin-bottom:3px; }
+.bi-home-v3 h1 { font-size:26px; }
+.bi-home-v3 .bi-home-intro { margin:3px 0!important;font-size:12px; }
+.bi-home-v3 .bi-workspace-identity { margin:5px 0 8px; }
+.bi-home-v3 .bi-home-overview>div { min-width:85px;padding:0 13px; }
+.bi-home-v3 .bi-home-overview strong { font-size:22px; }
+.bi-home-v3 .bi-home-nav { margin-bottom:8px;padding-bottom:0; }
+.bi-home-v3 .bi-home-automation { margin-bottom:13px; }
+.bi-home-v3 .bi-home-automation>summary { padding:8px 0; }
+.bi-home-v3 .bi-home-search input { height:36px; }
+.bi-home-v3 .bi-home-bar>button { height:38px; }
+.bi-home-v3 .bi-home-columns { grid-template-columns:minmax(0,2.6fr) minmax(260px,1fr);gap:20px; }
+.bi-home-v3 .bi-home-density { display:flex;gap:3px;margin-left:auto; }
+.bi-home-v3 .bi-home-density button { font-size:11px;padding:5px 8px;min-height:28px;border-color:transparent;background:transparent;color:var(--text-muted); }
+.bi-home-v3 .bi-home-density button[aria-pressed=true] { border-color:var(--bi-line);background:var(--background-secondary);color:var(--text-normal); }
+.bi-home-v3[data-layout=compact] .bi-home-projects { grid-template-columns:minmax(0,1fr);gap:8px; }
+.bi-home-v3[data-layout=compact] .bi-home-project { display:grid;grid-template-columns:minmax(150px,1fr) minmax(180px,1.5fr) 115px;grid-template-areas:'head next actions' 'progress facts actions';column-gap:16px;row-gap:8px;padding:13px 15px;border-radius:11px;align-items:center; }
+.bi-home-v3[data-layout=compact] .bi-project-head { grid-area:head;margin:0;gap:8px;flex-wrap:wrap; }
+.bi-home-v3[data-layout=compact] .bi-project-mark { flex-basis:27px;height:27px;font-size:10px;border-radius:7px; }
+.bi-home-v3[data-layout=compact] .bi-home-project-title { font-size:14px!important; }
+.bi-home-v3[data-layout=compact] .bi-project-head small { font-size:10px; }
+.bi-home-v3[data-layout=compact] .bi-project-ready { font-size:10px; }
+.bi-home-v3[data-layout=compact] .bi-project-next-label { display:none; }
+.bi-home-v3[data-layout=compact] .bi-project-next { grid-area:next;min-height:0;margin:0!important;font-size:12px!important;line-height:1.55;-webkit-line-clamp:2; }
+.bi-home-v3[data-layout=compact] .bi-project-progress { grid-area:progress;margin:0; }
+.bi-home-v3[data-layout=compact] .bi-project-progress small { font-size:10px;margin-bottom:5px; }
+.bi-home-v3[data-layout=compact] .bi-project-facts { grid-area:facts;margin:0;font-size:10px!important;line-height:1.5; }
+.bi-home-v3[data-layout=compact] .bi-home-actions { grid-area:actions;flex-direction:column;align-items:stretch;gap:1px;padding:0 0 0 10px;border-top:0;border-left:1px solid var(--bi-line); }
+.bi-home-v3[data-layout=compact] .bi-home-actions button { font-size:11px!important;padding:5px 7px!important;min-height:27px; }
+.bi-home-v3 .bi-home-chat { padding:12px 0; }
+.bi-home-v3 .bi-home-chat-title { font-size:13px!important;margin:5px 0!important; }
+.bi-home-v3 .bi-home-chat .bi-chat-preview { font-size:12px!important;line-height:1.5;margin:5px 0 8px!important; }
+.bi-home-v3 .bi-chat-meta { font-size:10px;gap:7px; }
+.bi-home-v3 .bi-chat-meta small { font-size:10px; }
+.bi-project-v3 .bi-page-navigation { margin-bottom:12px;padding:7px 0; }
+.bi-project-v3 .bi-top h1 { font-size:26px; }
+.bi-project-v3 .bi-page-eyebrow { font-size:10px;margin-bottom:3px; }
+.bi-project-v3 .bi-nav { padding-bottom:7px;margin-bottom:12px; }
+.bi-project-v3 .bi-freshness { margin:4px 0 6px; }
+.bi-project-v3 .bi-compact-next-row { padding:10px 14px; }
+.bi-project-v3 .bi-compact-next { margin-bottom:12px; }
+.bi-project-v3 .bi-compact-next h2 { font-size:14px; }
+.bi-project-v3 .bi-glance>h2 { margin:12px 0 3px!important;font-size:16px; }
+.bi-project-v3 .bi-intro { margin:0 0 7px;font-size:11px; }
+.bi-project-v3 .bi-card { min-height:83px;padding:11px 14px;gap:4px; }
+.bi-project-v3 .bi-card strong { font-size:24px; }
+.bi-project-v3 .bi-card>span { font-size:11px; }
+.bi-project-v3 .bi-card small { font-size:10px; }
+.bi-project-workspace { display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:15px;align-items:start;margin:0 0 15px; }
+.bi-project-workspace>.bi-map { margin:0;min-width:0;padding:16px; }
+.bi-project-sidebar { min-width:0; }
+.bi-project-sidebar .bi-panel { padding:15px;margin-bottom:12px; }
+.bi-project-sidebar h2 { font-size:16px;margin-bottom:12px!important; }
+.bi-project-sidebar .bi-record { padding:9px 0; }
+.bi-project-sidebar .bi-record>button { padding:0;background:transparent;border:0;text-align:left;font-size:12px;line-height:1.5;font-weight:600; }
+.bi-project-sidebar .bi-record p { font-size:11px;line-height:1.5;margin:5px 0; }
+.bi-project-sidebar .bi-record small { font-size:10px; }
+.bi-project-sidebar .bi-queue { gap:4px;margin-bottom:8px; }
+.bi-project-sidebar .bi-queue button { font-size:11px;padding:6px 8px; }
+.bi-project-sidebar .bi-project-chats>button { font-size:11px;padding:5px 8px; }
+/* Portable headings can be wrapped by Obsidian versions in different ways. */
+.brancha-interactive .markdown-preview-section:has(.bi-page-v3)>div:has(>p>a[data-href="Generated/Navigation/Home"]):not(:has(.bi)),
+.brancha-interactive .markdown-preview-section:has(.bi-page-v3)>div:has(>p>a[data-href^="Generated/Branches/"]):not(:has(.bi)) { display:none; }
+@container (max-width:1000px) {
+ .bi-home-v3 .bi-home-columns { grid-template-columns:minmax(0,1fr); }
+ .bi-home-v3 .bi-home-recent { border-left:0;padding-left:0; }
+ .bi-project-workspace { grid-template-columns:minmax(0,1fr); }
+ .bi-project-sidebar { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+}
+@container (max-width:650px) {
+ .bi-home-v3[data-layout=compact] .bi-home-project { grid-template-columns:minmax(0,1fr) 100px;grid-template-areas:'head actions' 'next actions' 'progress progress' 'facts facts';column-gap:10px; }
+ .bi-home-v3 .bi-home-density { margin-left:0; }
+ .bi-home-v3 .bi-home-overview>div { min-width:70px;padding:0 8px; }
+ .bi-project-sidebar { grid-template-columns:minmax(0,1fr); }
+}
+.bi-home-v3[data-layout=compact] .bi-home-project { grid-template-columns:minmax(150px,1fr) minmax(180px,1.4fr) 190px;padding:10px 13px;row-gap:6px; }
+.bi-home-v3[data-layout=compact] .bi-home-actions { flex-direction:row;flex-wrap:wrap;align-content:center;justify-content:flex-start;gap:2px; }
+.bi-home-v3[data-layout=compact] .bi-home-actions button { min-height:26px; }
+.bi-home-v3 .bi-page-navigation { margin-bottom:10px;padding:7px 0; }
+.bi-home-v3 .bi-home-header { align-items:center; }
+.bi-home-v3 .bi-home-eyebrow { display:none; }
+.bi-home-v3 .bi-home-intro { font-size:11px; }
+.bi-home-v3 .bi-home-recent>.bi-home-view-all { margin:9px 0;font-size:11px; }
+@container (max-width:1150px) {
+ .bi-home-v3[data-layout=compact] .bi-home-project { grid-template-columns:minmax(150px,1fr) minmax(180px,1.4fr) 120px; }
+}
+@container (max-width:650px) {
+ .bi-home-v3[data-layout=compact] .bi-home-project { grid-template-columns:minmax(0,1fr) 100px; }
+ .bi-home-v3[data-layout=compact] .bi-home-actions { flex-direction:column; }
+}
