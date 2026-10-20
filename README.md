@@ -2,6 +2,8 @@
 
 Keep the thread across AI projects: goals, decisions, branches, evidence, next steps and a visual map you can return to.
 
+Obsidian is the primary project workspace. Brancha generates a dashboard, a Pele mindmap, evidence notes and reusable templates for every project; its local browser is a companion view of the same record.
+
 Brancha is a local Node.js companion, browser workspace and portable skill. It renders diagrams with [Pele](https://pele.run/) and generates linked notes, project maps, a Canvas overview, a Bases table and resume briefs for Obsidian.
 
 ## Entry points
@@ -28,9 +30,15 @@ npm start
 
 For other AI tools, run setup with `--no-codex`. Then run `npm run doctor` to inspect the configuration. See [portable setup](docs/portable-setup.md) for MCP connection snippets and [checkpoint protocol](docs/checkpoint-protocol.md) for optional Harness²/ARTEMIS receipts.
 
-Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Brancha`) and then `Generated/Brancha.canvas`. Each project links to a clean dependency mindmap, with a compact editable Canvas and full evidence in linked notes.
+Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Brancha`) and then `Generated/START HERE.md` or `Generated/Dashboards/index.md`. `Generated/Brancha.canvas` provides a visual entrance to the same dashboards. Each project links to a clean dependency mindmap, with a compact editable Canvas and full evidence in linked notes.
 
 Setup writes a private connection to `~/.config/brancha/config.json`. Choose another vault with `npm run setup -- --vault /absolute/path/to/vault`. Existing configs are preserved. A fresh installation starts with fictional examples; creating your first project or receiving the first automatic checkpoint starts your real workspace. Unmatched automatic captures appear in **Codex Inbox**.
+
+## Project dashboards
+
+Each project automatically receives a dashboard with original goals backed by evidence, ready work, unmet prerequisites, reports awaiting review, a 14-day activity chart, and recent decisions and sources. The central Pele mindmap groups the records; dependency arrows stay in a separate flow view. Dates follow the displayed local timezone. Counts describe saved records, not hours, AI spending or productivity.
+
+Five view templates tailor check-in prompts: Everyday project, Build & ship, Make & test, Research & decide, and Career & applications. The suggested template is inferred from the project name; an explicit dashboard choice is saved separately from the original request. Template stages are prompts, not inferred progress. Obsidian receives Check-in, Decision and Evidence review templates to copy into personal Notes. Generated dashboards refresh after record changes and daily while the companion runs.
 
 ## Automatic capture
 

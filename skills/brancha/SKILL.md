@@ -9,6 +9,10 @@ Use the user's supplied workspace or read the local connection at `$BRANCHA_CONF
 
 The local companion and this skill share the vault JSON. Generated Markdown, Canvas and Bases are derived views, refreshed while the service runs. Keep personal notes in `Notes/`; editing generated views does not update the record. A hosted browser copy remains separate.
 
+## Primary workspace
+
+Prioritise the Obsidian vault. `Generated/START HERE.md` and `Generated/Dashboards/index.md` lead to each project’s dashboard, Pele mindmap, dependency flow and evidence notes. Browser dashboards are companion views. Read the canonical JSON before changing claims; generated notes are derived. Template stages are prompts, not completed milestones.
+
 ## Resume
 
 Run `node scripts/brancha.mjs brief WORKSPACE PROJECT_ID [FOCUS_ID]` from this skill directory, using absolute paths when invoked elsewhere. Verify consequential or changed claims against the owning project source. Preserve the original request; imported scope summaries and automatic completion reports are not reconstructed original prompts.

@@ -30,6 +30,7 @@ export function validate(w){
   const ps=new Set(w.projects.map(p=>p.id)), ns=new Map(w.nodes.map(n=>[n.id,n]));
   for(const p of w.projects){
     if(!str(p.title,200)||!p.title.trim()||!str(p.prompt)||!str(p.createdAt)||isNaN(Date.parse(p.createdAt))||!Array.isArray(p.criteria)||p.criteria.length>100)fail('Invalid project.');
+    if(p.templateId!==undefined&&p.templateId!=='auto'&&!PROJECT_TEMPLATES.some(t=>t.id===p.templateId))fail('Unknown dashboard template.');
     const cs=new Set();for(const c of p.criteria){if(!c||!str(c.id,100)||!/^[a-zA-Z0-9_-]+$/.test(c.id)||!str(c.text,2000)||!c.text.trim()||cs.has(c.id))fail('Invalid success criteria.');cs.add(c.id);}
   }
   for(const n of w.nodes){
@@ -134,7 +135,7 @@ export function layout(w,projectId){
 }
 export function vaultFiles(w){
   validate(w);const files={};const json=x=>JSON.stringify(x);const ppath=p=>`Projects/${p.id}.md`,npath=n=>`Items/${n.id}.md`;
-  files['START HERE.md']='# Brancha\n\nYour exported workspace. Open `Brancha.canvas` for the map, `Projects.base` for project views, or a project note to resume.\n\n'+(w.demo?'These are fictional demonstration records.\n\n':'')+'This is a snapshot. Browser edits and Obsidian edits do not synchronise. Keep the JSON export as the portable source for the web tracker. Markdown and Canvas edits are not imported by the tracker.\n\n'+w.projects.map(p=>`- [[${ppath(p)}|${p.title}]]`).join('\n');
+  files['START HERE.md']='# Brancha\n\n[[Dashboards/index|Open your project dashboards →]]\n\nYour exported workspace. Open `Brancha.canvas` for the map, `Projects.base` for project views, or a project note to resume.\n\n'+(w.demo?'These are fictional demonstration records.\n\n':'')+'This is a snapshot. Browser edits and Obsidian edits do not synchronise. Keep the JSON export as the portable source for the web tracker. Markdown and Canvas edits are not imported by the tracker.\n\n'+w.projects.map(p=>`- [[${ppath(p)}|${p.title}]]`).join('\n');
   for(const p of w.projects){const pr=progress(w,p);files[ppath(p)]=`---\nbrancha_type: project\nbrancha_id: ${json(p.id)}\ntitle: ${json(p.title)}\nverified_goals: ${pr.done}\ntotal_goals: ${pr.total}\ncreated: ${json(p.createdAt)}\n---\n# ${p.title}\n\n## Original request\n${p.prompt}\n\n## Goals\n${pr.criteria.map(c=>`- [${c.evidence.length?'x':' '}] ${c.text}`).join('\n')}\n\n## Work\n${w.nodes.filter(n=>n.projectId===p.id).map(n=>`- [[${npath(n)}|${n.title}]] — ${statusLabel(n.status)}`).join('\n')}\n\n## Flow\n\`\`\`mermaid\n${mermaid(w,p.id)}\n\`\`\`\n`;files[`Resume/${p.id}.md`]=contextBrief(w,p.id);}
   for(const n of w.nodes){files[npath(n)]=`---\ncssclasses: brancha-record\nbrancha_type: ${json(n.type)}\nbrancha_id: ${json(n.id)}\nstatus: ${json(n.status)}\nproject: ${json('[[Projects/'+n.projectId+']]')}\n---\n# ${n.title}\n\n**${statusLabel(n.status)}** · ${n.type}\n\n${n.detail||''}\n\n## Evidence\n${n.evidence||'Not recorded'}\n\n## Verification\n${n.verification?`Implementation: ${n.verification.implementation}; testing: ${n.verification.testing}; acceptance: ${n.verification.acceptance}`:'Not separately recorded.'}\n\n## Acceptance criteria\n${(n.acceptanceCriteria||[]).map(c=>`- ${c.text} — ${statusLabel(c.status)}; evidence: ${c.evidence||'Not recorded'}; source: ${c.source||'Not recorded'}`).join('\n')||'Not recorded'}\n\n${n.run?`## Improvement run\nPhase: ${n.run.phase}; outcome: ${n.run.outcome}; decision: ${n.run.decision}\n\nHypothesis: ${n.run.hypothesis}\n\nBaseline: ${n.run.baseline}\n\nObservation: ${n.run.observation}\n\nLesson: ${n.run.lesson}\n\n${n.run.artifacts.map(a=>`- ${a.label}: ${a.ref}`).join('\n')}\n\n`:''}## Next action\n${n.next||'Not recorded'}\n\n## Decision\nWhy: ${n.rationale||'Not recorded'}\n\nAlternatives: ${n.alternatives||'Not recorded'}\n\nConsequences: ${n.consequence||'Not recorded'}\n\n## Connections\n${w.edges.filter(e=>e.from===n.id||e.to===n.id).map(e=>{const o=w.nodes.find(x=>x.id===(e.from===n.id?e.to:e.from));return `- ${e.from===n.id?'Leads to':'Comes from'} [[${npath(o)}|${o.title}]] (${label(e.type)})`;}).join('\n')}\n`;}
   const daily={};for(const e of w.events){const d=e.at.slice(0,10);(daily[d]??=[]).push(`- ${e.at} — [[Projects/${e.projectId}]]: ${e.text}`);}for(const [d,es]of Object.entries(daily))files[`Activity/${d}.md`]=`# ${d} (UTC)\n\n${es.join('\n')}`;
@@ -146,10 +147,74 @@ export function vaultFiles(w){
   }
   const connections=new Map();for(const e of w.edges){const a=w.nodes.find(n=>n.id===e.from),b=w.nodes.find(n=>n.id===e.to);if(a.projectId!==b.projectId)connections.set(a.projectId+'_'+b.projectId,{id:'project_'+a.projectId+'_'+b.projectId,fromNode:a.projectId,fromSide:'right',toNode:b.projectId,toSide:'left',toEnd:'arrow',label:'informs'});}
   files['Brancha.canvas']=JSON.stringify({nodes:w.projects.map((p,i)=>({id:p.id,type:'text',text:`# ${p.title}\n\n${nextAction(w,p.id)}\n\n[[Maps/${p.id}.canvas|Open project map →]]\n\n[[Projects/${p.id}|Brief and progress]]`,x:(i%2)*540,y:Math.floor(i/2)*360,width:420,height:280})),edges:[...connections.values()]},null,2);
+  const overview=JSON.parse(files['Brancha.canvas']);
+  overview.nodes=overview.nodes.map((card,i)=>{const p=w.projects.find(p=>p.id===card.id),a=projectAnalytics(w,p.id),short=text=>text.length>140?text.slice(0,137)+'…':text;return {...card,width:480,height:300,x:(i%2)*600,y:Math.floor(i/2)*370,color:({physical:'5',build:'4',research:'3',career:'6',general:'2'})[a.template.id],text:`${a.template.title.toUpperCase()}\n\n# ${p.title.slice(0,52)}\n\n**${a.originalGoals.done} / ${a.originalGoals.total} goals with evidence** · ${a.reportsToReview.length} reports to review\n\n${short(a.next)}\n\n[[Dashboards/${p.id}|Open dashboard →]] · [[Maps/${p.id}|Dependency map]]`};});files['Brancha.canvas']=JSON.stringify(overview,null,2);
   files['Projects.base']='filters:\n  and:\n    - \'brancha_type == "project"\'\nviews:\n  - type: table\n    name: Projects\n    order:\n      - file.name\n      - title\n      - verified_goals\n      - total_goals\n      - created\n';
   files['Records.md']='---\ncssclasses: brancha-record\n---\n# Project records\n\n| Item | Project | Status | Next action |\n| --- | --- | --- | --- |\n'+w.nodes.map(n=>`| ${tableWikiLink(npath(n),n.title)} | ${tableWikiLink('Projects/'+n.projectId+'.md',w.projects.find(p=>p.id===n.projectId).title)} | ${statusLabel(n.status)} | ${tableText(n.next)} |`).join('\n')+'\n';
+  for(const p of w.projects){files[`Dashboards/${p.id}.md`]=dashboardNote(w,p.id);files[ppath(p)]=files[ppath(p)].replace('## Original request',`[[Dashboards/${p.id}|Open project dashboard →]]\n\n## Original request`);}
+  files['Dashboards/index.md']='---\ncssclasses: brancha-dashboard\n---\n# Your projects\n\nPick a dashboard to see the original goal, current work, evidence, decisions and the next action.\n\n[[Brancha.canvas|Open the visual project overview →]]\n\n| Project | View | Goals with evidence | Waiting | Reports to review |\n| --- | --- | --- | --- | --- |\n'+w.projects.map(p=>{const a=projectAnalytics(w,p.id);return `| ${tableWikiLink('Dashboards/'+p.id,p.title)} | ${a.template.title} | ${a.originalGoals.done} / ${a.originalGoals.total} | ${a.waiting.length} | ${a.reportsToReview.length} |`;}).join('\n')+'\n\n## Reusable notes\n\nCopy a [[Templates/Check-in|Check-in]], [[Templates/Decision|Decision]] or [[Templates/Evidence review|Evidence review]] into Notes for your own writing.\n';
+  files['Templates/Check-in.md']='# Project check-in\n\nProject: \nDate: \n\n## What changed\n\n## Evidence or source\n\n## Still uncertain\n\n## Next concrete action\n\nUse the Brancha skill or connected tools to record this checkpoint. Keep manual notes in Notes.\n';
+  files['Templates/Decision.md']='# Decision\n\nProject: \n\n## Choice\n\n## Why\n\n## Alternatives\n\n## Evidence\n\n## Consequences and next action\n';
+  files['Templates/Evidence review.md']='# Evidence review\n\nProject: \nSource checkpoint: \n\n## Reported claim\n\n## Acceptance criterion\n\n## What was actually checked\n\n## Result and evidence reference\n\n## What remains unverified\n\n## Decision and next action\n';
   files['brancha.json']=JSON.stringify(w,null,2);return files;
 }
+export const PROJECT_TEMPLATES = [
+ {id:'general',title:'Everyday project',description:'Keep the goal, choices and next action together.',stages:['Clarify','Work','Review','Finish'],prompts:['What changed since the last session?','Which decision needs evidence?','What is the next concrete action?']},
+ {id:'build',title:'Build & ship',description:'Move from a useful draft to a tested release.',stages:['Scope','Build','Test','Ship'],prompts:['What can someone use now?','What has actually been tested?','What remains before release?']},
+ {id:'physical',title:'Make & test',description:'Separate prepared parts from real fit and running tests.',stages:['Design','Make','Fit','Run'],prompts:['Which parts actually exist?','What fit or running test was observed?','What is the smallest next physical check?']},
+ {id:'research',title:'Research & decide',description:'Keep questions, evidence and decisions connected.',stages:['Question','Explore','Compare','Decide'],prompts:['Which source supports the finding?','What remains uncertain?','Which option is supported by the evidence?']},
+ {id:'career',title:'Career & applications',description:'Connect real experience, tailored work and confirmed outcomes.',stages:['Evidence','Prepare','Review','Follow up'],prompts:['Which experience is confirmed?','What needs tailoring for this opportunity?','What has the recipient or system confirmed?']}
+];
+export function projectTemplate(project){
+ const explicit=PROJECT_TEMPLATES.find(t=>t.id===project.templateId);if(explicit)return {...explicit,inferred:false};
+ const title=project.title.toLowerCase();
+ const id=/\b(clock|prototype|cad|physical|fabrication)\b/.test(title)?'physical':/\b(career|cv|jobs?|applications?)\b/.test(title)?'career':/\b(research|learn|study|compare)\b/.test(title)?'research':/\b(brancha|software|website|app|game|shortwalk|build)\b/.test(title)?'build':'general';
+ return {...PROJECT_TEMPLATES.find(t=>t.id===id),inferred:true};
+}
+const dateKey=(date,timeZone)=>{
+ const parts=new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(date));
+ const value=type=>parts.find(p=>p.type===type).value;return `${value('year')}-${value('month')}-${value('day')}`;
+};
+export function projectAnalytics(w,projectId,options={}){
+ const project=w.projects.find(p=>p.id===projectId);if(!project)throw Error('Unknown dashboard project.');
+ const at=options.at||now(),timeZone=options.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone;
+ const nodes=w.nodes.filter(n=>n.projectId===projectId),work=nodes.filter(n=>!['goal','source'].includes(n.type)),sources=nodes.filter(n=>n.type==='source');
+ const events=w.events.filter(e=>e.projectId===projectId&&Date.parse(e.at)<=Date.parse(at)).sort((a,b)=>Date.parse(a.at)-Date.parse(b.at)||a.id.localeCompare(b.id));
+ const pr=progress(w,project),today=dateKey(at,timeZone),anchor=new Date(today+'T00:00:00Z');
+ const activity=Array.from({length:14},(_,i)=>{const d=new Date(anchor);d.setUTCDate(d.getUTCDate()-13+i);return {date:d.toISOString().slice(0,10),count:0};});
+ const days=new Map(activity.map(d=>[d.date,d]));for(const e of events){const day=days.get(dateKey(e.at,timeZone));if(day)day.count++;}
+ const blocked=work.filter(n=>n.status==='blocked');
+ const waiting=work.filter(n=>!['done','parked'].includes(n.status)&&prerequisites(w,n.id).some(p=>p.status!=='done'));
+ const ready=work.filter(n=>['active','planned'].includes(n.status)&&!waiting.some(x=>x.id===n.id));
+ const touched=new Map(events.filter(e=>e.nodeId).map((e,i)=>[e.nodeId,i]));
+ const newest=(a,b)=>(touched.get(b.id)??-1)-(touched.get(a.id)??-1)||b.id.localeCompare(a.id);
+ const status=STATUSES.map(id=>({id,label:statusLabel(id),count:work.filter(n=>n.status===id).length}));
+ const checkpointCounts=new Map();
+ for(const e of events){const provider=e.capture?.capture?.provider||e.after?.checkpoint?.provider||(e.cloudRequestId&&e.after?.type!=='goal'?'ChatGPT':null);if(provider)checkpointCounts.set(provider,(checkpointCounts.get(provider)||0)+1);}
+ const last=events.at(-1),recentSources=[...sources].sort(newest);
+ return {projectId,at,timeZone,template:projectTemplate(project),originalGoals:{done:pr.done,total:pr.total,percent:pr.total?Math.round(100*pr.done/pr.total):null},workTotal:work.length,status,blocked,waiting,ready,sourcesTotal:sources.length,reportsToReview:sources.filter(n=>n.status!=='done'&&n.status!=='parked'),reportedDone:work.filter(n=>n.status==='reported_done'),decisions:work.filter(n=>n.type==='decision').sort(newest),branches:work.filter(n=>n.type==='branch').sort(newest),recentSources:recentSources.slice(0,4),activity,updates14d:activity.reduce((sum,d)=>sum+d.count,0),activeDays:activity.filter(d=>d.count).length,providers:[...checkpointCounts].map(([provider,count])=>({provider,count})),latest:last?{at:last.at,text:last.text,nodeId:last.nodeId}:null,next:nextAction(w,projectId),recent:events.slice(-5).reverse(),crossProjectLinks:w.edges.filter(e=>{const a=w.nodes.find(n=>n.id===e.from),b=w.nodes.find(n=>n.id===e.to);return a&&b&&a.projectId!==b.projectId&&(a.projectId===projectId||b.projectId===projectId);}).length};
+}
+const diagramText=(text,max=36)=>String(text).replace(/[\r\n]+/g,' ').replace(/["<>\[\]{}()]/g,' ').replaceAll('&','and').replace(/\s+/g,' ').trim().slice(0,max)||'Untitled';
+export function projectMindmap(w,projectId,{perGroup=2}={}){
+ const p=w.projects.find(p=>p.id===projectId);if(!p)throw Error('Choose a project.');
+ const ns=w.nodes.filter(n=>n.projectId===projectId),isWork=n=>!['source','goal','decision','branch'].includes(n.type);
+ const groups=[['goals','The goal',ns.filter(n=>n.type==='goal')],['work','Work in motion',ns.filter(n=>isWork(n)&&!['done','parked'].includes(n.status))],['decisions','Decisions',ns.filter(n=>n.type==='decision')],['branches','Offshoots',ns.filter(n=>n.type==='branch')],['outputs','Results',ns.filter(n=>isWork(n)&&n.status==='done')],['sources','Evidence and reports',ns.filter(n=>n.type==='source')]];
+ const selected=[],lines=['mindmap',`  mm_root((${diagramText(p.title,42)}))`];
+ for(const [key,title,items]of groups){if(!items.length)continue;lines.push(`    group_${key}[${title} · ${items.length}]`);
+  const touch=new Map(w.events.filter(e=>e.projectId===projectId&&e.nodeId).map((e,i)=>[e.nodeId,i]));
+  const sorted=['sources','decisions','branches','outputs'].includes(key)?[...items].sort((a,b)=>(touch.get(b.id)??-1)-(touch.get(a.id)??-1)):items;
+  for(const n of sorted.slice(0,perGroup)){selected.push(n.id);lines.push(`      item_${n.id}[${diagramText(n.title)}]`);}
+  if(items.length>perGroup)lines.push(`      more_${key}[+ ${items.length-perGroup} more in full map]`);
+ }
+ if(!selected.length)lines.push('    group_start[Add the first task or decision]');
+ return {source:lines.join('\n'),nodeIds:selected,total:ns.length,shown:selected.length};
+}
+export function dashboardNote(w,projectId,options={}){
+ const p=w.projects.find(p=>p.id===projectId),a=projectAnalytics(w,projectId,options),m=projectMindmap(w,projectId);
+ const link=n=>`[[Items/${n.id}|${n.title.replaceAll('|','&#124;')}]]`;
+ return `---\ncssclasses: brancha-dashboard\nbrancha_type: dashboard\nbrancha_project: ${JSON.stringify(projectId)}\n---\n# ${p.title}\n\n${a.template.title} · Workspace revision ${w.revision}\n\n> [!tip] Pick up here\n> ${a.next.replaceAll('\n',' ')}\n\n[[Maps/${p.id}|Dependency flow]] · [[Maps/${p.id}.canvas|Editable Canvas]] · [[Projects/${p.id}|Original request]] · [[Resume/${p.id}|Resume brief]]\n\n## At a glance\n\n| Goals with evidence | Work ready | Waiting on prerequisites | Reports to review |\n| --- | --- | --- | --- |\n| ${a.originalGoals.done} / ${a.originalGoals.total} | ${a.ready.length} | ${a.waiting.length} | ${a.reportsToReview.length} |\n\nProgress counts original goals with recorded evidence. Reports and activity are not verified completion or time spent.\n\n## Project mindmap\n\n\`\`\`mermaid\n${m.source}\n\`\`\`\n\nGrouped overview: ${m.shown} of ${m.total} records. Dependency arrows are in the separate flow view.\n\n## Work rhythm · last 14 days\n\n${a.updates14d} recorded updates across ${a.activeDays} day${a.activeDays===1?'':'s'}. Dates use ${a.timeZone}.\n\n| Date | Updates |\n| --- | --- |\n${a.activity.map(d=>`| ${d.date} | ${d.count} |`).join('\n')}\n\n## Ready to move\n\n${a.ready.slice(0,4).map(n=>`- ${link(n)} — ${n.next||'Choose the next action.'}`).join('\n')||'No ready work recorded. Review the goal and prerequisites.'}\n\n## Needs a look\n\n${[...new Map([...a.blocked,...a.waiting,...a.reportedDone].map(n=>[n.id,n])).values()].slice(0,8).map(n=>`- ${link(n)} — ${statusLabel(n.status)}; ${n.next||'Review dependencies and evidence.'}`).join('\n')||'No explicit blockers, waiting work or completion claims recorded.'}\n\n## Latest evidence and reports\n\n${a.recentSources.map(n=>`- ${link(n)} — ${statusLabel(n.status)}`).join('\n')||'No source checkpoints recorded yet.'}\n\n## Decisions and offshoots\n\n${[...a.decisions.slice(0,3),...a.branches.slice(0,3)].map(n=>`- ${link(n)} — ${n.type}; ${statusLabel(n.status)}`).join('\n')||'No decisions or branches recorded yet.'}\n\n## Next check-in\n\n${a.template.prompts.map(q=>`- ${q}`).join('\n')}\n\nTemplate stages: ${a.template.stages.join(' → ')}. These are prompts, not inferred project status.\n\nCopy a [[Templates/Check-in|check-in]], [[Templates/Decision|decision]] or [[Templates/Evidence review|evidence review]] template into Notes. Generated views are refreshed from Brancha; editing this page does not change the record.\n`;
+}
+
 export function demo(){
   const w=blank();w.demo=true;
   const p={id:'example_launch',title:'Launch a small business',prompt:'Help me launch a small homewares business. I need a clear offer, a simple website and a realistic launch plan. Keep the first launch small and affordable.',createdAt:now(),criteria:[{id:'offer',text:'Define an offer people understand'},{id:'site',text:'Create and test a simple website'},{id:'launch',text:'Agree a practical launch plan'}]};

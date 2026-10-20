@@ -69,7 +69,7 @@ Default `all` preserves existing local capture behaviour. Exclusions take preced
 
 ## Obsidian
 
-Open the configured vault, then `Generated/Brancha.canvas`, a project mindmap, or `Generated/Records.md`. The latter is a table with escaped wiki-link separators. Structured verification and acceptance criteria appear in generated item notes. The browser inspector and editor expose those fields without dropping source provenance.
+Open the configured vault, then `Generated/START HERE.md` or `Generated/Dashboards/index.md`. Obsidian is the primary workspace; the browser is its companion view. See [project dashboards](obsidian-dashboard.md). The visual overview is `Generated/Brancha.canvas`; `Generated/Records.md` remains the full table. The latter is a table with escaped wiki-link separators. Structured verification and acceptance criteria appear in generated item notes. The browser inspector and editor expose those fields without dropping source provenance.
 
 ```sh
 npm run obsidian-style

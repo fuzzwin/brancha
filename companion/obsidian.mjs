@@ -1,9 +1,18 @@
 import {render} from '../dist/vendor/pele-1.7.0.mjs';
-import {vaultFiles,statusLabel} from '../dist/core.mjs';
+import {dashboardSvg} from './dashboard-svg.mjs';
+import {vaultFiles,statusLabel,projectMindmap,projectAnalytics} from '../dist/core.mjs';
 const short=n=>n.capture?'Latest Codex checkpoint':n.title.replace(/[*`]/g,'').slice(0,58);
 const safe=s=>s.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n',' ');
 export function obsidianFiles(w){
  const files=vaultFiles(w);
+ for(const p of w.projects){
+  const m=projectMindmap(w,p.id),a=projectAnalytics(w,p.id),rendered=render(m.source,{fontSize:18,padding:30,images:false,links:false,responsive:true});
+  const theme='<style>svg{--pele-bg:transparent;--pele-fg:#294236;--pele-border:#9daf95;--pele-surface:#f0f5e9;--pele-radius:9px;--pele-series-1:#7c9b6f;--pele-series-2:#b29564;--pele-series-3:#7896a4;--pele-series-4:#a78db5;--pele-series-5:#b5927d;--pele-series-6:#7d9d91}@media(prefers-color-scheme:dark){svg{--pele-fg:#dce8d7;--pele-surface:#29372d;--pele-border:#7c9375}}</style>';
+  files[`Diagrams/${p.id}-mindmap.svg`]=rendered.svg.replace(/(<svg[^>]*>)/,'$1'+theme);
+  files[`Diagrams/${p.id}-dashboard.svg`]=dashboardSvg(a);
+  files[`Dashboards/${p.id}.md`]=files[`Dashboards/${p.id}.md`].replace(/```mermaid\n[\s\S]*?\n```/,`![[Diagrams/${p.id}-mindmap.svg]]`).replace('## At a glance\n\n',`## At a glance\n\n![[Diagrams/${p.id}-dashboard.svg]]\n\n`);
+  files[`Dashboards/${p.id}.md`]=files[`Dashboards/${p.id}.md`].replace(/(## At a glance[\s\S]*?)(## Project mindmap[\s\S]*?)(## Work rhythm)/,'$2\n$1\n$3').replace(/\| Goals with evidence \| Work ready \| Waiting on prerequisites \| Reports to review \|\n\| --- \| --- \| --- \| --- \|\n\|[^\n]+\n/,'').replace(/\| Date \| Updates \|\n\| --- \| --- \|\n(?:\| \d{4}-[^\n]+\n)+/,'');
+ }
  for(const p of w.projects){
   const nodes=w.nodes.filter(n=>n.projectId===p.id),ids=new Set(nodes.map(n=>n.id)),edges=w.edges.filter(e=>ids.has(e.from)&&ids.has(e.to));
   const source=['flowchart LR',...nodes.map(n=>`${n.id}["${safe(short(n))} · ${statusLabel(n.status)}"]`),...edges.map(e=>`${e.from} ${e.type==='informs'?'-.->':'-->'}${e.type==='depends_on'?'|"before"|':e.type==='branches_from'?'|"branch"|':''} ${e.to}`)].join('\n');
@@ -24,5 +33,5 @@ export function obsidianFiles(w){
   }
   files[`Projects/${p.id}.md`]=files[`Projects/${p.id}.md`].replace(`[[Maps/${p.id}.canvas|Open this project map →]]`,`[[Maps/${p.id}|Open the dependency mindmap →]] · [[Maps/${p.id}.canvas|Canvas]]`);
  }
- const overview=JSON.parse(files['Brancha.canvas']);for(const n of overview.nodes)n.text=n.text.replace(/\[\[Maps\/([^|]+)\.canvas\|Open project map →\]\]/g,'[[Maps/$1|Open dependency mindmap →]]');files['Brancha.canvas']=JSON.stringify(overview,null,2);for(const name of Object.keys(files))if(name.endsWith('.md'))files[name]=files[name].replace(/!?\[([^\]]*)\]\((\/(?:Users|home|Volumes|var)\/[^)\n]+)\)/g,(_,label,local)=>`[${label}](file://${encodeURI(local)})`);return files;
+ const overview=JSON.parse(files['Brancha.canvas']);for(const n of overview.nodes)n.text=n.text.replace(/\[\[Maps\/([^|]+)\.canvas\|Open project map →\]\]/g,'[[Maps/$1|Open dependency mindmap →]]');for(const n of overview.nodes)n.text=n.text.replace('[[Maps/'+n.id+'|Open dependency mindmap →]]','[[Dashboards/'+n.id+'|Open project dashboard →]]');files['Brancha.canvas']=JSON.stringify(overview,null,2);for(const name of Object.keys(files))if(name.endsWith('.md'))files[name]=files[name].replace(/!?\[([^\]]*)\]\((\/(?:Users|home|Volumes|var)\/[^)\n]+)\)/g,(_,label,local)=>`[${label}](file://${encodeURI(local)})`);return files;
 }

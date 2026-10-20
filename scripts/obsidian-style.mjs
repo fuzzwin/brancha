@@ -10,4 +10,4 @@ if(settings.enabledCssSnippets&&!Array.isArray(settings.enabledCssSnippets))thro
 const backups=[];
 for(const file of [target,appearance])if(fs.existsSync(file)){const backup=file+'.'+Date.now()+'.backup';fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);backups.push(backup);}
 atomicText(target,source);settings.enabledCssSnippets=[...new Set([...(settings.enabledCssSnippets||[]),'brancha-map'])];atomic(appearance,settings);
-console.log(JSON.stringify({installed:true,scope:'Generated Brancha maps and records',backups},null,2));
+console.log(JSON.stringify({installed:true,scope:'Generated Brancha dashboards, maps and records',backups},null,2));

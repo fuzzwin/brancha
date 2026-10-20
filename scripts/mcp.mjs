@@ -11,7 +11,7 @@ async function handle(message){
  const result=value=>send({jsonrpc:'2.0',id,result:value});
  if(method==='initialize'){
   initialized=true;
-  return result({protocolVersion:versions.includes(params.protocolVersion)?params.protocolVersion:versions[0],capabilities:{tools:{}},serverInfo:{name:'brancha-local',version:'0.6.0'},instructions:'Resume the explicitly chosen project. Save meaningful milestones and unsaved work before project switches without repeated reminders. Reread revisions before writes; reuse requestId only for retries of identical content. Checkpoints are reports, not verified completion. This connection reads the configured local workspace only; it does not monitor other chats or upload data.'});
+  return result({protocolVersion:versions.includes(params.protocolVersion)?params.protocolVersion:versions[0],capabilities:{tools:{}},serverInfo:{name:'brancha-local',version:'0.7.0'},instructions:'Resume the explicitly chosen project. Save meaningful milestones and unsaved work before project switches without repeated reminders. Reread revisions before writes; reuse requestId only for retries of identical content. Checkpoints are reports, not verified completion. This connection reads the configured local workspace only; it does not monitor other chats or upload data.'});
  }
  if(method==='ping')return result({});
  if(!ready)return send({jsonrpc:'2.0',id,error:{code:-32002,message:'Initialize the connection first.'}});

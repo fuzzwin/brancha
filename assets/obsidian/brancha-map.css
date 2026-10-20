@@ -10,3 +10,12 @@
 .brancha-record .markdown-rendered { overflow-x: auto; }
 
 .brancha-record .inline-title, .brancha-record .metadata-container { display: none !important; }
+/* Generated project dashboards */
+.brancha-dashboard { --file-line-width: 1160px; }
+.brancha-dashboard .inline-title, .brancha-dashboard .metadata-container { display: none !important; }
+.brancha-dashboard .markdown-preview-sizer { max-width: 1160px; }
+.brancha-dashboard .image-embed { display: block; margin: 22px 0; }
+.brancha-dashboard .image-embed img { max-width: 100%; height: auto; }
+.brancha-dashboard table { width: 100%; }
+.brancha-dashboard td { vertical-align: top; overflow-wrap: anywhere; }
+.brancha-dashboard .callout { border-radius: 12px; padding: 18px 22px; }

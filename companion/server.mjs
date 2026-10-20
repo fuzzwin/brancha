@@ -17,13 +17,13 @@ if(!fs.existsSync(file))fs.copyFileSync(path.join(base,'dist/starter-workspace.j
 const captureConfig=options.config||null;
 function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=JSON.parse(fs.readFileSync(capturePaths(captureConfig).status,'utf8'));}catch{}return {...latest,paused:controls(captureConfig).paused===true};}
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
-let lastHash='',lastError='';
+let lastHash='',lastDay='',lastError='';
 function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');return {raw,w:validate(JSON.parse(raw)),etag:hash(raw)};}
-function refresh(){const r=read();if(r.etag===lastHash)return r;
+function refresh(){const r=read(),day=new Date().toLocaleDateString('en-CA');if(r.etag===lastHash&&day===lastDay)return r;
  const generated=path.join(vault,'Generated');fs.mkdirSync(generated,{recursive:true});
  for(const [name,original]of Object.entries(obsidianFiles(r.w))){if(name==='brancha.json')continue;let content=original.replaceAll('[[','[[Generated/');if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}atomicText(path.join(generated,name),content);}
- fs.writeFileSync(path.join(generated,'START HERE.md'),'# Brancha live views\n\nGenerated from ../brancha.json while the local companion is running. These views are overwritten on each record update. Keep your own notes in ../Notes.\n\n[[Generated/Brancha.canvas|Open the whole map]]\n\n'+r.w.projects.map(p=>`- [[Generated/Projects/${p.id}|${p.title}]]`).join('\n'));
- fs.mkdirSync(path.join(vault,'Notes'),{recursive:true});lastHash=r.etag;lastError='';return r;
+ atomicText(path.join(generated,'START HERE.md'),'---\ncssclasses: brancha-dashboard\n---\n# Pick up the thread\n\nYour project dashboards are the starting point. They bring together the goal, mindmap, next action, decisions and evidence.\n\n[[Generated/Dashboards/index|Open all project dashboards →]] · [[Generated/Brancha.canvas|Visual project overview]]\n\n'+r.w.projects.map(p=>`- [[Generated/Dashboards/${p.id}|${p.title}]]`).join('\n')+'\n\n## Keep useful notes\n\nCopy a [[Generated/Templates/Check-in|Check-in]], [[Generated/Templates/Decision|Decision]] or [[Generated/Templates/Evidence review|Evidence review]] into Notes for your own writing.\n\nThese dashboards update from Brancha while the companion runs. Personal notes belong in Notes; generated pages are refreshed.');
+ fs.mkdirSync(path.join(vault,'Notes'),{recursive:true});lastHash=r.etag;lastDay=day;lastError='';return r;
 }
 refresh();
 const token=crypto.randomBytes(32).toString('hex');
