@@ -1,5 +1,6 @@
 import {blank,demo,validate,uid,now,event,progress,prerequisites,contextBrief,mermaid,vaultFiles,layout,TYPES,STATUSES,RELATIONS,label} from './core.mjs';
 import {zip} from './zip.mjs';
+import {bindMapPointerSelection} from './map-selection.mjs';
 import {mount as mountPele, render as renderPele} from './vendor/pele-1.7.0.mjs';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -55,6 +56,10 @@ function render(){renderCapture();
  for(const name of ['map','activity','brief'])$('#'+name+'-view').hidden=view!==name;
  if(view==='map')renderMap();if(view==='activity')renderActivity();if(view==='brief')renderBrief();renderInspector();
 }
+function selectMapItem(id){
+ if(!w.nodes.some(n=>n.id===id&&n.projectId===projectId))return;
+ selected=id;$('#map-stage').querySelectorAll('.pele-node').forEach(x=>x.classList.toggle('is-selected',x.getAttribute('data-id')===id));renderInspector();
+}
 function renderMap(){
  mapMount?.destroy();mapMount=null;
  const q=$('#map-search').value.toLowerCase(),status=$('#status-filter').value;
@@ -66,7 +71,7 @@ function renderMap(){
  mapMount=mountPele(stage,source,{fontSize:15,padding:28,images:false,links:false,idPrefix:'branchaMap',maxEdges:1000,zoom:{always:true,controls:false,maxScale:3},onRender:()=>{
    stage.querySelectorAll('.pele-node[data-id]').forEach(el=>{const n=nodes.find(n=>n.id===el.getAttribute('data-id'));if(!n)return;
      el.dataset.status=n.status;el.setAttribute('role','button');el.setAttribute('tabindex','0');el.setAttribute('aria-label',n.title+', '+n.type+', '+n.status);el.classList.toggle('is-selected',n.id===selected);
-     const choose=()=>{selected=n.id;stage.querySelectorAll('.pele-node').forEach(x=>x.classList.toggle('is-selected',x.getAttribute('data-id')===selected));renderInspector();};
+     const choose=()=>selectMapItem(n.id);
      el.onclick=choose;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}};
    });
  },onError:()=>toast('This map could not be drawn. Narrow it with search or status; your records are preserved.')});
@@ -126,6 +131,7 @@ $('#export-json').onclick=()=>download('brancha-workspace.json',JSON.stringify(w
 $('#import-json').onclick=()=>{if(localToken){toast('Live workspace imports are disabled to protect shared history. Use the skill for incremental changes, or import into the hosted browser copy.');return;}$('#import-file').click();};
 $('#import-file').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;try{if(file.size>8*1024*1024)throw Error('Choose a workspace smaller than 8 MB.');const imported=validate(JSON.parse(await file.text()));modal('Import this workspace?',`<p class="form-note">${imported.projects.length} projects and ${imported.nodes.length} map items. This replaces the browser workspace. Download your current backup first if you want to keep it.</p><div class="actions"><button id="backup-before-import">Back up current</button><button id="confirm-import" class="primary">Replace workspace</button></div><p class="error" id="import-error"></p>`);$('#backup-before-import').onclick=()=>download('brancha-before-import.json',JSON.stringify(w,null,2));$('#confirm-import').onclick=async()=>{try{await commit(n=>Object.assign(n,imported));close();projectId=w.projects[0]?.id;selected=w.nodes[0]?.id;overview=false;render();toast('Workspace imported.');}catch(err){$('#import-error').textContent=err.message;}};}catch(err){toast('Import stopped: '+err.message);}};
 window.addEventListener('storage',e=>{if(!localToken&&e.key===KEY)toast('Workspace changed in another tab. Reload before editing.');});
+bindMapPointerSelection($('#map-stage'),selectMapItem);
 render();
 
 if(localToken)setInterval(async()=>{if(saving||$('#modal').open)return;try{const r=await readLive();captureState=r.capture;renderCapture();if(r.etag!==etag){w=validate(r.workspace);etag=r.etag;if(!w.projects.some(p=>p.id===projectId)){projectId=w.projects[0]?.id;selected=w.nodes.find(n=>n.projectId===projectId)?.id;}render();toast('Shared record updated.');}$('#save-status').textContent=r.viewError?'Record saved · vault view issue':'Live · shared with Obsidian';}catch{$('#save-status').textContent='Disconnected · restart local companion';}},2000);
