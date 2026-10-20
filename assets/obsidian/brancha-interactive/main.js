@@ -1,11 +1,11 @@
 const {Plugin,MarkdownRenderChild,Notice}=globalThis.BranchaHost||require('obsidian');
 // Work in CSS pixels; never magnify a small diagram just to fill a wide note.
 // Very narrow or dense maps keep an 11px label floor and can scroll.
-function mapSize({width,height,availableWidth,availableHeight,zoom=1,readable=false,fullWidth=false}){
+function mapSize({width,height,availableWidth,availableHeight,zoom=1,readable=false,fullWidth=false,fullPage=false,fitAll=false}){
  if(![width,height,availableWidth,availableHeight].every(n=>Number.isFinite(n)&&n>0))return null;
- const frame=fullWidth?Math.floor(Math.min(560,Math.max(300,availableHeight*.62))):Math.min(430,Math.max(260,availableHeight*.5));
+ const frame=fullPage?Math.max(240,Math.floor(availableHeight)):fullWidth?Math.floor(Math.min(560,Math.max(300,availableHeight*.62))):Math.min(430,Math.max(260,availableHeight*.5));
  const fit=Math.min(1,availableWidth/width,frame/height);
- const scale=(readable?1:Math.max(11/18,fit))*Math.max(.25,Math.min(3,zoom));
+ const scale=(readable?1:fullPage&&fitAll?fit:Math.max(fullPage?11/15:11/18,fit))*Math.max(.25,Math.min(3,zoom));
  return {width:Math.round(width*scale),height:Math.round(height*scale),frame,scale};
 }
 function savedStamp(value){
@@ -38,6 +38,7 @@ class Dashboard extends MarkdownRenderChild{
  get path(){return `Generated/Interactive/${this.id}.json`;}
  async refresh(){
   try{const raw=await this.plugin.app.vault.adapter.read(this.path);if(this.dead)return;this.data=JSON.parse(raw);if(this.data.version!==1||this.data.project.id!==this.id)throw Error('Unsupported dashboard');
+   if(this.sessionId&&this.data.sessionId!==this.sessionId)throw Error('Chat scope does not match');
    if(this.focus&&!this.data.views[this.focus])this.focus=null;this.draw();
   }catch(e){if(!this.dead){this.containerEl.replaceChildren();this.el(this.containerEl,'p','Dashboard unavailable. Open the portable note below. '+e.message);}}
  }
@@ -80,7 +81,7 @@ class Dashboard extends MarkdownRenderChild{
   const app=this.plugin.app;await app.workspace.openLinkText(path,this.sourcePath,false);
   // Generated interactive pages open as views, even when the previous note
   // was being edited. This avoids landing on their renderer code blocks.
-  if((/^Generated\/(Dashboards|Timelines|Chats|ChatLogs|Guides)\//.test(path)||path==='Generated/Navigation/Home')&&!path.endsWith('-static')&&!path.endsWith('-history')){
+  if((/^Generated\/(Dashboards|Timelines|Chats|ChatLogs|Guides|Explorers)\//.test(path)||path==='Generated/Navigation/Home')&&!path.endsWith('-static')&&!path.endsWith('-history')){
    const leaf=app.workspace.activeLeaf,state=leaf?.getViewState();
    if(state?.type==='markdown'&&app.workspace.getActiveFile()?.path===path.replace(/\.md$/,'')+'.md')await leaf.setViewState({...state,state:{...state.state,mode:'preview'}});
   }
@@ -121,6 +122,7 @@ class Dashboard extends MarkdownRenderChild{
   }
   const panel=this.el(glance,'section',undefined,'bi-panel bi-map'),heading=this.el(panel,'div',undefined,'bi-panel-head');
   this.el(heading,'h2',this.focus?d.views[this.focus].title:'Your project, connected');
+  this.button(heading,'Full-page map ↗',()=>this.open(`Generated/Explorers/${this.id}`));
   if(this.focus)this.button(heading,'Previous map',()=>{this.focus=this.history.pop()??null;this.zoom=1;this.draw();});
   if(this.focus)this.button(heading,'Whole project',()=>this.select('mm_root'));
   const tools=this.el(panel,'div',undefined,'bi-tools');
@@ -300,7 +302,7 @@ class Dashboard extends MarkdownRenderChild{
  scale(delta){
   this.zoom=Math.max(.25,Math.min(3,this.zoom+delta));if(!this.svg)return;
   const scroll=this.svg.parentElement,box=this.svg.viewBox.baseVal,pane=this.containerEl.closest('.workspace-leaf-content');
-  const size=mapSize({width:box.width,height:box.height,availableWidth:scroll.clientWidth,availableHeight:pane?.clientHeight||this.containerEl.ownerDocument.defaultView.innerHeight,zoom:this.zoom,readable:this.readable,fullWidth:!!this.data.compactOverview||!!this.data.map});
+  const size=mapSize({width:box.width,height:box.height,availableWidth:scroll.clientWidth,availableHeight:this.fullPage?Math.max(240,(pane?.getBoundingClientRect().bottom||this.containerEl.ownerDocument.defaultView.innerHeight)-scroll.getBoundingClientRect().top-48):(pane?.clientHeight||this.containerEl.ownerDocument.defaultView.innerHeight),fullPage:!!this.fullPage,fitAll:!!this.fitAll,zoom:this.zoom,readable:this.readable,fullWidth:!!this.data.compactOverview||!!this.data.map});
   if(!size)return;this.svg.style.width=size.width+'px';this.svg.style.minWidth='0';this.svg.style.height=size.height+'px';scroll.style.maxHeight=size.frame+'px';
  }
 }
@@ -380,6 +382,7 @@ class Chat extends Dashboard{
   const navigate=(group,item)=>{if((this.chatMapGroup||null)===(group||null)&&(this.chatMapItem||null)===(item||null))return;this.chatMapHistory??=[];this.chatMapHistory.push({group:this.chatMapGroup||null,item:this.chatMapItem||null});this.chatMapGroup=group;this.chatMapItem=item;this.zoom=1;this.readable=false;this.draw();const target=this.containerEl.querySelector(item?'.bi-chat-map-detail':'.bi-chat-map');target?.scrollIntoView({block:'start',behavior:'smooth'});};
   const group=m.groups.find(g=>g.id===this.chatMapGroup),selected=m.items.find(i=>i.id===this.chatMapItem),panel=this.el(parent,'section',undefined,'bi-panel bi-map bi-chat-map'),heading=this.el(panel,'div',undefined,'bi-panel-head');
   this.el(heading,'h2',group?group.title:'This chat, connected');
+  this.button(heading,'Full-page map ↗',()=>this.open(`Generated/Explorers/chat-${this.id}-${this.sessionId}`));
   if(this.chatMapHistory?.length)this.button(heading,'Previous map',()=>{const previous=this.chatMapHistory.pop();this.chatMapGroup=previous.group;this.chatMapItem=previous.item;this.zoom=1;this.readable=false;this.draw();this.containerEl.querySelector('.bi-chat-map')?.scrollIntoView({block:'start'});});
   if(group||selected)this.button(heading,'Whole chat',()=>{this.chatMapGroup=null;this.chatMapItem=null;this.chatMapHistory=[];this.zoom=1;this.readable=false;this.draw();this.containerEl.querySelector('.bi-chat-map')?.scrollIntoView({block:'start'});});
   const tools=this.el(panel,'div',undefined,'bi-tools');if(!group&&m.preview){const previews=this.button(tools,this.mapPreview?'Hide item previews':'Item previews',()=>{this.mapPreview=!this.mapPreview;this.zoom=1;this.readable=false;this.draw();});previews.setAttribute('aria-pressed',String(!!this.mapPreview));}this.el(tools,'span','Select a group or item to trace its saved source.','bi-muted');this.button(tools,'−',()=>this.scale(-.2)).setAttribute('aria-label','Zoom chat map out');this.button(tools,'Fit map',()=>{this.zoom=1;this.readable=false;this.scale(0);});this.button(tools,'Readable size',()=>{this.zoom=1;this.readable=true;this.scale(0);});this.button(tools,'+',()=>this.scale(.2)).setAttribute('aria-label','Zoom chat map in');
@@ -412,8 +415,123 @@ class Chat extends Dashboard{
  }
 
 }
+// These layouts retain every record. Group branches organise; only saved edges
+// enter the dependency graph. Neither layout writes back to the project.
+function explorerModel(data){
+ const chat=!!data.sessionId,raw=chat?data.map.items:data.nodes;
+ const nodes=raw.map(n=>({...n,detail:n.detail||n.summary||'',recordId:chat?n.nodeId:n.id,type:n.type||n.kind}));
+ const ids=new Set(nodes.map(n=>n.id));
+ const groups=(chat?data.map.groups:data.groups).map(g=>({...g,nodeIds:[...(g.nodeIds||g.itemIds)].filter(id=>ids.has(id))}));
+ const grouped=new Set(groups.flatMap(g=>g.nodeIds)),remaining=nodes.filter(n=>!grouped.has(n.id));
+ if(remaining.length)groups.push({id:'other',title:'Other saved records',nodeIds:remaining.map(n=>n.id)});
+ const edges=(chat?data.map.edges||[]:data.edges).filter(e=>ids.has(e.from)&&ids.has(e.to));
+ const linked=new Set(edges.flatMap(e=>[e.from,e.to]));
+ return {title:chat?data.title:data.project.title,nodes,groups,edges,isolated:nodes.filter(n=>!linked.has(n.id))};
+}
+function explorerBox(n){
+ const words=String(n.title||'Untitled').split(/\s+/),lines=[];let line='';
+ for(const word of words){if(line&&(line+' '+word).length>31){lines.push(line);line='';}line+=(line?' ':'')+word;}
+ if(line)lines.push(line);if(lines.length>4){lines.length=4;lines[3]=lines[3].slice(0,29)+'…';}
+ return {...n,lines,width:250,height:Math.max(66,lines.length*18+(n.status?36:24))};
+}
+function explorerMindmap(model,expanded,query=''){
+ const term=query.trim().toLowerCase(),byId=new Map(model.nodes.map(n=>[n.id,n]));
+ const groups=model.groups.map(g=>({...g,nodeIds:g.nodeIds.filter(id=>!term||byId.get(id).title.toLowerCase().includes(term))})).filter(g=>g.nodeIds.length);
+ const sides=[[],[]];groups.forEach((g,i)=>sides[i%2].push(g));
+ const plans=sides.map(side=>side.map(g=>{const open=!!term||expanded.has(g.id),items=open?g.nodeIds.map(id=>explorerBox(byId.get(id))):[];return {g,open,items,height:Math.max(82,items.reduce((v,n)=>v+n.height+14,0)-14)};}));
+ const height=Math.max(220,...plans.map(side=>side.reduce((v,g)=>v+g.height+40,0)))+60,boxes=[],links=[];
+ const root={id:'explorer_root',title:model.title,lines:explorerBox({title:model.title}).lines,x:640,y:height/2-46,width:220,height:92,root:true};boxes.push(root);
+ plans.forEach((side,i)=>{let y=(height-side.reduce((v,g)=>v+g.height+40,0))/2;
+  for(const {g,open,items,height:h}of side){const group=explorerBox({id:'group_'+g.id,title:g.title+' · '+g.nodeIds.length,group:g.id,open});Object.assign(group,{x:i?924:326,y:y+h/2-group.height/2,width:240});boxes.push(group);links.push({from:root.id,to:group.id,category:true});
+   let itemY=y;for(const n of items){Object.assign(n,{x:i?1210:30,y:itemY});boxes.push(n);links.push({from:group.id,to:n.id,category:true});itemY+=n.height+14;}y+=h+40;
+  }
+ });
+ const left=Math.min(...boxes.map(n=>n.x))-30,right=Math.max(...boxes.map(n=>n.x+n.width))+30;for(const n of boxes)n.x-=left;
+ return {boxes,links,width:right-left,height,shown:boxes.filter(n=>!n.root&&!n.group).length,total:model.nodes.filter(n=>!term||n.title.toLowerCase().includes(term)).length};
+}
+function explorerFlow(model,query='',focus=null){
+ const term=query.trim().toLowerCase(),wanted=focus?new Set([focus,...model.edges.filter(e=>e.from===focus||e.to===focus).flatMap(e=>[e.from,e.to])]):null;
+ const nodes=model.nodes.filter(n=>(!wanted||wanted.has(n.id))&&(!term||n.title.toLowerCase().includes(term))),ids=new Set(nodes.map(n=>n.id)),edges=model.edges.filter(e=>ids.has(e.from)&&ids.has(e.to));
+ // Iterative strongly connected components keep cycles finite and place the
+ // condensed dependency DAG from left to right. No edge is dropped for layout.
+ const outgoing=new Map(nodes.map(n=>[n.id,[]])),incoming=new Map(nodes.map(n=>[n.id,[]]));
+ for(const e of edges){outgoing.get(e.from).push(e.to);incoming.get(e.to).push(e.from);}
+ const seen=new Set(),order=[];
+ for(const n of nodes){if(seen.has(n.id))continue;seen.add(n.id);const stack=[[n.id,0]];while(stack.length){const top=stack.at(-1),next=outgoing.get(top[0]);if(top[1]<next.length){const id=next[top[1]++];if(!seen.has(id)){seen.add(id);stack.push([id,0]);}}else{order.push(top[0]);stack.pop();}}}
+ const component=new Map();let count=0;
+ for(const id of order.reverse()){if(component.has(id))continue;const stack=[id];component.set(id,count);while(stack.length)for(const previous of incoming.get(stack.pop()))if(!component.has(previous)){component.set(previous,count);stack.push(previous);}count++;}
+ const next=Array.from({length:count},()=>new Set()),degree=Array(count).fill(0),rank=Array(count).fill(0);
+ for(const e of edges){const a=component.get(e.from),b=component.get(e.to);if(a!==b&&!next[a].has(b)){next[a].add(b);degree[b]++;}}
+ const queue=degree.flatMap((v,i)=>v?[]:[i]);for(let i=0;i<queue.length;i++)for(const b of next[queue[i]]){rank[b]=Math.max(rank[b],rank[queue[i]]+1);if(!--degree[b])queue.push(b);}
+ const columns=new Map();for(const n of nodes){const col=rank[component.get(n.id)];if(!columns.has(col))columns.set(col,[]);columns.get(col).push(explorerBox(n));}
+ const height=Math.max(180,...[...columns.values()].map(ns=>ns.reduce((v,n)=>v+n.height+26,0)))+140,boxes=[];
+ for(const [col,ns]of columns){let y=(height-ns.reduce((v,n)=>v+n.height+26,0))/2;for(const n of ns){Object.assign(n,{x:30+col*360,y});boxes.push(n);y+=n.height+26;}}
+ return {boxes,links:edges,width:Math.max(350,(Math.max(0,...columns.keys())+1)*360),height,shown:boxes.length,total:model.nodes.length,cycleEdges:edges.filter(e=>component.get(e.from)===component.get(e.to)).length};
+}
+class MapExplorer extends Dashboard{
+ constructor(el,plugin,id,sourcePath,sessionId){super(el,plugin,id,sourcePath);this.sessionId=sessionId;this.mode='mindmap';this.query='';this.expanded=null;this.selected=null;this.connectionFocus=null;this.fullPage=true;}
+ get path(){return `Generated/Interactive/${this.sessionId?'chat-'+this.id+'-'+this.sessionId:this.id}.json`;}
+ draw(){
+  const root=this.containerEl,d=this.data,m=explorerModel(d);this.model=m;this.mapObserver?.disconnect();this.svg=null;
+  const activeId=root.ownerDocument.activeElement?.getAttribute('data-id');
+  const old=root.querySelector('.bi-map-scroll'),offset=old?{left:old.scrollLeft,top:old.scrollTop}:null;
+  root.replaceChildren();root.classList.add('bi-explorer');this.expanded??=new Set(m.nodes.length<=40?m.groups.map(g=>g.id):[]);
+  const top=this.el(root,'div',undefined,'bi-top');this.el(top,'h1',m.title);this.el(top,'span',this.sessionId?'Full-page chat map':'Full-page project map','bi-muted');
+  const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,this.sessionId?'← Chat dashboard':'← Project dashboard',()=>this.open(this.sessionId?`Generated/Chats/${this.id}-${this.sessionId}`:`Generated/Dashboards/${this.id}`));this.button(nav,'Home',()=>this.open('Generated/Navigation/Home'));this.quickSwitch(nav);
+  const tools=this.el(root,'div',undefined,'bi-explorer-tools');
+  for(const [key,label]of [['mindmap','Mindmap'],['flow','Flow / dependencies']]){const b=this.button(tools,label,()=>{this.mode=key;this.zoom=1;this.fitAll=false;this.draw();});b.setAttribute('aria-pressed',String(this.mode===key));}
+  if(this.mode==='mindmap'){this.button(tools,'Expand all',()=>{this.expanded=new Set(m.groups.map(g=>g.id));this.draw();});this.button(tools,'Collapse all',()=>{this.expanded.clear();this.draw();});}
+  if(this.connectionFocus)this.button(tools,'Show whole map',()=>{this.connectionFocus=null;this.query='';this.draw();});
+  const form=this.el(tools,'form'),input=this.el(form,'input');input.type='search';input.placeholder='Find a saved item…';input.setAttribute('aria-label','Find map items');input.value=this.query;const search=this.el(form,'button','Find');search.type='submit';form.addEventListener('submit',e=>{e.preventDefault();this.query=input.value;this.zoom=1;this.draw();});if(this.query)this.button(tools,'Clear search',()=>{this.query='';this.draw();});
+  const diagnostics=this.el(root,'details',undefined,'bi-explorer-diagnostics');this.el(diagnostics,'summary',`${m.nodes.length} records · ${m.edges.length} saved connections · ${m.isolated.length} without connections`);
+  this.el(diagnostics,'p','Unconnected records may be useful source material, or work waiting to be linked. Group branches organise the mindmap; they are not dependencies. AI suggestions remain unverified.','bi-muted');
+  const isolated=this.el(diagnostics,'div',undefined,'bi-chips');for(const n of m.isolated)this.button(isolated,n.title,()=>{this.selected=n.id;this.query='';this.draw();});
+  this.el(root,'p',this.mode==='mindmap'?'Click a branch to expand or collapse it. Select a record for its details and recorded connections.':'Arrows follow saved relationships. Dashed arrows add context. Select a record to trace its connections.','bi-explorer-guide');
+  const layout=this.el(root,'div',undefined,'bi-explorer-layout'),panel=this.el(layout,'section',undefined,'bi-map bi-explorer-canvas');
+  const zoom=this.el(panel,'div',undefined,'bi-tools');this.button(zoom,'−',()=>this.scale(-.2)).setAttribute('aria-label','Zoom full map out');this.button(zoom,'Fit whole map',()=>{this.zoom=1;this.readable=false;this.fitAll=true;this.scale(0);});this.button(zoom,'Readable size',()=>{this.zoom=1;this.readable=true;this.fitAll=false;this.scale(0);});this.button(zoom,'+',()=>this.scale(.2)).setAttribute('aria-label','Zoom full map in');
+  const key=this.el(zoom,'div',undefined,'bi-key');for(const state of d.statusKey||[]){if(!m.nodes.some(n=>n.statusId===state.id))continue;const badge=this.el(key,'span',`${state.mark} ${state.label}`,'bi-badge');this.paintStatus(badge,state.id);badge.title=state.description;}
+  const scroll=this.el(panel,'div',undefined,'bi-map-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label','Full map. Scroll horizontally or vertically to explore.');
+  const plan=this.mode==='mindmap'?explorerMindmap(m,this.expanded,this.query):explorerFlow(m,this.query,this.connectionFocus);
+  const svg=this.diagram(scroll,plan);this.svg=svg;this.scale(0);this.mapObserver=new ResizeObserver(()=>this.scale(0));this.mapObserver.observe(scroll);if(offset){scroll.scrollLeft=offset.left;scroll.scrollTop=offset.top;}
+  if(activeId)[...svg.querySelectorAll('[data-id]')].find(n=>n.dataset.id===activeId)?.focus({preventScroll:true});
+  this.el(panel,'p',`${plan.shown} of ${plan.total} ${this.query?'matching ':''}records visible${this.mode==='mindmap'?' · expand a branch to reveal its items':''}. Scroll in either direction; Readable size keeps labels larger.${plan.cycleEdges?' Cyclic connections share a column.':''}`,'bi-caption');
+  if((!plan.shown&&!m.groups.length)||(this.query&&!plan.shown))this.el(panel,'p',this.query?'No matching saved items. Clear the search to return to the whole map.':'No saved records yet. Return to the dashboard to begin.','bi-muted');
+  const n=m.nodes.find(n=>n.id===this.selected);
+  if(n){const detail=this.el(layout,'aside',undefined,'bi-explorer-detail');const header=this.el(detail,'div',undefined,'bi-panel-head');this.el(header,'h2','Selected record');this.button(header,'Close',()=>{this.selected=null;this.draw();});this.el(detail,'h3',n.title);if(n.status)this.badge(detail,n);else this.el(detail,'small',n.type);if(n.detail)this.el(detail,'p',n.detail,'bi-snapshot');if(n.next)this.el(detail,'p','Next: '+n.next);if(n.quote)this.el(detail,'blockquote',n.quote);
+   if(n.recordId)this.button(detail,'Open record & evidence',()=>this.open('Generated/Items/'+n.recordId));
+   for(const source of n.sources||[])this.button(detail,'Open saved source · '+new Date(source.at).toLocaleString(),()=>this.open('Generated/'+source.logPath));
+   if(n.url&&/^(https?:\/\/|file:\/\/)/i.test(n.url)){const a=this.el(detail,'a','Open linked file / page ↗');a.href=n.url;}
+   const links=m.edges.filter(e=>e.from===n.id||e.to===n.id);this.el(detail,'h4',`${links.length} saved connections`);if(!links.length)this.el(detail,'p','No dependency or context connections recorded for this item.','bi-muted');
+   for(const e of links){const other=m.nodes.find(x=>x.id===(e.from===n.id?e.to:e.from));this.button(detail,`${e.from===n.id?'→':'←'} ${this.edgeLabel(e)} · ${other.title}`,()=>{this.selected=other.id;this.draw();});}
+   this.button(detail,'Focus connected records',()=>{this.mode='flow';this.query='';this.connectionFocus=n.id;this.draw();});
+  }
+ }
+ edgeLabel(e){return ({depends_on:'Must precede',branches_from:'Offshoot',implements:'Goal to work',informs:'Context'})[e.type]||e.type||'Recorded connection';}
+ diagram(parent,plan){
+  const doc=parent.ownerDocument,ns='http://www.w3.org/2000/svg',make=(tag,attrs={},text)=>{const n=doc.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,String(v));if(text!==undefined)n.textContent=text;return n;},svg=make('svg',{viewBox:`0 0 ${plan.width} ${plan.height}`,role:'group','aria-label':this.mode==='mindmap'?'Expandable mindmap':'Recorded dependency map'});parent.append(svg);
+  const defs=make('defs'),marker=make('marker',{id:'bi-explorer-arrow',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'});marker.append(make('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'var(--bi-muted)'}));defs.append(marker);svg.append(defs);
+  const boxes=new Map(plan.boxes.map(n=>[n.id,n]));
+  for(const e of plan.links){const a=boxes.get(e.from),b=boxes.get(e.to);if(!a||!b)continue;const right=b.x>a.x,x=a.x+(right?a.width:0),end=b.x+(right?0:b.width),y=a.y+a.height/2,ey=b.y+b.height/2,bend=a.x===b.x?x-70:(x+end)/2;
+   const curve=e.from===e.to?`M ${a.x+a.width-25} ${a.y} C ${a.x+a.width+70} ${a.y-60}, ${a.x+a.width+70} ${a.y+20}, ${a.x+a.width} ${a.y+25}`:`M ${x} ${y} C ${bend} ${y}, ${bend} ${ey}, ${end} ${ey}`;
+   const path=make('path',{d:curve,fill:'none',stroke:'var(--bi-muted)','stroke-width':1.6,...(e.category?{}:{'marker-end':'url(#bi-explorer-arrow)'}),...(e.type==='informs'?{'stroke-dasharray':'6 5'}:{})});path.append(make('title',{},e.category?'Mindmap grouping':this.edgeLabel(e)));svg.append(path);
+   if(!e.category&&plan.links.length<=24&&a.x!==b.x){const text=make('text',{x:(x+end)/2,y:(y+ey)/2-7,'text-anchor':'middle','font-size':11,fill:'var(--bi-muted)',class:'bi-edge-caption'},this.edgeLabel(e));svg.append(text);}
+  }
+  for(const n of plan.boxes){const group=make('g',{class:'pele-node bi-explorer-node'+(n.id===this.selected?' is-selected':''),'data-id':n.id,transform:`translate(${n.x},${n.y})`});if(n.group)group.dataset.category=n.group;
+   group.append(make('title',{},n.title));group.append(make('rect',{width:n.width,height:n.height,rx:n.root?32:10}));
+   const y=n.status?22:((n.height-(n.lines.length-1)*18)/2+5);n.lines.forEach((line,i)=>group.append(make('text',{x:n.width/2,y:y+i*18,'text-anchor':'middle','font-size':15},line)));
+   if(n.status)group.append(make('text',{x:n.width/2,y:n.height-13,'text-anchor':'middle','font-size':11},`${n.proposal?'AI suggestion · ':''}${n.status}`));
+   if(n.group){group.append(make('text',{x:n.width-15,y:18,'text-anchor':'middle','font-size':16},n.open?'−':'+'));group.setAttribute('aria-expanded',String(n.open));}
+   if(n.statusId)this.paintStatus(group,n.statusId);
+   if(!n.root){group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label',n.title+(n.status?' · '+n.status:''));const action=()=>{if(n.group){if(this.expanded.has(n.group))this.expanded.delete(n.group);else this.expanded.add(n.group);}else this.selected=n.id;this.draw();if(!n.group)this.containerEl.querySelector('.bi-explorer-detail')?.scrollIntoView({block:'nearest',behavior:'smooth'});};group.addEventListener('click',action);group.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action();}});}
+   svg.append(group);
+  }
+  return svg;
+ }
+}
+
 class BranchaInteractive extends Plugin{
- onload(){this.registerMarkdownCodeBlockProcessor('brancha-interactive',(source,el,ctx)=>{const id=source.trim();if(!valid(id)){el.textContent='Invalid Brancha project ID';return;}ctx.addChild(new Dashboard(el,this,id,ctx.sourcePath));});
+ onload(){this.registerMarkdownCodeBlockProcessor('brancha-map',(source,el,ctx)=>{const [id,sessionId]=source.trim().split(/\r?\n/).map(s=>s.trim());if(!valid(id)||sessionId&&!valid(sessionId)){el.textContent='Invalid map ID';return;}ctx.addChild(new MapExplorer(el,this,id,ctx.sourcePath,sessionId));});
+  this.registerMarkdownCodeBlockProcessor('brancha-interactive',(source,el,ctx)=>{const id=source.trim();if(!valid(id)){el.textContent='Invalid Brancha project ID';return;}ctx.addChild(new Dashboard(el,this,id,ctx.sourcePath));});
   this.registerMarkdownCodeBlockProcessor('brancha-timeline',(source,el,ctx)=>{const [id,sessionId]=source.trim().split(/\r?\n/).map(s=>s.trim());if(!valid(id)||sessionId&&!valid(sessionId)){el.textContent='Invalid timeline ID';return;}ctx.addChild(new Dashboard(el,this,id,ctx.sourcePath,{timelineOnly:true,sessionId}));});
   this.registerMarkdownCodeBlockProcessor('brancha-home',(_source,el,ctx)=>ctx.addChild(new Home(el,this,ctx.sourcePath)));
   this.registerMarkdownCodeBlockProcessor('brancha-chats',(_source,el,ctx)=>ctx.addChild(new Home(el,this,ctx.sourcePath,{chatsOnly:true})));
@@ -421,5 +539,5 @@ class BranchaInteractive extends Plugin{
   const home=()=>new Dashboard(document.createElement('div'),this,'home','').open('Generated/Navigation/Home');
   this.addCommand({id:'open-home',name:'Open Brancha Home',callback:home});this.addRibbonIcon('house','Brancha Home',home);}
 }
-if(typeof module!=='undefined'){module.exports=BranchaInteractive;module.exports.safeSvg=safeSvg;module.exports.mapSize=mapSize;module.exports.renderers={Dashboard,Home,Chat};}
-else globalThis.BranchaRenderers={Dashboard,Home,Chat,safeSvg};
+if(typeof module!=='undefined'){module.exports=BranchaInteractive;module.exports.safeSvg=safeSvg;module.exports.mapSize=mapSize;module.exports.renderers={Dashboard,Home,Chat,MapExplorer};module.exports.explorer={model:explorerModel,mindmap:explorerMindmap,flow:explorerFlow};}
+else globalThis.BranchaRenderers={Dashboard,Home,Chat,MapExplorer,safeSvg};

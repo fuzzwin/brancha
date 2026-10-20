@@ -6,7 +6,7 @@ class Child{constructor(el){this.containerEl=el;this.events=[];}registerEvent(of
 class Notice{constructor(text){const el=document.querySelector('#notice');el.textContent=text;el.hidden=false;clearTimeout(Notice.timer);Notice.timer=setTimeout(()=>el.hidden=true,6000);}}
 globalThis.BranchaHost={Plugin:class{},MarkdownRenderChild:Child,Notice};
 await import('/shared/renderer.js');
-const {Dashboard,Home,Chat,safeSvg}=globalThis.BranchaRenderers;
+const {Dashboard,Home,Chat,MapExplorer,safeSvg}=globalThis.BranchaRenderers;
 const obsidianLink=page=>'obsidian://open?path='+encodeURIComponent(identity.vault+'/'+(/\.(?:md|svg|canvas|json)$/i.test(page)?page:page+'.md'));
 const navigate=page=>{page=page.replace(/\.md$/,'');if(page!==currentPage){backCount++;history.pushState({branchaDepth:backCount},'', '#'+encodeURIComponent(page));render();}};
 const plugin={app:{vault:{adapter:{read,exists:async()=>true,mkdir:async()=>{},write:async(path)=>{if(path!=='.brancha/reviewer/request.json')throw Error('Only the review request control is available');return api('/api/review-request',{method:'POST'});}},on:(_name,callback)=>{subscribers.add(callback);return()=>subscribers.delete(callback);}},workspace:{openLinkText:async page=>navigate(page),get activeLeaf(){return {history:{backHistory:backCount?[true]:[],back:()=>history.back()},getViewState:()=>({type:'browser'})};},getActiveFile:()=>null}}};
@@ -46,9 +46,10 @@ async function render(){
   if(!page.startsWith('Generated/')){root.replaceChildren();el(root,'h1','Your personal Obsidian note');el(root,'p','Personal notes stay in Obsidian. This live browser shares Brancha’s generated project and chat views.');const a=el(root,'a','Open this note in Obsidian ↗');a.className='obsidian-note';a.href=obsidianLink(page);return;}
   if(page.endsWith('.svg')){const raw=await read(page);if(mine!==sequence)return;root.replaceChildren();root.className='note';root.append(safeSvg(raw,document));return;}
   const text=await read(page.endsWith('.md')?page:page+'.md');if(mine!==sequence)return;root.replaceChildren();
-  const block=text.match(/```(brancha-home|brancha-chats|brancha-chat|brancha-interactive|brancha-timeline)\n([^`]*?)```/);
+  const block=text.match(/```(brancha-home|brancha-chats|brancha-chat|brancha-interactive|brancha-timeline|brancha-map)\n([^`]*?)```/);
   if(block){const [id,session]=block[2].trim().split(/\r?\n/);const kind=block[1];
    if(kind==='brancha-home'||kind==='brancha-chats')current=new Home(root,plugin,page,{chatsOnly:kind==='brancha-chats'});
+   else if(kind==='brancha-map')current=new MapExplorer(root,plugin,id,page,session);
    else if(kind==='brancha-chat')current=new Chat(root,plugin,id,session,page);
    else current=new Dashboard(root,plugin,id,page,{timelineOnly:kind==='brancha-timeline',sessionId:session});
    current.onload();

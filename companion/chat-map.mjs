@@ -34,5 +34,6 @@ export function chatMindmap(w,c){
   return statusSvg(svg,selected.filter(n=>n.statusId).map(n=>({id:n.id,status:n.statusId})),{overview:true});
  };
  for(const g of populated)views[g.id]=diagram(g.title,[g]);
- return {version:1,overview:diagram(c.title,populated,{overview:true}),preview:diagram(c.title,populated,{limit:1,preview:true}),groups:populated,items,views,indexPath:`Chats/${c.projectId}-${c.sessionId}-index`,receiptCount:c.reports.length};
+ const edges=w.edges.filter(e=>recordIds.has(e.from)&&recordIds.has(e.to)).map(e=>({...e,from:recordIds.get(e.from),to:recordIds.get(e.to)}));
+ return {version:1,edges,overview:diagram(c.title,populated,{overview:true}),preview:diagram(c.title,populated,{limit:1,preview:true}),groups:populated,items,views,indexPath:`Chats/${c.projectId}-${c.sessionId}-index`,receiptCount:c.reports.length};
 }

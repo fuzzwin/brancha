@@ -163,3 +163,5 @@ Brancha Home lists projects and recent captured chats, with search, handovers an
 Obsidian Home now opens a chat overview from Recent chats. **All saved chats** searches captured chat titles, latest report excerpts, report headings and file links; each project also lists its captured chats. Overviews collect saved requests/results, explicitly source-linked outcomes, choices, artifacts and a chat timeline. Automatic capture runs after completed turns while the companion runs; it does not reconstruct uncaptured history or passively read cloud chats. See [Chat continuity](docs/chat-continuity.md).
 
 Daily recaps update automatically; Claude Code hooks and a local ChatGPT/Claude browser capture adapter are available. [Daily recap and capture setup](docs/daily-recap-and-capture.md). Browser capture is optional; real-client delivery must be verified before claiming coverage.
+
+Full-page maps: choose **Full-page map** on a project or chat dashboard for expandable branches, all-record dependency views, search, diagnostics and evidence links in both Obsidian and localhost. [Usage guide](docs/full-page-maps.md).

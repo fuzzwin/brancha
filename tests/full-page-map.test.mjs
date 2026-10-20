@@ -1,0 +1,21 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+import {demo} from '../dist/core.mjs';import {obsidianFiles} from '../companion/obsidian.mjs';
+const sandbox={module:{exports:{}},require:()=>({Plugin:class{},MarkdownRenderChild:class{},Notice:class{}})};vm.runInNewContext(fs.readFileSync(new URL('../assets/obsidian/brancha-interactive/main.js',import.meta.url),'utf8'),sandbox);const {explorer,mapSize}=sandbox.module.exports,plain=v=>JSON.parse(JSON.stringify(v));
+test('full-page maps retain all records beyond dashboard caps, including parked work, and never invent dependency edges',()=>{
+ const w=demo(),p=w.projects[0];w.nodes=Array.from({length:45},(_,i)=>({id:'record'+i,projectId:p.id,title:'A saved work item '+i,type:'task',status:i===44?'parked':'planned',criteria:[],detail:'Saved evidence boundary',evidence:'',next:''}));w.edges=[{id:'actual',from:'record0',to:'record44',type:'depends_on'}];w.events=[];const before=JSON.stringify(w),files=obsidianFiles(w),d=JSON.parse(files[`Interactive/${p.id}.json`]),m=explorer.model(d);
+ assert(files[`Explorers/${p.id}.md`].includes('```brancha-map'));assert.equal(d.views.group_work.nodes.length,24);assert.equal(m.nodes.length,45);assert(m.groups.some(g=>g.nodeIds.includes('record44')));
+ const all=explorer.mindmap(m,new Set(m.groups.map(g=>g.id))),collapsed=explorer.mindmap(m,new Set()),flow=explorer.flow(m);
+ assert.equal(all.shown,45);assert.equal(collapsed.shown,0);assert.equal(explorer.mindmap(m,new Set(),'item 44').shown,1);assert.equal(flow.boxes.length,45);assert.deepEqual(plain(flow.links),w.edges);assert.equal(m.isolated.length,43);assert.equal(JSON.stringify(w),before);
+});
+test('dependency layout keeps cycles, self-loops, disconnected nodes and arrow direction without infinite ranks',()=>{
+ const model={nodes:['a','b','c','d','alone'].map(id=>({id,title:id})),edges:[{from:'a',to:'b',type:'depends_on'},{from:'b',to:'c',type:'informs'},{from:'c',to:'b',type:'informs'},{from:'c',to:'d',type:'branches_from'},{from:'alone',to:'alone',type:'informs'}]};const before=JSON.stringify(model),plan=explorer.flow(model),by=new Map(plan.boxes.map(n=>[n.id,n]));
+ assert.equal(plan.boxes.length,5);assert.equal(plan.links.length,5);assert.equal(plan.cycleEdges,3);assert(by.get('a').x<by.get('b').x);assert.equal(by.get('b').x,by.get('c').x);assert(by.get('c').x<by.get('d').x);for(const n of plan.boxes)assert([n.x,n.y,n.width,n.height].every(Number.isFinite));assert.equal(explorer.flow(model,'','a').shown,2);assert.equal(JSON.stringify(model),before);
+});
+test('full chat map retains all saved replies, and exposes only explicit in-scope record connections',()=>{
+ const w=demo(),p=w.projects[0];w.nodes=[];w.edges=[];w.events=Array.from({length:85},(_,i)=>({id:'event'+i,projectId:p.id,at:'2026-10-20T01:00:00Z',text:'Captured report',capture:{title:'Reply '+i,type:'source',status:'active',detail:'A saved report',capture:{provider:'codex',sessionId:'chat',turnId:'turn'+i,request:'Request '+i}}}));
+ for(const id of ['one','two'])w.nodes.push({id,projectId:p.id,type:'decision',status:'planned',title:id,criteria:[],detail:'A choice',mapper:{sessionId:'chat',turnId:'turn0',quote:'A saved quote'}});w.edges=[{id:'explicit',from:'one',to:'two',type:'informs'}];const files=obsidianFiles(w),d=JSON.parse(files[`Interactive/chat-${p.id}-chat.json`]),m=explorer.model(d),plan=explorer.flow(m);
+ assert(files[`Explorers/chat-${p.id}-chat.md`].includes('```brancha-map'));assert.equal(m.nodes.length,172);assert.equal(plan.boxes.length,172);assert.equal(plan.links.length,1);const edge=plan.links[0];assert.equal(m.nodes.find(n=>n.id===edge.from).recordId,'one');assert.equal(m.nodes.find(n=>n.id===edge.to).recordId,'two');assert.equal(edge.type,'informs');assert(m.nodes.filter(n=>n.type==='reply').every(n=>files[n.sources[0].logPath+'.md']));
+});
+test('full-page scaling uses remaining pane height, retains readable controls and supports an actual fit overview',()=>{
+ const args={width:1800,height:2000,availableWidth:1000,availableHeight:760,fullPage:true};assert.equal(mapSize(args).frame,760);assert(mapSize(args).scale>=11/15);const fit=mapSize({...args,fitAll:true});assert(fit.height<=760);assert(fit.width<=1000);assert.equal(mapSize({...args,readable:true}).scale,1);
+});
