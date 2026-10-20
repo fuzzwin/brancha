@@ -2,3 +2,11 @@
 .brancha-map .inline-title { display: none !important; }
 .brancha-map .metadata-container { display: none !important; }
 .brancha-map .image-embed { display: block; }
+/* Scoped to generated records. Personal notes and the vault theme are untouched. */
+.brancha-record { --file-line-width: 1100px; }
+.brancha-record .markdown-preview-sizer { max-width: 1100px; }
+.brancha-record table { width: 100%; }
+.brancha-record td { overflow-wrap: anywhere; vertical-align: top; }
+.brancha-record .markdown-rendered { overflow-x: auto; }
+
+.brancha-record .inline-title, .brancha-record .metadata-container { display: none !important; }

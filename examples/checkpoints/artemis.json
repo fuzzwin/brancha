@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "provider": "artemis",
+  "sessionId": "fictional-mobile-check",
+  "eventId": "trace-1",
+  "projectId": "YOUR_PROJECT_ID",
+  "title": "Check project switching on Android",
+  "summary": "Fictional receipt showing how selected device evidence can be attached.",
+  "next": "Inspect the device trace and check the acceptance criteria.",
+  "status": "reported done",
+  "sourceRef": "example-traces/fictional-trace/status.json",
+  "acceptanceCriteria": [{"text": "Both projects retain their own next action", "status": "reported done", "evidence": "Fictional observation; not a real device result.", "source": "example-traces/fictional-trace/status.json"}],
+  "run": {
+    "phase": "probe",
+    "outcome": "passed",
+    "decision": "undecided",
+    "hypothesis": "Project switching preserves each project's context.",
+    "baseline": "Fictional Android scenario.",
+    "observation": "Example only; this fixture does not establish device behaviour.",
+    "lesson": "A passing execution report is separate from user acceptance.",
+    "artifacts": [{"label": "Fictional device trace", "ref": "example-traces/fictional-trace/status.json"}]
+  }
+}

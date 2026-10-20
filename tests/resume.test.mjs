@@ -14,3 +14,10 @@ test('a fresh instance receives recent checkpoints even with many older active t
   assert(brief.includes('## Continue from here\n\n'+checkpoint.next));
   assert.equal(JSON.stringify(w), before);
 });
+
+test('recent local checkpoint next actions take precedence over older active tasks and cloud notes',()=>{
+ const w=demo(),p=w.projects[0],template=w.nodes[0];
+ const old={...template,id:'cloud-old',type:'source',cloudOrigin:true,next:'An old cloud next step.',criteria:[]};w.nodes.push(old);event(w,p.id,'Earlier cloud checkpoint',old.id);
+ const local={...template,id:'local-new',type:'source',status:'reported_done',next:'Review the current portable change.',criteria:[]};w.nodes.push(local);event(w,p.id,'Latest local checkpoint',local.id);
+ const brief=contextBrief(w,p.id);assert(brief.includes('## Continue from here\n\n'+local.next));
+});

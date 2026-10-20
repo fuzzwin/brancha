@@ -2,23 +2,26 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {atomic,controls,paths as capturePaths} from '../adapters/capture.mjs';
 import {validate} from '../dist/core.mjs';
 import {obsidianFiles} from './obsidian.mjs';
+import {atomicText} from '../skills/brancha/scripts/storage.mjs';
+import {loadConfig} from '../scripts/config.mjs';
 const base=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const vault=path.resolve(process.argv[2]||path.join(base,'vault'));
-const file=path.join(vault,'brancha.json'),port=Number(process.argv[3]||51207);
+export function startServer(options={}){
+const vault=path.resolve(options.vault||path.join(base,'vault'));
+const file=path.join(vault,'brancha.json'),port=Number(options.port||51207);
 fs.mkdirSync(vault,{recursive:true});
 if(!fs.existsSync(file))fs.copyFileSync(path.join(base,'dist/starter-workspace.json'),file,fs.constants.COPYFILE_EXCL);
-const captureConfig=process.env.BRANCHA_CONFIG?JSON.parse(fs.readFileSync(process.env.BRANCHA_CONFIG,'utf8')):null;
+const captureConfig=options.config||null;
 function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=JSON.parse(fs.readFileSync(capturePaths(captureConfig).status,'utf8'));}catch{}return {...latest,paused:controls(captureConfig).paused===true};}
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 let lastHash='',lastError='';
 function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');return {raw,w:validate(JSON.parse(raw)),etag:hash(raw)};}
 function refresh(){const r=read();if(r.etag===lastHash)return r;
  const generated=path.join(vault,'Generated');fs.mkdirSync(generated,{recursive:true});
- for(const [name,original]of Object.entries(obsidianFiles(r.w))){if(name==='brancha.json')continue;let content=original.replaceAll('[[','[[Generated/');if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}const dest=path.join(generated,name);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest+'.tmp',content);fs.renameSync(dest+'.tmp',dest);}
+ for(const [name,original]of Object.entries(obsidianFiles(r.w))){if(name==='brancha.json')continue;let content=original.replaceAll('[[','[[Generated/');if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}atomicText(path.join(generated,name),content);}
  fs.writeFileSync(path.join(generated,'START HERE.md'),'# Brancha live views\n\nGenerated from ../brancha.json while the local companion is running. These views are overwritten on each record update. Keep your own notes in ../Notes.\n\n[[Generated/Brancha.canvas|Open the whole map]]\n\n'+r.w.projects.map(p=>`- [[Generated/Projects/${p.id}|${p.title}]]`).join('\n'));
  fs.mkdirSync(path.join(vault,'Notes'),{recursive:true});lastHash=r.etag;lastError='';return r;
 }
@@ -43,7 +46,7 @@ const server=http.createServer(async(req,res)=>{res.setHeader('Cache-Control','n
     for(const p of current.w.projects){const found=next.projects.find(x=>x.id===p.id);if(!found||found.prompt!==p.prompt)throw Error('Live updates must preserve projects and original prompts. Use a separate workspace for replacement imports.');}
     if(next.revision<=current.w.revision)throw Error('Revision must advance');
     const backups=path.join(vault,'.brancha-backups');fs.mkdirSync(backups,{recursive:true});fs.writeFileSync(path.join(backups,Date.now()+'-'+crypto.randomUUID()+'.json'),current.raw,{flag:'wx'});
-    const temp=file+'.'+crypto.randomUUID()+'.tmp';fs.writeFileSync(temp,JSON.stringify(next,null,2)+'\n',{flag:'wx'});fs.renameSync(temp,file);
+    atomic(file,next);
    }finally{fs.closeSync(fd);fs.unlinkSync(lock);}
    let r;try{r=refresh();}catch(e){lastError=e.message;r=read();}
    return send(200,{workspace:r.w,etag:r.etag,vault,viewError:lastError,capture:captureStatus()});
@@ -58,4 +61,10 @@ const server=http.createServer(async(req,res)=>{res.setHeader('Cache-Control','n
 const timer=setInterval(()=>{try{refresh();}catch(e){lastError=e.message;}},1000);
 server.on('error',e=>{clearInterval(timer);console.error(e.message);process.exitCode=1;});
 server.listen(port,'127.0.0.1',()=>console.log(`Brancha live: ${origin}\nVault: ${vault}\nKeep this process running. Ctrl+C stops live updates.`));
-function stop(){clearInterval(timer);server.close();}process.on('SIGINT',stop);process.on('SIGTERM',stop);
+function stop(){clearInterval(timer);server.close();}
+return {server,stop};
+}
+if(process.argv[1]&&pathToFileURL(path.resolve(process.argv[1])).href===import.meta.url){
+ const instance=startServer({vault:process.argv[2],port:process.argv[3],config:process.env.BRANCHA_CONFIG?loadConfig().config:null});
+ process.on('SIGINT',instance.stop);process.on('SIGTERM',instance.stop);
+}

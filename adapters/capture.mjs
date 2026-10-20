@@ -1,16 +1,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import {validate,event,uid,blank} from '../dist/core.mjs';
+import {validate,event,uid,blank,redactText} from '../dist/core.mjs';
+import {atomic} from '../skills/brancha/scripts/storage.mjs';
+export {atomic} from '../skills/brancha/scripts/storage.mjs';
 export const digest=s=>crypto.createHash('sha256').update(s).digest('hex');
 export function redact(text=''){
- return String(text).replace(/\b(?:sk-(?:proj-)?[\w-]{16,}|gh[pousr]_[\w]{20,}|github_pat_[\w_]{20,}|AKIA[A-Z0-9]{16})\b/g,'[redacted credential]')
- .replace(/(authorization\s*[:=]\s*(?:bearer\s+)?)[^\s"'`]+/ig,'$1[redacted]')
- .replace(/((?:api[_ -]?key|password|access[_ -]?token|secret)\s*[:=]\s*)[^\s"'`]+/ig,'$1[redacted]')
- .replace(/^\*?Usage\b.*$/gmi,'').trim();
+ return redactText(text).replace(/^\*?Usage\b.*$/gmi,'').trim();
 }
 export function paths(config){const vault=path.resolve(config.vault);return {vault,file:path.join(vault,'brancha.json'),state:path.join(vault,'.brancha'),control:path.join(vault,'.brancha/control.json'),status:path.join(vault,'.brancha/status.json')};}
-export function atomic(file,value){fs.mkdirSync(path.dirname(file),{recursive:true});const temp=file+'.'+crypto.randomUUID()+'.tmp';try{fs.writeFileSync(temp,JSON.stringify(value,null,2)+'\n',{flag:'wx',mode:0o600});fs.renameSync(temp,file);}finally{if(fs.existsSync(temp))fs.unlinkSync(temp);}}
+export function sessionAllowed(config, sessionId){
+ const policy=config.capturePolicy;
+ if(policy?.excludedSessionIds?.includes(sessionId))return false;
+ return policy?.mode!=='approved'||Boolean(policy.approvedSessionIds?.includes(sessionId));
+}
 export function controls(config){const p=paths(config);try{return JSON.parse(fs.readFileSync(p.control,'utf8'));}catch{return {paused:false};}}
 export function status(config,patch={}){const p=paths(config);let current={};try{current=JSON.parse(fs.readFileSync(p.status,'utf8'));}catch{}const next={...current,...patch,paused:controls(config).paused===true};atomic(p.status,next);return next;}
 function route(config,input,w){
@@ -20,7 +23,9 @@ function route(config,input,w){
  return 'codex_inbox';
 }
 export function capture(config,input){
- const p=paths(config);if(controls(config).paused)return {captured:false,reason:'paused'};
+ const p=paths(config);if(config.captureEnabled===false)return {captured:false,reason:'disabled'};
+ if(!sessionAllowed(config,input.sessionId))return {captured:false,reason:'excluded'};
+ if(controls(config).paused)return {captured:false,reason:'paused'};
  const text=redact(input.message);if(!text||text.length<20)return {captured:false,reason:'empty'};
  if(!input.sessionId||!input.turnId)throw Error('Capture requires session and turn IDs.');
  fs.mkdirSync(p.vault,{recursive:true});let fd;try{fd=fs.openSync(p.file+'.lock','wx');}catch(e){if(e.code==='EEXIST')return {captured:false,retry:true,reason:'locked'};throw e;}
@@ -40,7 +45,7 @@ export function capture(config,input){
   event(w,projectId,'Codex checkpoint: '+title,node.id);Object.assign(w.events.at(-1),{at,captureId,capture:structuredClone(data)});
   validate(w);const raw=JSON.stringify(w,null,2)+'\n';if(Buffer.byteLength(raw)>8*1024*1024)throw Error('Workspace reached 8 MB; export/archive old checkpoints before continuing capture.');
   const backups=path.join(p.state,'backups');fs.mkdirSync(backups,{recursive:true});if(fs.existsSync(p.file))fs.copyFileSync(p.file,path.join(backups,Date.now()+'-'+crypto.randomUUID()+'.json'));
-  const temp=p.file+'.'+crypto.randomUUID()+'.tmp';try{fs.writeFileSync(temp,raw,{flag:'wx',mode:0o600});fs.renameSync(temp,p.file);}finally{if(fs.existsSync(temp))fs.unlinkSync(temp);}
+  atomic(p.file,w);
   status(config,{enabled:true,lastCaptureAt:at,lastProjectId:projectId,lastTitle:title,lastCaptureId:captureId,error:null});
   return {captured:true,projectId,nodeId,revision:w.revision};
  }finally{fs.closeSync(fd);fs.unlinkSync(p.file+'.lock');}

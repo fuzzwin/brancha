@@ -1,5 +1,32 @@
-import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {atomic} from '../adapters/capture.mjs';
-const args=process.argv.slice(2),value=k=>args[args.indexOf(k)+1];
-const dir=path.join(os.homedir(),'.config/brancha');const configFile=value('--config')&&args.includes('--config')?path.resolve(value('--config')):path.join(dir,'config.json');
-if(fs.existsSync(configFile))throw Error('Configuration already exists: '+configFile+'. Edit it explicitly to preserve project routing.');
-const config={vault:args.includes('--vault')?path.resolve(value('--vault')):path.join(os.homedir(),'Documents/Brancha'),sessionsDirectory:path.join(process.env.CODEX_HOME||path.join(os.homedir(),'.codex'),'sessions'),port:51207,pollMs:3000,sessionProjects:{},directoryProjects:[]};atomic(configFile,config);console.log('Created '+configFile+'\nStart with: node companion/service.mjs '+JSON.stringify(configFile)+'\nOpen http://127.0.0.1:51207 and the configured vault in Obsidian.');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {atomic} from '../skills/brancha/scripts/storage.mjs';
+import {absolutePath, defaultConfigPath, loadConfig} from './config.mjs';
+
+const args = process.argv.slice(2), flags = new Set(['--config', '--vault', '--sessions', '--port', '--no-codex']);
+const values = {};
+for (let i = 0; i < args.length; i++) {
+  const key = args[i];
+  if (!flags.has(key) || key in values) throw Error('Unknown or duplicate option: ' + key);
+  if (key === '--no-codex') values[key] = true;
+  else { if (!args[i+1] || args[i+1].startsWith('--')) throw Error('Missing value for ' + key); values[key] = args[++i]; }
+}
+const configFile = absolutePath(values['--config'] || process.env.BRANCHA_CONFIG || defaultConfigPath());
+if (fs.existsSync(configFile)) {
+  loadConfig(configFile);
+  console.log('Existing configuration preserved. Run npm run doctor to inspect it.');
+} else {
+  const port = Number(values['--port'] || 51207);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) throw Error('port must be an integer from 1024 to 65535.');
+  const config = {
+    vault: values['--vault'] ? absolutePath(values['--vault']) : path.join(os.homedir(), 'Documents', 'Brancha'),
+    captureEnabled: !values['--no-codex'],
+    sessionsDirectory: values['--sessions'] ? absolutePath(values['--sessions']) : path.join(process.env.CODEX_HOME || path.join(os.homedir(), '.codex'), 'sessions'),
+    port, pollMs: 3000, sessionProjects: {}, directoryProjects: []
+  };
+  atomic(configFile, config);
+  console.log('Created ' + configFile);
+  console.log('Start with: node companion/service.mjs ' + JSON.stringify(configFile));
+  console.log('Open http://127.0.0.1:' + port + ' and the configured vault in Obsidian.');
+}

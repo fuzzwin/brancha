@@ -4,8 +4,10 @@ Keep the thread across AI projects: goals, decisions, branches, evidence, next s
 
 Brancha is a local Node.js companion, browser workspace and portable skill. It renders diagrams with [Pele](https://pele.run/) and generates linked notes, project maps, a Canvas overview, a Bases table and resume briefs for Obsidian.
 
-## Two entry points
+## Entry points
 
+- **Portable Local MCP:** shared resume/checkpoint tools for compatible AI clients, using the local record without a cloud service or Codex session folder.
+- **Checkpoint CLI:** a versioned receipt format for trusted hooks, test tools and other integrations.
 - **Codex Local:** automatic local completion capture, the browser map and live generated Obsidian views.
 - **Brancha Connect for ChatGPT:** a private cloud MCP service and skill for resuming projects and saving checkpoints during an activated task. It stays available while the Mac is off; it cannot passively watch every ChatGPT chat.
 
@@ -15,7 +17,7 @@ In the app, **Use with ChatGPT** explains both entry points and gives you a star
 
 ## Quick start
 
-Requires Node.js 22+ and local Codex session files. Obsidian is optional. No packages, model API keys or paid API requests are required by the capture adapter.
+Requires Node.js 22+. Codex session files are needed only for its optional automatic capture adapter. Obsidian is optional. No packages, model API keys or paid API requests are required by the capture adapter.
 
 ```sh
 git clone https://github.com/fuzzwin/brancha.git
@@ -23,6 +25,8 @@ cd brancha
 npm run setup
 npm start
 ```
+
+For other AI tools, run setup with `--no-codex`. Then run `npm run doctor` to inspect the configuration. See [portable setup](docs/portable-setup.md) for MCP connection snippets and [checkpoint protocol](docs/checkpoint-protocol.md) for optional Harness²/ARTEMIS receipts.
 
 Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Brancha`) and then `Generated/Brancha.canvas`. Each project links to a clean dependency mindmap, with a compact editable Canvas and full evidence in linked notes.
 
@@ -64,12 +68,12 @@ Use exact chat routes for shared folders containing unrelated work. `node script
 
 ## Obsidian and the skill
 
-`brancha.json` in the vault is the shared record. The app, capture adapter and skill use file locks and atomic saves. Obsidian views refresh about one second after a change; the browser checks about every two seconds and defers changes while a form is open. Stale concurrent saves are rejected.
+`brancha.json` in the vault is the shared record. The app, capture adapters, local MCP and skill use file locks and atomic saves. Transient file replacement locks are retried within a bounded window without deleting the previous destination. Obsidian views refresh about one second after a change; the browser checks about every two seconds and defers changes while a form is open. Stale concurrent saves are rejected.
 
 - `Generated/` is regenerated. Do not store personal edits there.
 - `Notes/` is for your manual Obsidian notes. These notes are preserved, but are not automatically parsed back into the project record.
 - `.brancha/` contains local cursors, status and capture backups.
-- To hide duplicate titles and properties on generated maps, copy `assets/obsidian/brancha-map.css` into the vault’s `.obsidian/snippets/` folder and enable it under Appearance → CSS snippets.
+- Run `npm run obsidian-style` to install scoped map/record styling with backups, or copy `assets/obsidian/brancha-map.css` into the vault’s `.obsidian/snippets/` folder and enable it under Appearance → CSS snippets.
 
 Copy `skills/brancha` into your tool's skill directory (for example `~/.codex/skills/brancha`) or install the manual plugin package. The skill reads the local connection and helps you resume projects, review reports, record actual evidence and map decisions. It is reusable instructions plus validated helpers; the service supplies automatic capture.
 
@@ -107,7 +111,7 @@ Plugins containing lifecycle hooks are for manual desktop distribution, not the 
 
 ## Local data and sharing
 
-The service binds only to loopback and uses a per-start token plus origin checks for browser writes. It does not upload captured chats. The app loads its display fonts from Google Fonts; the capture adapter itself has no network calls. A separately hosted browser copy is a snapshot and does not automatically sync with your local vault.
+The service binds only to loopback and uses a per-start token plus origin checks for browser writes. It does not upload captured chats. The local app uses bundled assets and system font fallbacks; its capture adapter and local MCP server make no network calls. The separately configured cloud bridge makes authenticated network requests. A separately hosted browser copy is a snapshot and does not automatically sync with your local vault.
 
 This repository contains reusable code and fictional examples. Keep private configs, vaults, actual project history, credentials and hosting metadata out of commits. The included `.gitignore` covers common runtime locations; review files before publishing your own fork.
 
@@ -117,6 +121,6 @@ This repository contains reusable code and fictional examples. Keep private conf
 npm test
 ```
 
-Tests cover routing, no-history activation, final-only parsing, split UTF-8 writes, duplicates, lock conflicts, restart recovery, pause behaviour, credential masking, source history and Obsidian links. This is an early working prototype; it is not a universal screen or chat recorder.
+Tests use fictional fixtures and cover portable setup, local MCP round trips, concurrent clients, status preservation, verification stages, dependency chains and reimports, temporary file locks, routing, no-history activation, final-only parsing, split UTF-8 writes, duplicates, lock conflicts, restart recovery, pause behaviour, credential masking, source history and Obsidian links. This is an early working prototype; it is not a universal screen or chat recorder.
 
 MIT licensed. The bundled Pele 1.7.0 library is MIT licensed; its original licence and package integrity receipt are in `dist/vendor/`.

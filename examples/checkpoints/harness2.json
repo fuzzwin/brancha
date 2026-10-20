@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "provider": "harness2",
+  "sessionId": "fictional-layout-comparison",
+  "eventId": "probe-1",
+  "projectId": "YOUR_PROJECT_ID",
+  "title": "Compare a simpler navigation layout",
+  "summary": "Fictional example: the candidate keeps all target controls reachable.",
+  "next": "Review the result before accepting the change.",
+  "status": "reported done",
+  "evidence": "Example fixture only; no real benchmark was executed.",
+  "run": {
+    "phase": "probe",
+    "outcome": "passed",
+    "decision": "undecided",
+    "hypothesis": "A simpler layout reduces missed controls.",
+    "baseline": "Same fictional task, model configuration and viewport.",
+    "observation": "The fictional candidate reached every target control.",
+    "lesson": "Inspect the artifacts before retaining this approach.",
+    "artifacts": [{"label": "Fictional comparison", "ref": "example-runs/layout/probe-1/report.json"}]
+  }
+}

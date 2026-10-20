@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {capture,atomic,paths,status,redact,controls} from './capture.mjs';
+import {capture,atomic,paths,status,redact,controls,sessionAllowed} from './capture.mjs';
 function logs(root,out=[]){if(!fs.existsSync(root))return out;for(const e of fs.readdirSync(root,{withFileTypes:true})){const p=path.join(root,e.name);if(e.isDirectory())logs(p,out);else if(e.isFile()&&e.name.endsWith('.jsonl'))out.push(p);}return out;}
 function metadata(file){const fd=fs.openSync(file,'r');try{const b=Buffer.alloc(65536),n=fs.readSync(fd,b,0,b.length,0),first=b.subarray(0,n).toString('utf8').split('\n')[0],r=JSON.parse(first);return r.type==='session_meta'?r.payload:{};}catch{return {};}finally{fs.closeSync(fd);}}
 export class CodexWatcher{
@@ -19,6 +19,7 @@ export class CodexWatcher{
    if(cursor.identity!==stat.ino||stat.size<cursor.offset){cursor.offset=0;cursor.partial='';cursor.identity=stat.ino;}
    if(stat.size===cursor.offset)continue;
    if(!cursor.sessionId){const meta=metadata(file);cursor.sessionId=meta.id;cursor.cwd=meta.cwd;cursor.subagent=typeof meta.source==='object'&&Boolean(meta.source?.subagent);}
+   if(cursor.subagent||!sessionAllowed(this.config,cursor.sessionId)){cursor.offset=stat.size;cursor.partial='';continue;}
    const fd=fs.openSync(file,'r');try{
     const count=Math.min(stat.size-cursor.offset,1024*1024),bytes=Buffer.alloc(count),n=fs.readSync(fd,bytes,0,count,cursor.offset);cursor.offset+=n;
     const whole=Buffer.concat([Buffer.from(cursor.partial||'','base64'),bytes.subarray(0,n)]);let last=whole.lastIndexOf(10);if(last<0){if(whole.length>8*1024*1024)throw Error('Codex record exceeded 8 MB; adapter needs review.');cursor.partial=whole.toString('base64');continue;}
