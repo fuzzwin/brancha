@@ -4,6 +4,24 @@ Branchi helps you pick up a project without starting from scratch. It keeps your
 
 Use it when your work stretches across several chats, you keep exploring different ideas, or you need to return after a break. You can add records by hand, or connect supported AI tools to save useful updates.
 
+## See Branchi in action
+
+These screenshots use **Branchi — fictional example**, a made-up project about planning Branchi itself. Every goal, decision, result and progress count is sample data. No real user projects or captured conversations are shown.
+
+**1. Pick up where you left off.** The overview brings together the next action, saved progress and work that needs attention.
+
+![Branchi fictional project overview showing its next action and progress cards](docs/images/branchi-overview.jpg)
+
+**2. See how the work connects.** Explore the goal, decisions, results and offshoots. The work branch is collapsed here; open it to reveal its tasks.
+
+![Branchi fictional mindmap with connected goals, decisions, results and alternative branches](docs/images/branchi-map.jpg)
+
+**3. Remember why you chose something.** A decision keeps its reasoning, alternatives, next action and related work together.
+
+![Fictional Branchi decision showing its reason, alternatives, consequences and next action](docs/images/branchi-decision.jpg)
+
+[How the example images were made](docs/images/README.md) · [Download the fictional example record](examples/branchi-demo.json)
+
 ## What could I use it for?
 
 | You want to… | Branchi helps you keep… |

@@ -4,6 +4,14 @@ Branchi is a memory and a visual map for a project. It helps you answer: **What 
 
 You do not need to think in diagrams. Start with a goal and a few useful updates; Branchi turns the saved records into dashboards, maps and a handover you can return to.
 
+## A visual example
+
+This is **Branchi — fictional example**: a made-up project about planning Branchi itself. The records, decisions and progress are demonstration data, not real user work.
+
+![The fictional Branchi project overview with a next action and progress cards](images/branchi-overview.jpg)
+
+The overview answers “Where am I up to?” The [branching map](images/branchi-map.jpg) shows how the work connects, and the [decision example](images/branchi-decision.jpg) shows why a choice was made and what comes next.
+
 ## When it is most useful
 
 Branchi is a good fit for projects that take more than one conversation, involve several alternative directions or are interrupted by other work. It can help you keep related work together across supported AI tools. For a quick question you will never return to, a normal chat may be enough.
