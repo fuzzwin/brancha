@@ -1,4 +1,4 @@
-const {Plugin,MarkdownRenderChild,Notice}=require('obsidian');
+const {Plugin,MarkdownRenderChild,Notice}=globalThis.BranchaHost||require('obsidian');
 // Work in CSS pixels; never magnify a small diagram just to fill a wide note.
 // Very narrow or dense maps keep an 11px label floor and can scroll.
 function mapSize({width,height,availableWidth,availableHeight,zoom=1,readable=false,fullWidth=false}){
@@ -98,6 +98,7 @@ class Dashboard extends MarkdownRenderChild{
   this.button(nav,'← Home',()=>this.open('Generated/Navigation/Home'));
   this.button(nav,'Chats',()=>root.querySelector('.bi-project-chats')?.scrollIntoView({block:'start',behavior:'smooth'}));
   this.button(nav,'Original plan',()=>this.open(`Generated/Projects/${this.id}`));
+  this.button(nav,'Git branches',()=>this.open(`Generated/Branches/${this.id}`));
   this.button(nav,'Timeline',()=>root.querySelector('.bi-timeline')?.scrollIntoView({block:'start',behavior:'smooth'}));
   this.button(nav,'How to use',()=>{const help=root.querySelector('.bi-help');help.open=!help.open;if(help.open)help.scrollIntoView({block:'nearest'});});
   const help=this.el(root,'details',undefined,'bi-help');
@@ -309,7 +310,7 @@ class Home extends Dashboard{
  async refresh(){try{const raw=await this.plugin.app.vault.adapter.read(this.path);if(this.dead||raw===this.previous)return;this.previous=raw;this.data=JSON.parse(raw);if(!Array.isArray(this.data.projects))throw Error('Invalid Home data');this.draw();}catch(e){if(!this.dead){this.containerEl.replaceChildren();this.el(this.containerEl,'p','Home is waiting for the Brancha companion. Open the plain project list below.');}}}
  draw(){
   const root=this.containerEl,d=this.data,r=d.review;root.replaceChildren();root.classList.add('bi-home');
-  this.el(root,'h1',this.chatsOnly?'Your saved chats':'Brancha Home');this.el(root,'p',this.chatsOnly?'Find what you worked on, what was saved, and where to continue.':'Choose a project, or pick up a recent chat.','bi-home-intro');const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,'← Back',()=>this.back());this.button(nav,this.chatsOnly?'← Home':'All saved chats',()=>this.open(this.chatsOnly?'Generated/Navigation/Home':'Generated/Chats/index'));this.button(nav,'Daily recap',()=>this.open('Generated/Recaps/index'));this.button(nav,'Set up another chat',()=>this.open('Generated/Guides/Chat privacy'));
+  this.el(root,'h1',this.chatsOnly?'Your saved chats':'Brancha Home');if(d.workspace){const identity=this.el(root,'p',`LIVE · ${d.workspace.name} · revision ${d.revision}`,'bi-workspace-identity');identity.title=d.workspace.vault;const browser=this.el(identity,'a',' · Open localhost');browser.href=d.workspace.localUrl;}this.el(root,'p',this.chatsOnly?'Find what you worked on, what was saved, and where to continue.':'Choose a project, or pick up a recent chat.','bi-home-intro');const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,'← Back',()=>this.back());this.button(nav,this.chatsOnly?'← Home':'All saved chats',()=>this.open(this.chatsOnly?'Generated/Navigation/Home':'Generated/Chats/index'));this.button(nav,'Daily recap',()=>this.open('Generated/Recaps/index'));this.button(nav,'Set up another chat',()=>this.open('Generated/Guides/Chat privacy'));
   const setup=this.el(root,'div',undefined,'bi-chat-setup');this.el(setup,'span',d.privacy?`${d.privacy.includedSavedChats} included chat${d.privacy.includedSavedChats===1?'':'s'} · ${d.privacy.excludedSavedChats} previously saved chats excluded by your privacy settings.`:'Only individually included chats with saved turns appear here.');
   const bar=this.el(root,'div',undefined,'bi-home-bar'),input=this.el(bar,'input');input.type='search';input.placeholder='Find a project or chat…';input.setAttribute('aria-label','Find a project or chat');input.value=this.search;
   const check=this.button(bar,'Check now',async()=>{check.disabled=true;try{const adapter=this.plugin.app.vault.adapter;for(const folder of ['.brancha','.brancha/reviewer'])if(!await adapter.exists(folder))await adapter.mkdir(folder);await adapter.write('.brancha/reviewer/request.json',JSON.stringify({id:Date.now()+'_'+Math.random().toString(16).slice(2),requestedAt:new Date().toISOString()}));new Notice('Check requested. Brancha will review new saved turns and update Obsidian.');check.textContent='Check requested';}catch(e){check.disabled=false;new Notice('Check could not be requested. Open Connection status for setup details.');}});
@@ -411,7 +412,7 @@ class Chat extends Dashboard{
  }
 
 }
-module.exports=class BranchaInteractive extends Plugin{
+class BranchaInteractive extends Plugin{
  onload(){this.registerMarkdownCodeBlockProcessor('brancha-interactive',(source,el,ctx)=>{const id=source.trim();if(!valid(id)){el.textContent='Invalid Brancha project ID';return;}ctx.addChild(new Dashboard(el,this,id,ctx.sourcePath));});
   this.registerMarkdownCodeBlockProcessor('brancha-timeline',(source,el,ctx)=>{const [id,sessionId]=source.trim().split(/\r?\n/).map(s=>s.trim());if(!valid(id)||sessionId&&!valid(sessionId)){el.textContent='Invalid timeline ID';return;}ctx.addChild(new Dashboard(el,this,id,ctx.sourcePath,{timelineOnly:true,sessionId}));});
   this.registerMarkdownCodeBlockProcessor('brancha-home',(_source,el,ctx)=>ctx.addChild(new Home(el,this,ctx.sourcePath)));
@@ -419,7 +420,6 @@ module.exports=class BranchaInteractive extends Plugin{
   this.registerMarkdownCodeBlockProcessor('brancha-chat',(source,el,ctx)=>{const [id,sessionId]=source.trim().split(/\r?\n/).map(s=>s.trim());if(!valid(id)||!valid(sessionId)){el.textContent='Invalid chat ID';return;}ctx.addChild(new Chat(el,this,id,sessionId,ctx.sourcePath));});
   const home=()=>new Dashboard(document.createElement('div'),this,'home','').open('Generated/Navigation/Home');
   this.addCommand({id:'open-home',name:'Open Brancha Home',callback:home});this.addRibbonIcon('house','Brancha Home',home);}
-};
-module.exports.safeSvg=safeSvg;
-
-module.exports.mapSize=mapSize;
+}
+if(typeof module!=='undefined'){module.exports=BranchaInteractive;module.exports.safeSvg=safeSvg;module.exports.mapSize=mapSize;module.exports.renderers={Dashboard,Home,Chat};}
+else globalThis.BranchaRenderers={Dashboard,Home,Chat,safeSvg};

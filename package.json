@@ -1,6 +1,6 @@
 {
   "name": "brancha",
-  "version": "0.15.1",
+  "version": "0.16.0",
   "private": true,
   "description": "Local project memory, visual maps and automatic Codex checkpoints with Obsidian views",
   "type": "module",

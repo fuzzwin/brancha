@@ -12,6 +12,10 @@ Brancha is a local Node.js companion, browser workspace and portable skill. It r
 
 Use Brancha alongside local Codex work and Obsidian. No browser extension is required for that workflow. Run `npm run desktop-hook` for local-only ChatGPT Work/Codex hooks, then review and trust their exact definitions; ordinary Chat mode currently has explicit connector checkpoints, not a verified passive listener. [Desktop setup and exact coverage](docs/desktop-workflow.md). Web capture and ChatGPT Sites are optional entry points.
 
+## One live workspace
+
+Open the configured Obsidian vault or http://127.0.0.1:51207/ for the same live project/chat dashboards, maps, timelines, saved sources and recaps. The browser now shares the Obsidian renderer and generated data; its record editor is at `/editor`. [View parity and boundaries](docs/live-workspace.md).
+
 ## Entry points
 
 - **Portable Local MCP:** shared resume/checkpoint tools for compatible AI clients, using the local record without a cloud service or Codex session folder.

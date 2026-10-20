@@ -20,14 +20,16 @@ if(!fs.existsSync(file))fs.copyFileSync(path.join(base,'dist/starter-workspace.j
 const captureConfig=options.config||null;
 function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=JSON.parse(fs.readFileSync(capturePaths(captureConfig).status,'utf8'));}catch{}return {...latest,paused:controls(captureConfig).paused===true};}
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
-let lastHash='',lastDay='',lastError='',lastNavigation='';
+let lastHash='',lastDay='',lastError='',lastNavigation='',viewNames=new Set(),navigationNames=new Set();
+const identity={name:path.basename(vault),vault,localUrl:'http://127.0.0.1:'+port,obsidianHome:'obsidian://open?path='+encodeURIComponent(path.join(vault,'Generated/Navigation/Home.md'))};
 function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');const canonical=validate(JSON.parse(raw)),w=captureConfig?privacyView(captureConfig,canonical):canonical;return {raw,canonical,w,etag:hash(raw),viewKey:hash(raw+JSON.stringify(captureConfig?chatPermissions(captureConfig):{}))};}
 function refreshNavigation(r){
  const guide=fs.existsSync(path.join(vault,'Notes','Brancha guide.md')),names=fs.existsSync(path.join(vault,'Notes','Brancha name ideas.md'));
  const hasIndex=fs.existsSync(path.join(vault,'Notes','Project index.md'));
  const observed={...captureStatus(),...(captureConfig?{chatPrivacy:chatPrivacySummary(captureConfig,r.canonical)}:{})};
  const key=[r.viewKey,Math.floor(Date.now()/60000),guide,names,hasIndex,observed?.reviewerState,observed?.reviewerLastAt,observed?.reviewerError,observed?.paused].join(':');if(key===lastNavigation)return;
- const pages=navigationFiles(r.w,{port,capture:observed,hasGuide:guide,hasNames:names,hasIndex,chatTitles:chatTitles(captureConfig||{},r.w)});
+ const pages=navigationFiles(r.w,{port,capture:observed,hasGuide:guide,hasNames:names,hasIndex,chatTitles:chatTitles(captureConfig||{},r.w),workspace:identity});
+ navigationNames=new Set(Object.keys(pages));
  const recapManifest=path.join(vault,'.brancha/generated-recaps.json');let oldRecaps=[];
  try{oldRecaps=JSON.parse(fs.readFileSync(recapManifest,'utf8')).files||[];}catch{}
  const recaps=Object.keys(pages).filter(name=>/^Recaps\/(?:index|\d{4}-\d{2}-\d{2})\.md$/.test(name));
@@ -42,6 +44,7 @@ function refreshNavigation(r){
 function refresh(){const r=read(),day=new Date().toLocaleDateString('en-CA');if(r.viewKey===lastHash&&day===lastDay){refreshNavigation(r);return r;}
  const generated=path.join(vault,'Generated');fs.mkdirSync(generated,{recursive:true});
  const views=obsidianFiles(r.w,{chatTitles:chatTitles(captureConfig||{},r.w)}),assetPattern=/^Diagrams\/[a-zA-Z0-9_-]+-(?:mindmap|dashboard|flow|chat-[a-f0-9]{12})-[a-f0-9]{16}\.svg$/,assets=Object.keys(views).filter(name=>assetPattern.test(name));
+ viewNames=new Set(Object.keys(views));
  const assetManifest=path.join(vault,'.brancha','generated-assets.json');let priorAssets=[];
  const pageManifest=path.join(vault,'.brancha','generated-pages.json');let oldPages=[];
  try{oldPages=JSON.parse(fs.readFileSync(pageManifest,'utf8')).files||[];}catch{
@@ -69,6 +72,21 @@ const server=http.createServer(async(req,res)=>{res.setHeader('Cache-Control','n
   if(req.headers.origin&&req.headers.origin!==origin)return send(403,{error:'Origin rejected'});
   const url=new URL(req.url,origin);
   if(url.pathname==='/api/capture'&&req.method==='POST'){if(!captureConfig||req.headers['x-brancha-token']!==token)return send(403,{error:'Local capture connection required'});let body='';for await(const chunk of req){body+=chunk;if(body.length>1024)return send(413,{error:'Invalid control'});}const control=JSON.parse(body);if(typeof control.paused!=='boolean')throw Error('Choose paused true or false.');atomic(capturePaths(captureConfig).control,{paused:control.paused,changedAt:new Date().toISOString()});return send(200,{capture:captureStatus()});}
+  if(url.pathname==='/api/view'||url.pathname==='/api/identity'||url.pathname==='/api/review-request'){
+   if(req.headers['x-brancha-token']!==token)return send(403,{error:'Open the local companion to connect'});
+   const r=refresh();
+   if(url.pathname==='/api/identity')return req.method==='GET'?send(200,{...identity,revision:r.w.revision,capture:captureStatus()}):send(405,{error:'Method not allowed'});
+   if(url.pathname==='/api/review-request'){
+    if(req.method!=='POST')return send(405,{error:'Method not allowed'});
+    const state=captureStatus();if(!captureConfig||!state?.reviewerEnabled||state.paused)return send(409,{error:'Review is unavailable or paused'});
+    atomic(path.join(vault,'.brancha/reviewer/request.json'),{id:crypto.randomUUID(),requestedAt:new Date().toISOString()});return send(200,{requested:true});
+   }
+   if(req.method!=='GET')return send(405,{error:'Method not allowed'});
+   const selected=url.searchParams.get('path')||'',name=selected.startsWith('Generated/')?selected.slice(10):'';
+   if(!name||!viewNames.has(name)&&!navigationNames.has(name)&&name!=='START HERE.md')return send(404,{error:'This generated view is not available'});
+   const root=path.join(vault,'Generated'),dest=path.resolve(root,name);if(!dest.startsWith(root+path.sep)||!fs.realpathSync(dest).startsWith(fs.realpathSync(root)+path.sep))return send(403,{error:'Invalid view path'});
+   return send(200,{path:selected,content:fs.readFileSync(dest,'utf8'),revision:r.w.revision});
+  }
   if(url.pathname==='/api/workspace'){
    if(req.headers['x-brancha-token']!==token)return send(403,{error:'Open the local companion to connect'});
    if(req.method==='GET'){const r=refresh();return send(200,{workspace:r.w,etag:r.etag,vault,viewError:lastError,capture:captureStatus()});}
@@ -86,9 +104,11 @@ const server=http.createServer(async(req,res)=>{res.setHeader('Cache-Control','n
    return send(200,{workspace:r.w,etag:r.etag,vault,viewError:lastError,capture:captureStatus()});
   }
   if(req.method!=='GET')return send(405,{error:'Method not allowed'});
-  const relative=decodeURIComponent(url.pathname)==='/'?'index.html':decodeURIComponent(url.pathname).slice(1);
+  const shared={'/shared/renderer.js':'assets/obsidian/brancha-interactive/main.js','/shared/renderer.css':'assets/obsidian/brancha-interactive/styles.css'};
+  if(shared[url.pathname]){res.writeHead(200,{'Content-Type':url.pathname.endsWith('.css')?'text/css':'text/javascript'});return res.end(fs.readFileSync(path.join(base,shared[url.pathname])));}
+  const relative=url.pathname==='/'?'live.html':url.pathname==='/editor'?'index.html':decodeURIComponent(url.pathname).slice(1);
   const dest=path.resolve(base,'dist',relative);if(!dest.startsWith(path.join(base,'dist')+path.sep))return send(403,{error:'Invalid path'});
-  let data=fs.readFileSync(dest);if(relative==='index.html')data=Buffer.from(data.toString().replace('<head>',`<head><meta name="brancha-local-token" content="${token}">`));
+  let data=fs.readFileSync(dest);if(['index.html','live.html'].includes(relative))data=Buffer.from(data.toString().replace('<head>',`<head><meta name="brancha-local-token" content="${token}">`).replace('<body>',relative==='index.html'?'<body><div style="padding:12px 24px;background:#e9eee4;color:#263a31">Record editor · same live workspace · <a href="/">Return to Brancha Home →</a></div>':'<body>'));
   res.writeHead(200,{'Content-Type':({'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml'})[path.extname(dest)]||'text/plain'});res.end(data);
  }catch(e){send(e.code==='ENOENT'?404:400,{error:e.message});}
 });

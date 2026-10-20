@@ -10,7 +10,7 @@ const page = (title,body) => `---\ncssclasses: brancha-dashboard\n---\n# ${title
 
 // These small pages refresh independently of the expensive SVG/Canvas export.
 // Timestamps are observations, never a claim that a stopped service is still live.
-export function navigationFiles(w,{at=new Date(),timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone,port=51207,capture=null,hasGuide=false,hasNames=false,hasIndex=false,chatTitles={}}={}){
+export function navigationFiles(w,{at=new Date(),timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone,port=51207,capture=null,hasGuide=false,hasNames=false,hasIndex=false,chatTitles={},workspace=null}={}){
  const today=dateKey(at,timeZone),anchor=new Date(today+'T00:00:00Z');
  anchor.setUTCDate(anchor.getUTCDate()-1);const yesterday=anchor.toISOString().slice(0,10);
  const stamp=new Date(at).toLocaleString('en-AU',{timeZone,dateStyle:'medium',timeStyle:'short'});
@@ -41,8 +41,8 @@ export function navigationFiles(w,{at=new Date(),timeZone=Intl.DateTimeFormat().
  const captureState=!capture?'Not configured':capture.paused?'Paused':capture.error?'Error reported':capture.enabled?'Enabled at this observation':'Disabled at this observation';
  return {
   ...dailyRecapFiles(w,{at:new Date(at).toISOString(),timeZone,capture}),
-  'Interactive/home.json':JSON.stringify(homeData(w,{at:new Date(at).toISOString(),capture,chatTitles})),
-  'Interactive/chats.json':JSON.stringify(homeData(w,{at:new Date(at).toISOString(),capture,chatTitles,chatLimit:1000})),
+  'Interactive/home.json':JSON.stringify(homeData(w,{at:new Date(at).toISOString(),capture,chatTitles,workspace})),
+  'Interactive/chats.json':JSON.stringify(homeData(w,{at:new Date(at).toISOString(),capture,chatTitles,chatLimit:1000,workspace})),
   'Navigation/Home-list.md':page('Your projects',`${cards}\n\n${personal}`),
   'Navigation/Home.md':'---\ncssclasses: [brancha-dashboard, brancha-interactive]\n---\n```brancha-home\n```\n\n> [!info]- Plain project list\n'+w.projects.map(p=>'> '+link('Dashboards/'+p.id,p.title)).join('\n')+'\n\n'+link('Navigation/Home-list','Portable Home')+' · '+link('Navigation/Today','Today')+' · '+personal+'\n',
   'Navigation/Today.md':page('Across your projects',`**${eventsFor(today).length} saved updates today · ${w.projects.filter(p=>eventsFor(today,p.id).length).length} active projects · ${analyses.reduce((sum,{a})=>sum+a.waiting.length,0)} waiting on prerequisites.**\n\n## Today · ${today}\n\n| Project | Updates today / yesterday | Ready / waiting | Next step | Latest recorded update |\n| --- | --- | --- | --- | --- |\n${todayRows||'| No projects yet | — | — | Create a project | — |'}\n\n## Yesterday · ${yesterday}\n\n${yesterdayRows?'| Project | Updates | Latest recorded update |\n| --- | --- | --- |\n'+yesterdayRows:'No saved updates for this date.'}\n\n## Recent update details\n\nExpand a project for its latest three updates; full activity remains linked.\n\n${detailGroups||'No saved updates in this two-day window.'}\n\n*${timeZone} · refreshed ${stamp}. Updates count saved records, not hours or verified outcomes. Every project has a row, including those with no new capture.*`),
