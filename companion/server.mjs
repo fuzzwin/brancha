@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {aiBudget} from './ai-budget.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -19,7 +20,7 @@ fs.mkdirSync(vault,{recursive:true});
 if(!fs.existsSync(file))fs.copyFileSync(path.join(base,'dist/starter-workspace.json'),file,fs.constants.COPYFILE_EXCL);
 const captureConfig=options.config||null;
 const listen=options.listen??(captureConfig?.view!=='obsidian');
-function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=JSON.parse(fs.readFileSync(capturePaths(captureConfig).status,'utf8'));}catch{}return {...latest,paused:controls(captureConfig).paused===true};}
+function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=JSON.parse(fs.readFileSync(capturePaths(captureConfig).status,'utf8'));}catch{}const budget=aiBudget(captureConfig);return {...latest,aiBudget:budget,mapperBudgetExhausted:budget.mapper.limited,reviewerState:latest.reviewerState==='daily limit'&&!budget.reviewer.limited?'queued':latest.reviewerState,paused:controls(captureConfig).paused===true};}
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 let lastHash='',lastDay='',lastError='',lastNavigation='',viewNames=new Set(),navigationNames=new Set();
 const identity={name:path.basename(vault),vault,localUrl:listen?'http://127.0.0.1:'+port:null,obsidianHome:'obsidian://open?path='+encodeURIComponent(path.join(vault,'Generated/Navigation/Home.md').split(path.sep).join('/'))};
@@ -28,7 +29,7 @@ function refreshNavigation(r){
  const guide=fs.existsSync(path.join(vault,'Notes','Brancha guide.md')),names=fs.existsSync(path.join(vault,'Notes','Brancha name ideas.md'));
  const hasIndex=fs.existsSync(path.join(vault,'Notes','Project index.md'));
  const observed={...captureStatus(),...(captureConfig?{chatPrivacy:chatPrivacySummary(captureConfig,r.canonical)}:{})};
- const key=[r.viewKey,Math.floor(Date.now()/60000),guide,names,hasIndex,observed?.reviewerState,observed?.reviewerLastAt,observed?.reviewerError,observed?.paused].join(':');if(key===lastNavigation)return;
+ const key=[r.viewKey,Math.floor(Date.now()/60000),guide,names,hasIndex,observed?.reviewerState,observed?.reviewerLastAt,observed?.reviewerError,observed?.paused,JSON.stringify(observed?.aiBudget)].join(':');if(key===lastNavigation)return;
  const pages=navigationFiles(r.w,{port,capture:observed,hasGuide:guide,hasNames:names,hasIndex,chatTitles:chatTitles(captureConfig||{},r.w),workspace:identity});
  navigationNames=new Set(Object.keys(pages));
  const recapManifest=path.join(vault,'.brancha/generated-recaps.json');let oldRecaps=[];

@@ -706,3 +706,9 @@
  .bi-home-v3[data-layout=compact] .bi-home-project { grid-template-columns:minmax(0,1fr) 100px; }
  .bi-home-v3[data-layout=compact] .bi-home-actions { flex-direction:column; }
 }
+.bi-home-v3 .bi-ai-usage { display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 0;font-size:11px;border-bottom:1px solid var(--bi-line); }
+.bi-ai-usage-item { display:flex;flex-wrap:wrap;gap:7px;align-items:center; }
+.bi-ai-usage-item>span,.bi-ai-reset { color:var(--text-muted); }
+.bi-ai-usage-item[data-limited=true]>strong { color:var(--color-yellow); }
+.bi-ai-reset { margin-left:auto; }
+@container (max-width:650px) { .bi-ai-reset { margin-left:0; } }

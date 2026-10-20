@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {BookmarkSync} from './bookmark-sync.mjs';
 import {startServer} from './server.mjs';
 import {pullCloud} from '../adapters/cloud-pull.mjs';
 import {CodexWatcher} from '../adapters/codex-watch.mjs';
@@ -20,6 +21,7 @@ status(config,{reviewerEnabled:!!reviewer,reviewerState:reviewer?'ready':'disabl
 const watcher=config.captureEnabled?new CodexWatcher(config,{mapper}):null;
 if(watcher)watcher.poll();else status(config,{enabled:false,adapter:'portable-checkpoint',error:null});
 const companion=startServer({vault:config.vault,port:config.port,config});
+const bookmarks=new BookmarkSync(config,configFile);bookmarks.tick();const bookmarksTimer=setInterval(()=>bookmarks.tick(),60000);
 // Opt in by creating the local registry/index. Freshness checks never call AI.
 const refreshIndex=()=>{if(!fs.existsSync(path.join(indexRoot(config.vault),'sources.json'))&&!fs.existsSync(path.join(indexRoot(config.vault),'index.json')))return;try{writeProjectIndex(config);status(config,{projectIndexAt:new Date().toISOString(),projectIndexError:null});}catch(e){status(config,{projectIndexError:e.message});}};
 refreshIndex();const indexTimer=setInterval(refreshIndex,60000);
@@ -28,7 +30,7 @@ let pulling=false;const pull=async()=>{if(pulling||!config.cloud?.connectionFile
 const intake=new MappingIntake(config,mapper);
 const mapperTimer=setInterval(()=>{try{drainDesktopHooks(config);drainReceipts(config);intake.tick();}catch(e){status(config,{mappingIntakeError:e.message});}mapper?.tick().catch(e=>status(config,{mapperError:e.message}));},3000);
 const reviewerTimer=setInterval(()=>{reviewer?.tick().catch(e=>status(config,{reviewerState:'needs attention',reviewerError:e.message}));},5000);
-companion.server.on('error',()=>{clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);status(config,{enabled:false,error:'Companion server could not start.'});});
-function stop(){if(exiting)return;exiting=true;clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);status(config,{enabled:false,stoppedAt:new Date().toISOString()});companion.stop();}
+companion.server.on('error',()=>{clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);clearInterval(bookmarksTimer);status(config,{enabled:false,error:'Companion server could not start.'});});
+function stop(){if(exiting)return;exiting=true;clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);clearInterval(bookmarksTimer);status(config,{enabled:false,stoppedAt:new Date().toISOString()});companion.stop();}
 process.on('SIGINT',stop);process.on('SIGTERM',stop);
 console.log('Branchi '+(watcher?'automatic Codex capture':'portable checkpoints')+' is active. Config: '+configFile);

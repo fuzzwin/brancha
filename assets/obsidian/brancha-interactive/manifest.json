@@ -1,7 +1,7 @@
 {
   "id": "brancha-interactive",
   "name": "Branchi Interactive",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "minAppVersion": "1.5.0",
   "description": "Local project dashboards with clickable mindmaps, dependency drill-down and evidence links.",
   "author": "Branchi contributors",

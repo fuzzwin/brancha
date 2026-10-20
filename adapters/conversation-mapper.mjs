@@ -93,9 +93,9 @@ export class ConversationMapper{
     const budgetFile=path.join(this.root,'budget.json');let budget=read(budgetFile,{date:day(),calls:0,high:0});if(budget.date!==day())budget={date:day(),calls:0,high:0};
     const reserve=high=>{if(budget.calls>=(this.config.mapper.maxCallsPerDay??20)||(high&&budget.high>=(this.config.mapper.maxHighPerDay??3)))return false;budget.calls++;if(high)budget.high++;atomic(budgetFile,budget);return true;};
     if(!reserve(false)){status(this.config,{mapperBudgetExhausted:true});return;}
-    job.state='running';atomic(file,job);
+    status(this.config,{mapperBudgetExhausted:false});job.state='running';atomic(file,job);
     try{
-     let result=await this.runner(packet,{effort:'low',directory:path.join(this.root,'runner'),executable:this.config.mapper.executable||'codex',timeoutMs:this.config.mapper.timeoutMs||90000});job.receipts=[result.receipt];
+     let result=await this.runner(packet,{effort:this.config.mapper.reasoningEffort||'low',directory:path.join(this.root,'runner'),executable:this.config.mapper.executable||'codex',timeoutMs:this.config.mapper.timeoutMs||90000});job.receipts=[result.receipt];
      validateExtraction(result.value,packet);
      if(result.value.needsReview&&reserve(true)){const reviewed=await this.runner({...packet,lowProposal:result.value},{effort:'high',directory:path.join(this.root,'runner'),executable:this.config.mapper.executable||'codex',timeoutMs:this.config.mapper.timeoutMs||90000});validateExtraction(reviewed.value,packet);job.receipts.push(reviewed.receipt);result=reviewed;}
      job.result=result.value;job.state='ready';atomic(file,job);

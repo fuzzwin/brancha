@@ -27,6 +27,7 @@ if (fs.existsSync(configFile)) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw Error('port must be an integer from 1024 to 65535.');
   const config = {
     view,
+    obsidianBookmarks:{enabled:view!=='localhost'},
     vault: values['--vault'] ? absolutePath(values['--vault']) : path.join(os.homedir(), 'Documents', 'Branchi'),
     captureEnabled: !values['--no-codex'],
     sessionsDirectory: values['--sessions'] ? absolutePath(values['--sessions']) : path.join(process.env.CODEX_HOME || path.join(os.homedir(), '.codex'), 'sessions'),
