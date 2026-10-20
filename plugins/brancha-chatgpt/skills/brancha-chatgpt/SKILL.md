@@ -5,6 +5,8 @@ description: Resume, map and checkpoint projects through Brancha Connect tools i
 
 # Brancha in ChatGPT
 
+Keep Obsidian as the primary project workspace. Online views are companion entry points. Where the local bridge is configured, checkpoints feed the local record and its generated dashboards; personal notes stay in Notes. Do not claim that browser snapshots or local Codex captures synchronize back to the cloud.
+
 Use Brancha Connect tools, rather than assuming access to the user's local files. Start with `brancha_projects`, then call `brancha_resume` for the selected project. Ask only if the project is ambiguous. Keep the original request, evidence, important decisions and next action in view.
 
 Once the user activates Brancha for a project in the current conversation, save a checkpoint after meaningful milestones and before handing work back. The user does not need to repeat “save this” for each milestone in that activated task. Do not capture every message. Do not claim blanket monitoring of other chats or continued execution after the chat ends.
