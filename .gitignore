@@ -10,3 +10,5 @@ config.local.json
 *.tmp
 *.lock
 .openai/
+
+cloud-built/

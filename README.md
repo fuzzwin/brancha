@@ -4,6 +4,13 @@ Keep the thread across AI projects: goals, decisions, branches, evidence, next s
 
 Brancha is a local Node.js companion, browser workspace and portable skill. It renders diagrams with [Pele](https://pele.run/) and generates linked notes, project maps, a Canvas overview, a Bases table and resume briefs for Obsidian.
 
+## Two entry points
+
+- **Codex Local:** automatic local completion capture, the browser map and live generated Obsidian views.
+- **Brancha Connect for ChatGPT:** a private cloud MCP service and skill for resuming projects and saving checkpoints during an activated task. It stays available while the Mac is off; it cannot passively watch every ChatGPT chat.
+
+An optional approved bridge appends new ChatGPT checkpoints to the local map and Obsidian. Local Codex captures stay local. See [ChatGPT setup and connection boundaries](cloud/README.md).
+
 ## Quick start
 
 Requires Node.js 22+ and local Codex session files. Obsidian is optional. No packages, model API keys or paid API requests are required by the capture adapter.
@@ -15,7 +22,7 @@ npm run setup
 npm start
 ```
 
-Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Brancha`) and then `Generated/Brancha.canvas`.
+Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Brancha`) and then `Generated/Brancha.canvas`. Each project links to a clean dependency mindmap, with a compact editable Canvas and full evidence in linked notes.
 
 Setup writes a private connection to `~/.config/brancha/config.json`. Choose another vault with `npm run setup -- --vault /absolute/path/to/vault`. Existing configs are preserved. A fresh installation starts with fictional examples; creating your first project or receiving the first automatic checkpoint starts your real workspace. Unmatched automatic captures appear in **Codex Inbox**.
 
@@ -32,7 +39,7 @@ The default adapter watches local Codex session files. On first activation it re
 - Common credential formats are masked on a best-effort basis. Treat captured final responses as private data; redaction is not a guarantee that arbitrary confidential information has been removed.
 - The app shows capture status, last checkpoint and a Pause/Resume control. Paused activity is skipped rather than imported later.
 
-The adapter uses the observed `session_meta` and `event_msg/task_complete` JSONL format. Codex's transcript format is not a stable interface; a future version may require an adapter update. This version is tested against the locally observed Codex 0.154.0 completion format. Cloud chats, ChatGPT web conversations, Claude, Cursor and other tools are not connected by this release.
+The adapter uses the observed `session_meta` and `event_msg/task_complete` JSONL format. Codex's transcript format is not a stable interface; a future version may require an adapter update. This version is tested against the locally observed Codex 0.154.0 completion format. This automatic watcher does not observe cloud chats, ChatGPT web conversations, Claude, Cursor or other AI tools. Brancha Connect provides explicit project checkpoints for ChatGPT through its optional cloud plugin.
 
 The workspace has an 8 MB safety limit. If reached, capture reports an error and retains pending work in its private cursor queue. Export/archive old checkpoints before continuing. Local backups are retained; users should manage their disk usage.
 
@@ -60,6 +67,7 @@ Use exact chat routes for shared folders containing unrelated work. `node script
 - `Generated/` is regenerated. Do not store personal edits there.
 - `Notes/` is for your manual Obsidian notes. These notes are preserved, but are not automatically parsed back into the project record.
 - `.brancha/` contains local cursors, status and capture backups.
+- To hide duplicate titles and properties on generated maps, copy `assets/obsidian/brancha-map.css` into the vault’s `.obsidian/snippets/` folder and enable it under Appearance → CSS snippets.
 
 Copy `skills/brancha` into your tool's skill directory (for example `~/.codex/skills/brancha`) or install the manual plugin package. The skill reads the local connection and helps you resume projects, review reports, record actual evidence and map decisions. It is reusable instructions plus validated helpers; the service supplies automatic capture.
 

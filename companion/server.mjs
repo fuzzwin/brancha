@@ -4,7 +4,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {atomic,controls,paths as capturePaths} from '../adapters/capture.mjs';
-import {validate,vaultFiles} from '../dist/core.mjs';
+import {validate} from '../dist/core.mjs';
+import {obsidianFiles} from './obsidian.mjs';
 const base=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const vault=path.resolve(process.argv[2]||path.join(base,'vault'));
 const file=path.join(vault,'brancha.json'),port=Number(process.argv[3]||51207);
@@ -17,7 +18,7 @@ let lastHash='',lastError='';
 function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');return {raw,w:validate(JSON.parse(raw)),etag:hash(raw)};}
 function refresh(){const r=read();if(r.etag===lastHash)return r;
  const generated=path.join(vault,'Generated');fs.mkdirSync(generated,{recursive:true});
- for(const [name,original]of Object.entries(vaultFiles(r.w))){if(name==='brancha.json')continue;let content=original.replaceAll('[[','[[Generated/');if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}const dest=path.join(generated,name);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest+'.tmp',content);fs.renameSync(dest+'.tmp',dest);}
+ for(const [name,original]of Object.entries(obsidianFiles(r.w))){if(name==='brancha.json')continue;let content=original.replaceAll('[[','[[Generated/');if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}const dest=path.join(generated,name);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest+'.tmp',content);fs.renameSync(dest+'.tmp',dest);}
  fs.writeFileSync(path.join(generated,'START HERE.md'),'# Brancha live views\n\nGenerated from ../brancha.json while the local companion is running. These views are overwritten on each record update. Keep your own notes in ../Notes.\n\n[[Generated/Brancha.canvas|Open the whole map]]\n\n'+r.w.projects.map(p=>`- [[Generated/Projects/${p.id}|${p.title}]]`).join('\n'));
  fs.mkdirSync(path.join(vault,'Notes'),{recursive:true});lastHash=r.etag;lastError='';return r;
 }

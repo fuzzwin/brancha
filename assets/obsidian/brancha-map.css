@@ -1,0 +1,4 @@
+.brancha-map { --metadata-display-reading: none; }
+.brancha-map .inline-title { display: none !important; }
+.brancha-map .metadata-container { display: none !important; }
+.brancha-map .image-embed { display: block; }
