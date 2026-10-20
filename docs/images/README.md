@@ -21,3 +21,7 @@ node companion/server.mjs PATH_TO_NEW_DEMO_FOLDER 51421
 Use a shell without a `BRANCHA_CONFIG` override. Open `http://127.0.0.1:51421/` and choose the fictional project. This server-only command does not start chat capture, AI mapping or the cloud bridge.
 
 For the images, open the dashboard, then its Full-page map, then the setup decision and Open record & evidence. These are unretouched interface screenshots at the browser's normal viewport. JPEG is used to keep the README download small. They illustrate navigation and recorded state; they are not evidence of completed user work or usability testing.
+
+## Branchi logo
+
+[branchi-logo.png](branchi-logo.png) is an AI-generated wordmark created with the built-in image-generation tool, using a supplied lettering and leafy-branch reference. It is separate from the interface screenshots above. The final prompt is saved in [branchi-logo-prompt.txt](branchi-logo-prompt.txt).

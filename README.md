@@ -1,5 +1,9 @@
 # Branchi
 
+<p align="center">
+  <img src="docs/images/branchi-logo.png" alt="Branchi — a rounded wordmark with a leafy branch forming the i" width="420">
+</p>
+
 **Stop digging through old chats. Pick up where you left off.**
 
 Branchi gives your AI work a memory and a map. It connects your saved chat updates, decisions, dependencies and branching ideas around the project they belong to. Come back tomorrow, next week or whenever you are ready, see where things stand and continue from a clear next step.
