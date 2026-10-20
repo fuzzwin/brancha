@@ -609,3 +609,7 @@
  .bi-page-v3 .bi-explorer-tools input { flex:1;width:100%; }
  .bi-page-v3 .bi-explorer-detail { position:static; }
 }
+/* Hide only duplicate portable links immediately before an active renderer.
+   Without the plugin, the original Markdown navigation remains available. */
+.brancha-interactive .markdown-preview-section>.el-p:has(>p>a[data-href="Generated/Navigation/Home"]):has(+.el-p+.el-pre .bi-page-v3),
+.brancha-interactive .markdown-preview-section>.el-p:has(>p>a[data-href^="Generated/Branches/"]):has(+.el-pre .bi-page-v3) { display:none; }
