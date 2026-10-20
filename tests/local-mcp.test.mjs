@@ -10,7 +10,7 @@ import {atomic} from '../skills/brancha/scripts/storage.mjs';
 import {localTools} from '../adapters/local-tools.mjs';
 import {capture} from '../adapters/capture.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const fixture=()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'brancha-mcp-')),config={vault:path.join(dir,'vault'),captureEnabled:false},file=path.join(dir,'config.json');atomic(file,config);return {dir,config,file};};
+const fixture=()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'brancha-mcp-')),config={vault:path.join(dir,'vault'),captureEnabled:false,capturePolicy:{mode:'approved',approvedSessionIds:['new-chat']}},file=path.join(dir,'config.json');atomic(file,config);return {dir,config,file};};
 
 test('local MCP tools support fresh projects, independent clients, safe retries and concurrent conflicts',async()=>{
  const f=fixture(),one=localTools(f.config),two=localTools(f.config);
@@ -27,14 +27,14 @@ test('local MCP tools support fresh projects, independent clients, safe retries 
  atomic(path.join(f.config.vault,'.brancha','control.json'),{paused:true});await assert.rejects(()=>one('brancha_checkpoint',{...cp,expectedRevision:w.revision,requestId:'paused'}),/paused/);assert.equal((await one('brancha_projects')).revision,w.revision);
 });
 
-test('stdio MCP negotiates, exposes exactly four tools, writes and resumes without a browser or Codex folder',async()=>{
+test('stdio MCP negotiates, exposes four project tools plus one capture receipt tool, writes and resumes without a browser or Codex folder',async()=>{
  const f=fixture(),child=spawn(process.execPath,[path.join(root,'scripts/mcp.mjs'),f.file]);let buffer='',err='';const pending=new Map();
  child.stderr.on('data',chunk=>err+=chunk);child.stdout.on('data',chunk=>{buffer+=chunk;let i;while((i=buffer.indexOf('\n'))>=0){const line=buffer.slice(0,i);buffer=buffer.slice(i+1);const m=JSON.parse(line);pending.get(m.id)?.(m);pending.delete(m.id);}});
  let id=0;const rpc=(method,params={})=>new Promise((resolve,reject)=>{const key=++id,timer=setTimeout(()=>{pending.delete(key);reject(Error('MCP timeout: '+err));},5000);pending.set(key,m=>{clearTimeout(timer);resolve(m);});child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:key,method,params})+'\n');});
  try{
   assert.equal((await rpc('tools/list')).error.code,-32002);
   const init=await rpc('initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'fictional-client',version:'1'}});assert.equal(init.result.protocolVersion,'2025-06-18');
-  child.stdin.write(JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized'})+'\n');assert.equal((await rpc('tools/list')).result.tools.length,4);
+  child.stdin.write(JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized'})+'\n');assert.equal((await rpc('tools/list')).result.tools.length,5);
   const created=await rpc('tools/call',{name:'brancha_create_project',arguments:{title:'Fixture',originalRequest:'A testable local project.',criteria:['Check it'],expectedRevision:0,requestId:'fixture-start'}});assert(!created.result.isError);const projectId=created.result.structuredContent.projectId;
   assert((await rpc('tools/call',{name:'brancha_resume',arguments:{projectId}})).result.structuredContent.brief.includes('A testable local project.'));
   assert.equal((await rpc('missing-method')).error.code,-32601);

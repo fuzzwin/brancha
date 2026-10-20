@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Brancha Local Capture",
+  "version": "0.14.0",
+  "description": "Local visible-chat capture for individually enabled ChatGPT and Claude conversations.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyyb4XmR+BvMx4c19TWzFayzDcmp1qO/gQuPy6V9rosI4H14THSL58qcH9AJN/+ArGBcEt7+YVnAJW0uTM9JoJWtSy36Ug9juybLibYfl4ECs5jWRF5jDZ6MDGk+qbfJTemUPXjCP9TRwf8JeuhQhrAyxvG8/PDQGl65Ychve8KSI7lio4JF0GDcZceywjHcblgfpuCy+D2Av1JhIQPeiWGtZrfViKMBGeBHXAXb0t0zMItiAb9YVl55SPo6E6cNUIIAUrmoT2ZDP3iOZ+PrJItPL92a2EAJ6Wjp2rkif+8q0lllqMCZZFxX4mTtobEw5AFUmct/rW2RemirdxjjqwQIDAQAB",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "nativeMessaging",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://claude.ai/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "collector.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

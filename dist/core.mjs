@@ -109,7 +109,7 @@ export function reconcileImportedEdges(w,source,relationships){
 }
 export function nextAction(w,projectId){
  for(const e of [...w.events].reverse()){const n=w.nodes.find(n=>n.id===e.nodeId&&n.projectId===projectId&&n.type==='source'&&!n.capture&&!['done','parked'].includes(n.status));if(n?.next?.trim())return n.next;}
- const ready=w.nodes.filter(n=>n.projectId===projectId&&!['source','goal'].includes(n.type)&&['active','planned'].includes(n.status)&&n.next?.trim()&&prerequisites(w,n.id).every(p=>p.status==='done'));
+ const ready=w.nodes.filter(n=>n.projectId===projectId&&!n.mapper&&!['source','goal'].includes(n.type)&&['active','planned'].includes(n.status)&&n.next?.trim()&&prerequisites(w,n.id).every(p=>p.status==='done'));
  return ready.find(n=>n.status==='active')?.next||ready[0]?.next||'Choose the next unmet criterion and identify one concrete action.';
 }
 export function contextBrief(w,projectId,focusId=null){
@@ -187,7 +187,7 @@ export function projectAnalytics(w,projectId,options={}){
  const days=new Map(activity.map(d=>[d.date,d]));for(const e of events){const day=days.get(dateKey(e.at,timeZone));if(day)day.count++;}
  const blocked=work.filter(n=>n.status==='blocked');
  const waiting=work.filter(n=>!['done','parked'].includes(n.status)&&prerequisites(w,n.id).some(p=>p.status!=='done'));
- const ready=work.filter(n=>['active','planned'].includes(n.status)&&!waiting.some(x=>x.id===n.id));
+ const ready=work.filter(n=>!n.mapper&&['active','planned'].includes(n.status)&&!waiting.some(x=>x.id===n.id));
  const touched=new Map(events.filter(e=>e.nodeId).map((e,i)=>[e.nodeId,i]));
  const newest=(a,b)=>(touched.get(b.id)??-1)-(touched.get(a.id)??-1)||b.id.localeCompare(a.id);
  const status=STATUSES.map(id=>({id,label:statusLabel(id),count:work.filter(n=>n.status===id).length}));

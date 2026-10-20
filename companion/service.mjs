@@ -4,14 +4,31 @@ import {pullCloud} from '../adapters/cloud-pull.mjs';
 import {CodexWatcher} from '../adapters/codex-watch.mjs';
 import {paths,status} from '../adapters/capture.mjs';
 import {loadConfig} from '../scripts/config.mjs';
+import {ConversationMapper} from '../adapters/conversation-mapper.mjs';
+import path from 'node:path';
+import {writeProjectIndex,indexRoot} from '../scripts/project-index.mjs';
+import {drainReceipts} from '../adapters/external-inbox.mjs';
+import {drainDesktopHooks} from '../adapters/desktop-hook.mjs';
+import {MappingIntake} from '../adapters/mapping-intake.mjs';
+import {ProjectReviewer} from '../adapters/project-reviewer.mjs';
 const {config,configFile}=loadConfig(process.argv[2]||process.env.BRANCHA_CONFIG);
 const p=paths(config);fs.mkdirSync(p.state,{recursive:true});
-const watcher=config.captureEnabled?new CodexWatcher(config):null;
+const mapper=config.mapper?.enabled?new ConversationMapper(config):null;
+status(config,{mapperEnabled:Boolean(mapper),mapperError:null});
+const reviewer=config.reviewer?.enabled?new ProjectReviewer(config):null;
+status(config,{reviewerEnabled:!!reviewer,reviewerState:reviewer?'ready':'disabled'});
+const watcher=config.captureEnabled?new CodexWatcher(config,{mapper}):null;
 if(watcher)watcher.poll();else status(config,{enabled:false,adapter:'portable-checkpoint',error:null});
 const companion=startServer({vault:config.vault,port:config.port,config});
+// Opt in by creating the local registry/index. Freshness checks never call AI.
+const refreshIndex=()=>{if(!fs.existsSync(path.join(indexRoot(config.vault),'sources.json'))&&!fs.existsSync(path.join(indexRoot(config.vault),'index.json')))return;try{writeProjectIndex(config);status(config,{projectIndexAt:new Date().toISOString(),projectIndexError:null});}catch(e){status(config,{projectIndexError:e.message});}};
+refreshIndex();const indexTimer=setInterval(refreshIndex,60000);
 let exiting=false;const timer=setInterval(()=>{try{watcher?.poll();}catch(e){status(config,{error:e.message});console.error('Capture: '+e.message);}},config.pollMs||3000);
 let pulling=false;const pull=async()=>{if(pulling||!config.cloud?.connectionFile)return;pulling=true;try{await pullCloud(config);}catch(e){status(config,{cloudEnabled:true,cloudError:e.message});}finally{pulling=false;}};pull();const cloudTimer=setInterval(pull,30000);
-companion.server.on('error',()=>{clearInterval(timer);clearInterval(cloudTimer);status(config,{enabled:false,error:'Companion server could not start.'});});
-function stop(){if(exiting)return;exiting=true;clearInterval(timer);clearInterval(cloudTimer);status(config,{enabled:false,stoppedAt:new Date().toISOString()});companion.stop();}
+const intake=new MappingIntake(config,mapper);
+const mapperTimer=setInterval(()=>{try{drainDesktopHooks(config);drainReceipts(config);intake.tick();}catch(e){status(config,{mappingIntakeError:e.message});}mapper?.tick().catch(e=>status(config,{mapperError:e.message}));},3000);
+const reviewerTimer=setInterval(()=>{reviewer?.tick().catch(e=>status(config,{reviewerState:'needs attention',reviewerError:e.message}));},5000);
+companion.server.on('error',()=>{clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);status(config,{enabled:false,error:'Companion server could not start.'});});
+function stop(){if(exiting)return;exiting=true;clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);status(config,{enabled:false,stoppedAt:new Date().toISOString()});companion.stop();}
 process.on('SIGINT',stop);process.on('SIGTERM',stop);
 console.log('Brancha '+(watcher?'automatic Codex capture':'portable checkpoints')+' is active. Config: '+configFile);

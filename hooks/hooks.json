@@ -1,6 +1,29 @@
 {
-  "description": "Save a local Brancha checkpoint when a Codex turn completes. Requires explicit hook trust in Codex.",
+  "description": "Automatic Brancha capture for individually enabled local Work and Codex chats. Requires exact hook trust.",
   "hooks": {
-    "Stop": [{"hooks": [{"type": "command", "command": "node \"${PLUGIN_ROOT}/adapters/codex-hook.mjs\"", "timeout": 10, "statusMessage": "Saving Brancha checkpoint"}]}]
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT}/adapters/desktop-hook.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Updating Brancha locally"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT}/adapters/desktop-hook.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Updating Brancha locally"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -13,12 +13,12 @@ const identity = value => {
   return value;
 };
 export function normaliseCheckpoint(input) {
-  const allowed = ['version','provider','sessionId','eventId','projectId','title','summary','next','evidence','kind','status','sourceRef','at','run','acceptanceCriteria','prerequisiteIds'];
+  const allowed = ['version','provider','sessionId','eventId','projectId','title','summary','next','evidence','kind','status','sourceRef','at','run','acceptanceCriteria','prerequisiteIds','request'];
   if (!input || input.version !== 1 || Object.keys(input).some(key => !allowed.includes(key))) throw Error('Unsupported checkpoint envelope. Use version 1 and documented fields only.');
   const n = {
     version: 1, provider: identity(input.provider), sessionId: identity(input.sessionId), eventId: identity(input.eventId), projectId: identity(input.projectId),
     title: text(input.title, 200, true), summary: text(input.summary, 12000, true), next: text(input.next, 1000, true), evidence: text(input.evidence, 4000),
-    kind: input.kind || 'source', recordedStatus: text(input.status, 200) || 'unknown', status: reportedStatus(input.status), sourceRef: text(input.sourceRef, 2000)
+    kind: input.kind || 'source', recordedStatus: text(input.status, 200) || 'unknown', status: reportedStatus(input.status), sourceRef: text(input.sourceRef, 2000), ...(input.request!==undefined?{request:text(input.request,6000)}:{})
   };
   if (!['source','decision','branch'].includes(n.kind)) throw Error('External checkpoints must be sources, decisions or branches.');
   if (input.at !== undefined) {if (typeof input.at !== 'string' || isNaN(Date.parse(input.at))) throw Error('Invalid checkpoint time.'); n.at = new Date(input.at).toISOString();}
@@ -63,7 +63,7 @@ export function ingestCheckpoint(config, input, expectedRevision) {
       id:'cp_'+key.slice(0,30),projectId:n.projectId,title:n.title,type:n.kind,status:n.status,detail:n.summary,evidence:n.evidence,next:n.next,criteria:[],rationale:'',alternatives:'',consequence:'',
       recordedStatus:n.recordedStatus,acceptanceCriteria:n.acceptanceCriteria,
       verification:{implementation:n.status==='reported_done'?'reported_done':'unknown',testing:['passed','failed','blocked'].includes(n.run?.outcome)?n.run.outcome:'not_run',acceptance:'pending'},
-      checkpoint:{provider:n.provider,sessionId:n.sessionId,eventId:n.eventId,at:n.at || new Date().toISOString(),sourceRef:n.sourceRef},
+      checkpoint:{provider:n.provider,sessionId:n.sessionId,eventId:n.eventId,at:n.at || new Date().toISOString(),sourceRef:n.sourceRef,...(n.request?{request:n.request}:{})},
       ...(n.run?{run:n.run}:{})
     };
     w.nodes.push(node);

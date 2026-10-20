@@ -36,6 +36,8 @@ try {
   } else add('workspace', 'warning', 'Not created yet; start the companion to create it.');
   if (!config.captureEnabled) add('codex-capture', 'off', 'Optional adapter disabled; portable checkpoints remain available.');
   else add('codex-capture', readable(config.sessionsDirectory) ? 'ok' : 'warning', readable(config.sessionsDirectory) ? 'Session directory is readable; completion capture starts at EOF on first use.' : 'Session directory is unavailable; configure it or disable Codex capture.');
+  add('automatic-mapping',config.mapper?.enabled?'ok':'off',config.mapper?.enabled?'Luna mapping enabled for allowed saved receipts; model access and backlog require runtime status.':'AI layer disabled. Captures and basic maps can still update.');
+  add('catch-up-review',config.reviewer?.enabled?'warning':'off',config.reviewer?.enabled?'High catch-up enabled. Configure a twice-daily desktop schedule separately; offline doctor cannot verify its runs.':'Catch-up reviewer disabled.');
   add('cloud-bridge', config.cloud?.connectionFile ? (readable(config.cloud.connectionFile) ? 'warning' : 'blocked') : 'off', config.cloud?.connectionFile ? 'Configured. This offline check does not authenticate or contact the service.' : 'Disabled. No cloud connection required.');
   const css=path.join(config.vault,'.obsidian','snippets','brancha-map.css'),appearance=path.join(config.vault,'.obsidian','appearance.json');
   const matches=readable(css)&&fs.readFileSync(css,'utf8')===fs.readFileSync(path.join(root,'assets','obsidian','brancha-map.css'),'utf8');

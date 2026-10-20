@@ -6,8 +6,11 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {atomic,controls,paths as capturePaths} from '../adapters/capture.mjs';
 import {validate} from '../dist/core.mjs';
 import {obsidianFiles} from './obsidian.mjs';
+import {navigationFiles} from './navigation.mjs';
 import {atomicText} from '../skills/brancha/scripts/storage.mjs';
 import {loadConfig} from '../scripts/config.mjs';
+import {chatTitles} from '../adapters/chat-titles.mjs';
+import {privacyView,chatPermissions,mergePrivateRecords,chatPrivacySummary} from '../adapters/chat-privacy.mjs';
 const base=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 export function startServer(options={}){
 const vault=path.resolve(options.vault||path.join(base,'vault'));
@@ -17,18 +20,44 @@ if(!fs.existsSync(file))fs.copyFileSync(path.join(base,'dist/starter-workspace.j
 const captureConfig=options.config||null;
 function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=JSON.parse(fs.readFileSync(capturePaths(captureConfig).status,'utf8'));}catch{}return {...latest,paused:controls(captureConfig).paused===true};}
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
-let lastHash='',lastDay='',lastError='';
-function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');return {raw,w:validate(JSON.parse(raw)),etag:hash(raw)};}
-function refresh(){const r=read(),day=new Date().toLocaleDateString('en-CA');if(r.etag===lastHash&&day===lastDay)return r;
+let lastHash='',lastDay='',lastError='',lastNavigation='';
+function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');const canonical=validate(JSON.parse(raw)),w=captureConfig?privacyView(captureConfig,canonical):canonical;return {raw,canonical,w,etag:hash(raw),viewKey:hash(raw+JSON.stringify(captureConfig?chatPermissions(captureConfig):{}))};}
+function refreshNavigation(r){
+ const guide=fs.existsSync(path.join(vault,'Notes','Brancha guide.md')),names=fs.existsSync(path.join(vault,'Notes','Brancha name ideas.md'));
+ const hasIndex=fs.existsSync(path.join(vault,'Notes','Project index.md'));
+ const observed={...captureStatus(),...(captureConfig?{chatPrivacy:chatPrivacySummary(captureConfig,r.canonical)}:{})};
+ const key=[r.viewKey,Math.floor(Date.now()/60000),guide,names,hasIndex,observed?.reviewerState,observed?.reviewerLastAt,observed?.reviewerError,observed?.paused].join(':');if(key===lastNavigation)return;
+ const pages=navigationFiles(r.w,{port,capture:observed,hasGuide:guide,hasNames:names,hasIndex,chatTitles:chatTitles(captureConfig||{},r.w)});
+ const recapManifest=path.join(vault,'.brancha/generated-recaps.json');let oldRecaps=[];
+ try{oldRecaps=JSON.parse(fs.readFileSync(recapManifest,'utf8')).files||[];}catch{}
+ const recaps=Object.keys(pages).filter(name=>/^Recaps\/(?:index|\d{4}-\d{2}-\d{2})\.md$/.test(name));
+ for(const name of oldRecaps)if(/^Recaps\/(?:index|\d{4}-\d{2}-\d{2})\.md$/.test(name)&&!recaps.includes(name)){try{fs.unlinkSync(path.join(vault,'Generated',name));}catch(e){if(e.code!=='ENOENT')throw e;}}
+ atomic(recapManifest,{version:1,files:recaps});
+ for(const [name,content] of Object.entries(pages)){
+  const target=path.join(vault,'Generated',name);
+  if(!fs.existsSync(target)||fs.readFileSync(target,'utf8')!==content)atomicText(target,content);
+ }
+ lastNavigation=key;
+}
+function refresh(){const r=read(),day=new Date().toLocaleDateString('en-CA');if(r.viewKey===lastHash&&day===lastDay){refreshNavigation(r);return r;}
  const generated=path.join(vault,'Generated');fs.mkdirSync(generated,{recursive:true});
- const views=obsidianFiles(r.w),assetPattern=/^Diagrams\/[a-zA-Z0-9_-]+-(?:mindmap|dashboard|flow)-[a-f0-9]{16}\.svg$/,assets=Object.keys(views).filter(name=>assetPattern.test(name));
+ const views=obsidianFiles(r.w,{chatTitles:chatTitles(captureConfig||{},r.w)}),assetPattern=/^Diagrams\/[a-zA-Z0-9_-]+-(?:mindmap|dashboard|flow|chat-[a-f0-9]{12})-[a-f0-9]{16}\.svg$/,assets=Object.keys(views).filter(name=>assetPattern.test(name));
  const assetManifest=path.join(vault,'.brancha','generated-assets.json');let priorAssets=[];
+ const pageManifest=path.join(vault,'.brancha','generated-pages.json');let oldPages=[];
+ try{oldPages=JSON.parse(fs.readFileSync(pageManifest,'utf8')).files||[];}catch{
+  // Migration: only paths that this version can derive from the canonical
+  // record are managed. User-authored Notes and unrelated files are untouched.
+  if(captureConfig)oldPages=Object.keys(obsidianFiles(r.canonical));
+ }
  try{const previous=JSON.parse(fs.readFileSync(assetManifest,'utf8'));if(previous.version===1&&Array.isArray(previous.files))priorAssets=previous.files.filter(name=>typeof name==='string'&&assetPattern.test(name));}catch{}
- for(const [name,original]of Object.entries(views).sort(([a],[b])=>Number(!a.endsWith('.svg'))-Number(!b.endsWith('.svg')))){if(name==='brancha.json')continue;let content=original.replaceAll('[[','[[Generated/');if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}atomicText(path.join(generated,name),content);}
- atomicText(path.join(generated,'START HERE.md'),'---\ncssclasses: brancha-dashboard\n---\n# Pick up the thread\n\nYour project dashboards are the starting point. They bring together the goal, mindmap, next action, decisions and evidence.\n\n[[Generated/Dashboards/index|Open all project dashboards →]] · [[Generated/Brancha.canvas|Visual project overview]]\n\n'+r.w.projects.map(p=>`- [[Generated/Dashboards/${p.id}|${p.title}]]`).join('\n')+'\n\n## Keep useful notes\n\nCopy a [[Generated/Templates/Check-in|Check-in]], [[Generated/Templates/Decision|Decision]] or [[Generated/Templates/Evidence review|Evidence review]] into Notes for your own writing.\n\nThese dashboards update from Brancha while the companion runs. Personal notes belong in Notes; generated pages are refreshed.');
+ for(const [name,original]of Object.entries(views).sort(([a],[b])=>Number(!a.endsWith('.svg'))-Number(!b.endsWith('.svg')))){if(name==='brancha.json')continue;let content=name.endsWith('.md')?original.replaceAll('[[','[[Generated/'):original;if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}const target=path.join(generated,name);if(name.endsWith('.md')&&content.includes('```brancha-')&&fs.existsSync(target)&&fs.readFileSync(target,'utf8')===content)continue;atomicText(target,content);}
+ atomicText(path.join(generated,'START HERE.md'),'---\ncssclasses: brancha-dashboard\n---\n# Pick up the thread\n\n[[Generated/Navigation/Home|Open Brancha Home →]]\n\n[[Generated/Navigation/Today|Today and yesterday]] · [[Generated/Dashboards/index|All projects]] · [[Generated/Navigation/Review|Needs a look]] · [[Generated/Navigation/Connections|Connections and freshness]] · [[Generated/Navigation/How to use|How to use]]\n\nHome brings together the goal, next action, dashboards, maps and resume briefs. These pages update while the companion runs. Keep personal writing in Notes; generated pages are refreshed.');
  const retained=[];for(const name of priorAssets)if(!assets.includes(name)){try{fs.unlinkSync(path.join(generated,name));}catch(e){if(e.code!=='ENOENT')retained.push(name);}}
  atomic(assetManifest,{version:1,files:[...new Set([...assets,...retained])]});
- fs.mkdirSync(path.join(vault,'Notes'),{recursive:true});lastHash=r.etag;lastDay=day;lastError='';return r;
+ const names=Object.keys(views).filter(n=>n!=='brancha.json'),retainedPages=[];
+ for(const name of oldPages)if(typeof name==='string'&&!name.includes('..')&&!path.isAbsolute(name)&&name!=='brancha.json'&&!names.includes(name)){try{fs.unlinkSync(path.join(generated,name));}catch(e){if(e.code!=='ENOENT')retainedPages.push(name);}}
+ atomic(pageManifest,{version:1,files:[...new Set([...names,...retainedPages])]});
+ fs.mkdirSync(path.join(vault,'Notes'),{recursive:true});refreshNavigation(r);lastHash=r.viewKey;lastDay=day;lastError='';return r;
 }
 refresh();
 const token=crypto.randomBytes(32).toString('hex');
@@ -51,7 +80,7 @@ const server=http.createServer(async(req,res)=>{res.setHeader('Cache-Control','n
     for(const p of current.w.projects){const found=next.projects.find(x=>x.id===p.id);if(!found||found.prompt!==p.prompt)throw Error('Live updates must preserve projects and original prompts. Use a separate workspace for replacement imports.');}
     if(next.revision<=current.w.revision)throw Error('Revision must advance');
     const backups=path.join(vault,'.brancha-backups');fs.mkdirSync(backups,{recursive:true});fs.writeFileSync(path.join(backups,Date.now()+'-'+crypto.randomUUID()+'.json'),current.raw,{flag:'wx'});
-    atomic(file,next);
+    atomic(file,validate(mergePrivateRecords(current.canonical,current.w,next)));
    }finally{fs.closeSync(fd);fs.unlinkSync(lock);}
    let r;try{r=refresh();}catch(e){lastError=e.message;r=read();}
    return send(200,{workspace:r.w,etag:r.etag,vault,viewError:lastError,capture:captureStatus()});

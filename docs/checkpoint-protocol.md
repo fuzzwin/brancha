@@ -12,7 +12,7 @@ An optional third argument chooses the config; `-` reads stdin. The CLI takes at
 
 Required fields: `version` (1), `provider`, `sessionId`, `eventId`, `projectId`, `title`, `summary`, `next`.
 
-Optional fields: `kind` (source, decision, branch), `status`, `evidence`, `sourceRef`, `at`, `prerequisiteIds`, `acceptanceCriteria`, `run`. Unknown top-level fields are rejected. IDs must be opaque non-secret strings of 1–150 letters, digits, underscores, periods, colons or hyphens. Neither a credential nor arbitrary transcript text belongs in an identity.
+Optional fields: `request` (up to 6,000 characters of visible user context), `kind` (source, decision, branch), `status`, `evidence`, `sourceRef`, `at`, `prerequisiteIds`, `acceptanceCriteria`, `run`. Unknown top-level fields are rejected. IDs must be opaque non-secret strings of 1–150 letters, digits, underscores, periods, colons or hyphens. Neither a credential nor arbitrary transcript text belongs in an identity.
 
 ## Meaning and acceptance
 
@@ -48,3 +48,6 @@ The skill helper supports `import-links` with an expected revision, source key, 
 ## Privacy
 
 Common credential patterns and quoted/unquoted credential assignments are masked across imported text fields, including evidence, artifacts and lessons. This is best-effort protection, not general confidential-data detection. Store compact selected summaries. Local MCP reads/writes the configured local record. The CLI has no network calls. Private cloud checkpoints reach the independently hosted service, and an approved bridge only appends new cloud-origin records locally. Any folder synchronization is governed by the user's storage service; local storage does not mean device-only if that folder is synchronized.
+
+
+With automatic mapping enabled and the companion running, saved source receipts enter the same durable Luna queue as Codex completions, including recovery after an interrupted handoff. Local MCP also exposes `brancha_capture` for this envelope; hosted tools remain unchanged. See [automatic mapping](automatic-mapping.md).

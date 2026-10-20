@@ -1,10 +1,16 @@
 # Brancha
 
+**Automatic mapping is the main workflow:** work in an enabled chat → supported capture → Luna decisions/tasks/branches → source-linked Obsidian maps. Twice-daily incremental High catch-up is the safety net; the skill is the manual fallback. [Set up automatic mapping](docs/automatic-mapping.md). Local Codex is automatic; GPT/Claude coverage depends on a tested client integration.
+
 Keep the thread across AI projects: goals, decisions, branches, evidence, next steps and a visual map you can return to.
 
 Obsidian is the primary project workspace. Brancha generates a dashboard, a Pele mindmap, evidence notes and reusable templates for every project; its local browser is a companion view of the same record.
 
 Brancha is a local Node.js companion, browser workspace and portable skill. It renders diagrams with [Pele](https://pele.run/) and generates linked notes, project maps, a Canvas overview, a Bases table and resume briefs for Obsidian.
+
+## Desktop first
+
+Use Brancha alongside local Codex work and Obsidian. No browser extension is required for that workflow. Run `npm run desktop-hook` for local-only ChatGPT Work/Codex hooks, then review and trust their exact definitions; ordinary Chat mode currently has explicit connector checkpoints, not a verified passive listener. [Desktop setup and exact coverage](docs/desktop-workflow.md). Web capture and ChatGPT Sites are optional entry points.
 
 ## Entry points
 
@@ -37,6 +43,10 @@ Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (defa
 Setup writes a private connection to `~/.config/brancha/config.json`. Choose another vault with `npm run setup -- --vault /absolute/path/to/vault`. Existing configs are preserved. A fresh installation starts with fictional examples; creating your first project or receiving the first automatic checkpoint starts your real workspace. Unmatched automatic captures appear in **Codex Inbox**.
 
 ## Project dashboards
+
+### Luna conversation maps
+
+Run `npm run mapper -- enable`, restart the companion, and inspect `npm run mapper -- status`. New completed local Codex turns can produce source-linked decision and branch proposals in project maps and Obsidian conversation pages. The mapper uses your signed-in Codex CLI, Low effort with bounded High escalation, and preserves original goals. See [setup, limits and evidence boundaries](docs/conversation-mapper.md).
 
 Each project automatically receives a dashboard with original goals backed by evidence, ready work, unmet prerequisites, reports awaiting review, a 14-day activity chart, and recent decisions and sources. The central Pele mindmap groups the records; dependency arrows stay in a separate flow view. Dates follow the displayed local timezone. Counts describe saved records, not hours, AI spending or productivity.
 
@@ -134,3 +144,18 @@ npm test
 Tests use fictional fixtures and cover portable setup, local MCP round trips, concurrent clients, status preservation, verification stages, dependency chains and reimports, temporary file locks, routing, no-history activation, final-only parsing, split UTF-8 writes, duplicates, lock conflicts, restart recovery, pause behaviour, credential masking, source history and Obsidian links. This is an early working prototype; it is not a universal screen or chat recorder.
 
 MIT licensed. The bundled Pele 1.7.0 library is MIT licensed; its original licence and package integrity receipt are in `dist/vendor/`.
+
+## Interactive Obsidian dashboards
+
+Run `npm run obsidian-interactive` to install the bundled local plugin into your configured vault, then enable **Brancha Interactive** in Obsidian. Restart the companion after upgrading. Project bookmarks open dashboard cards and clickable Pele maps; portable notes remain linked as a fallback. [Setup and interaction guide](docs/obsidian-interactive.md).
+
+## Home and bounded review (0.9.0)
+
+Brancha Home lists projects and recent captured chats, with search, handovers and timelines. Dashboard and timeline Home buttons return there. Known chat names come from the local Codex name index when available, restricted to already captured IDs. `npm run reviewer -- enable` enables the separate Luna High review worker after the mapper is enabled and the companion restarts. Home’s Check now and the hourly desktop task use the same grounded, proposal-only updater and eight-call reviewer limit. [Workflow and limits](docs/hourly-review.md).
+
+
+### Find work by chat
+
+Obsidian Home now opens a chat overview from Recent chats. **All saved chats** searches captured chat titles, latest report excerpts, report headings and file links; each project also lists its captured chats. Overviews collect saved requests/results, explicitly source-linked outcomes, choices, artifacts and a chat timeline. Automatic capture runs after completed turns while the companion runs; it does not reconstruct uncaptured history or passively read cloud chats. See [Chat continuity](docs/chat-continuity.md).
+
+Daily recaps update automatically; Claude Code hooks and a local ChatGPT/Claude browser capture adapter are available. [Daily recap and capture setup](docs/daily-recap-and-capture.md). Browser capture is optional; real-client delivery must be verified before claiming coverage.

@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {blank} from '../dist/core.mjs';
+import {projectPacket,validateDeepReview,groundDeepReview,saveDeepReview,writeProjectIndex,indexRoot,reviewNote} from '../scripts/project-index.mjs';
+function fixture(){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'brancha-index-')),w=blank();w.projects=[{id:'p',title:'Example',prompt:'Imported scope; no device test reported.',criteria:[],createdAt:'2026-10-01T00:00:00Z'}];w.nodes=[{id:'n',projectId:'p',title:'Prepare trial',type:'task',status:'planned',detail:'Device test remains unreported.',criteria:[]}];fs.writeFileSync(path.join(dir,'brancha.json'),JSON.stringify(w));return {dir,w};}
+const review={summary:'Read the selected scope; device testing is still unknown.',findings:[{title:'Test not reported',kind:'gap',detail:'No device result can be inferred.',sourceId:'record:n',quote:'Device test remains unreported.'}],nextActions:[{title:'Obtain a device result',why:'Resolve the evidence gap.',sourceIds:['record:n']}],mapSections:[{title:'Testing',contents:'Prepared work and pending device validation.',sourceIds:['record:n']}],coverageGaps:['No runtime was tested.']};
+test('index detects registered source changes and preserves original project truth',()=>{
+ const {dir,w}=fixture();try{const source=path.join(dir,'CURRENT.md');fs.writeFileSync(source,'Current selected work.');fs.mkdirSync(indexRoot(dir),{recursive:true});fs.writeFileSync(path.join(indexRoot(dir),'sources.json'),JSON.stringify({projects:{p:{sources:[{path:source,label:'Current work'}]}}}));
+ const before=fs.readFileSync(path.join(dir,'brancha.json'),'utf8');let {index,packets}=writeProjectIndex({vault:dir});assert.equal(index.entries[0].state,'not_reviewed');
+ const saved=saveDeepReview(dir,packets[0],review,{completedAt:'2026-10-20T08:00:00Z',requestedModel:'gpt-6-luna',reasoningEffort:'medium'});assert.ok(fs.existsSync(path.join(dir,saved.note)));assert.equal(writeProjectIndex({vault:dir}).index.entries[0].state,'reviewed');
+ fs.writeFileSync(source,'The current work changed.');assert.equal(writeProjectIndex({vault:dir}).index.entries[0].state,'changed_since_review');assert.equal(fs.readFileSync(path.join(dir,'brancha.json'),'utf8'),before);
+ fs.unlinkSync(path.join(dir,saved.note));assert.equal(writeProjectIndex({vault:dir}).index.entries[0].state,'review_missing');
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('model claims require exact quotes and known source IDs',()=>{const {dir,w}=fixture();try{const packet=projectPacket(w,'p');assert.equal(validateDeepReview(review,packet),review);assert.throws(()=>validateDeepReview({...review,findings:[{...review.findings[0],quote:'Device test passed.'}]},packet),/exact source/);assert.throws(()=>validateDeepReview({...review,nextActions:[{...review.nextActions[0],sourceIds:['made-up']}]},packet),/source references/);}finally{fs.rmSync(dir,{recursive:true,force:true});}});
+test('missing sources stay explicit and credential files are never indexed',()=>{const {dir,w}=fixture();try{const packet=projectPacket(w,'p',{sources:[{path:path.join(dir,'missing.md')}]});assert.equal(packet.coverage.missingFiles,1);assert.equal(packet.sources.at(-1).error,'Source file missing');assert.throws(()=>projectPacket(w,'p',{sources:[{path:path.join(dir,'auth.json')}]}),/never credentials/);}finally{fs.rmSync(dir,{recursive:true,force:true});}});
+test('grounding restores whitespace and unique references but rejects paraphrases and ambiguity',()=>{const {dir,w}=fixture();try{const packet=projectPacket(w,'p');packet.sources.push({id:'file:0',label:'Test',excerpt:'The source wraps\n  this exact sentence.'});
+ const raw={...review,findings:[{...review.findings[0],sourceId:'wrong-id',quote:'The source wraps this exact sentence.'}]};
+ const result=groundDeepReview(raw,packet);assert.equal(result.value.findings[0].sourceId,'file:0');assert.match(result.value.findings[0].quote,/\n/);assert.equal(result.corrections.length,1);assert.equal(raw.findings[0].sourceId,'wrong-id');
+ packet.sources.push({id:'file:1',label:'Duplicate',excerpt:packet.sources.at(-1).excerpt});assert.throws(()=>groundDeepReview(raw,packet),/exact source/);assert.throws(()=>groundDeepReview({...review,findings:[{...review.findings[0],quote:'Device test passed.'}]},packet),/exact source/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}});
+test('display omits an unavailable-usage footer accidentally included in model summary, retaining raw data',()=>{const {dir,w}=fixture();try{const raw={...review,summary:review.summary+' Tokens: unavailable (no task telemetry supplied); AUD cost: unknown.'};const md=reviewNote(projectPacket(w,'p'),raw,{completedAt:'2026-10-20T08:00:00Z',requestedModel:'gpt-6-luna',reasoningEffort:'medium'});assert(!md.includes('Tokens: unavailable'));assert(raw.summary.includes('Tokens: unavailable'));}finally{fs.rmSync(dir,{recursive:true,force:true});}});

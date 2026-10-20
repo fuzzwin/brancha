@@ -13,7 +13,7 @@ import {capture, paths} from '../adapters/capture.mjs';
 import {CodexWatcher} from '../adapters/codex-watch.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const fixture=()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'brancha-portable-')),config={vault:path.join(dir,'vault'),captureEnabled:false};
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'brancha-portable-')),config={vault:path.join(dir,'vault'),captureEnabled:false,capturePolicy:{mode:'approved',approvedSessionIds:['session']}};
  const w=blank();
  for(const id of ['alpha','beta'])w.projects.push({id,title:'Fictional '+id,prompt:'Preserve this request: '+id,createdAt:new Date().toISOString(),criteria:[{id:'goal',text:'An accepted result'}]});
  const node=(id,projectId='alpha')=>({id,projectId,title:'Fictional item '+id,type:'task',status:'active',detail:'',evidence:'',next:'Check the result',criteria:[],rationale:'',alternatives:'',consequence:''});

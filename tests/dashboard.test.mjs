@@ -39,7 +39,7 @@ test('Pele mindmaps stay bounded for dense projects and labels cannot inject dia
 
 test('every project automatically exports a dashboard, native Pele map, analytic SVG and reusable templates',()=>{
  const w=demo(),before=JSON.stringify(w),files=obsidianFiles(w);
- for(const p of w.projects){assert(new RegExp('!\\[\\[Diagrams/'+p.id+'-mindmap-[a-f0-9]{16}\\.svg\\]\\]').test(files['Dashboards/'+p.id+'.md']));assert(files['Diagrams/'+p.id+'-mindmap.svg'].includes('pele-mindmap'));assert(files['Diagrams/'+p.id+'-dashboard.svg'].includes('Last 14 days'));assert(files['Projects/'+p.id+'.md'].includes('Open project dashboard'));}
+ for(const p of w.projects){assert(new RegExp('!\\[\\[Diagrams/'+p.id+'-mindmap-[a-f0-9]{16}\\.svg\\]\\]').test(files['Dashboards/'+p.id+'-static.md']));assert(files['Diagrams/'+p.id+'-mindmap.svg'].includes('pele-mindmap'));assert(files['Diagrams/'+p.id+'-dashboard.svg'].includes('Last 14 days'));assert(files['Projects/'+p.id+'.md'].includes('Open project dashboard'));}
  for(const title of ['Check-in','Decision','Evidence review'])assert(files['Templates/'+title+'.md']);
  for(const [name,contents]of Object.entries(files).filter(([name])=>name.startsWith('Dashboards/')&&name.endsWith('.md')))for(const link of contents.matchAll(/\[\[([^|\]]+)/g)){const target=link[1].replace(/\\$/,'');assert(files[target]||files[target+'.md']||files[target+'.canvas'],'Missing '+target+' in '+name);}
  assert.equal(JSON.stringify(w),before);
@@ -53,27 +53,41 @@ test('the bounded mindmap prioritises the newest decision instead of hiding it b
 
 
 test('native diagrams get new content addresses when evidence or activity changes',()=>{
- const {w}=fixture(),one=obsidianFiles(w),before=one['Dashboards/project.md'];
+ const {w}=fixture(),one=obsidianFiles(w),before=one['Dashboards/project-static.md'];
  event(w,'project','A meaningful new update','ready');w.nodes.find(n=>n.id==='ready').title='A changed task title';
- const two=obsidianFiles(w),after=two['Dashboards/project.md'];
+ const two=obsidianFiles(w),after=two['Dashboards/project-static.md'];
  const refs=text=>[...text.matchAll(/!\[\[(Diagrams\/[^\]]+\.svg)\]\]/g)].map(m=>m[1]);
- const old=refs(before),next=refs(after);assert.equal(old.length,2);assert.equal(next.length,2);assert.notDeepEqual(old,next);for(const name of next)assert(two[name]);assert.deepEqual(refs(obsidianFiles(w)['Dashboards/project.md']),next);
+ const old=refs(before),next=refs(after);assert.equal(old.length,2);assert.equal(next.length,2);assert.notDeepEqual(old,next);for(const name of next)assert(two[name]);assert.deepEqual(refs(obsidianFiles(w)['Dashboards/project-static.md']),next);
 });
 
 test('native overview puts actionable work ahead of maps and distinguishes relationship types',()=>{
- const w=demo(),files=obsidianFiles(w),p=w.projects[0],note=files[`Dashboards/${p.id}.md`];
+ const w=demo(),files=obsidianFiles(w),p=w.projects[0],note=files[`Dashboards/${p.id}-static.md`];
  assert(note.indexOf('## Ready to move')<note.indexOf('## Project mindmap'));
  assert(note.includes('[[Dashboards/index|All projects]]'));
  const canvas=JSON.parse(files[`Maps/${p.id}.canvas`]);
  const labels={depends_on:'must precede',branches_from:'offshoot',implements:'goal to work',informs:'context'};
- for(const edge of canvas.edges)assert.equal(edge.label,labels[w.edges.find(e=>e.id===edge.id).type]);
+ for(const edge of canvas.edges)assert.equal(edge.label,'');
+ assert(files['Maps/'+p.id+'.md'].includes('## Connection key'));
 });
 
 test('sparse activity is compact and gains a trend only after two active days',()=>{
  const {w}=fixture();
  const empty=dashboardSvg(projectAnalytics(w,'project',{at,timeZone:'UTC'}));
- assert(empty.includes('viewBox="0 0 1100 190"'));assert(empty.includes('No saved updates yet'));
+ assert(empty.includes('viewBox="0 0 1100 395"'));assert(empty.includes('No saved updates yet'));assert(empty.includes('Work status'));assert(empty.includes('Luna proposals'));
  w.events.push({id:'a',projectId:'project',at:'2026-10-19T12:00:00Z',text:'one'});
  w.events.push({id:'b',projectId:'project',at:'2026-10-20T02:00:00Z',text:'two'});
- assert(dashboardSvg(projectAnalytics(w,'project',{at,timeZone:'UTC'})).includes('viewBox="0 0 1100 340"'));
+ assert(dashboardSvg(projectAnalytics(w,'project',{at,timeZone:'UTC'})).includes('viewBox="0 0 1100 550"'));
+});
+
+test('focused Canvas keeps all context records and edges in its linked full view without mutating evidence',()=>{
+ const {w,node}=fixture();
+ const source=node('report-context','source','active');w.nodes.push(source);
+ w.edges.push({id:'report-link',from:source.id,to:w.nodes[0].id,type:'informs'});
+ const before=JSON.stringify(w),files=obsidianFiles(w),focused=JSON.parse(files['Maps/project.canvas']),full=JSON.parse(files['Maps/project-all.canvas']);
+ assert(!focused.nodes.some(n=>n.id===source.id));
+ for(const n of w.nodes)assert(full.nodes.some(c=>c.id===n.id));
+ for(const e of w.edges)assert(full.edges.some(c=>c.id===e.id));
+ assert(focused.nodes.some(n=>n.text.includes('Open every record and connection')));
+ assert(focused.nodes.some(n=>n.text.includes('Connection key')));
+ assert.equal(JSON.stringify(w),before);
 });

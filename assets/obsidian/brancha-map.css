@@ -11,9 +11,9 @@
 
 .brancha-record .inline-title, .brancha-record .metadata-container { display: none !important; }
 /* Generated project dashboards */
-.brancha-dashboard { --file-line-width: 1160px; }
+.brancha-dashboard { --file-line-width: 100%; }
 .brancha-dashboard .inline-title, .brancha-dashboard .metadata-container { display: none !important; }
-.brancha-dashboard .markdown-preview-sizer { max-width: 1160px; }
+.brancha-dashboard .markdown-preview-sizer { max-width: none; width: 100%; }
 .brancha-dashboard .image-embed { display: block; margin: 22px 0; }
 .brancha-dashboard .image-embed img { max-width: 100%; height: auto; }
 .brancha-dashboard table { width: 100%; }
@@ -26,6 +26,31 @@
 .brancha-dashboard .callout { margin-block: 12px; padding: 12px 16px; }
 .brancha-dashboard .image-embed { margin-block: 12px; }
 .brancha-dashboard .image-embed img[src*="-mindmap-"] {
-  width: 100%; max-height: 420px; object-fit: contain;
+  width: 100%; height: auto; max-height: none;
 }
 .brancha-map .image-embed img { max-width: 100%; height: auto; }
+/* SVGs with only a viewBox otherwise fall back to a tiny intrinsic image. */
+.brancha-dashboard .image-embed img[src*="-dashboard-"] { width: 100%; height: auto; max-width: 100%; }
+.brancha-dashboard .image-embed:has(img[src*="-dashboard-"]) { width: 100%; }
+/* Follow the note pane, rather than a fixed article width or image-height cap.
+   On narrow panes, scroll the visual instead of shrinking its labels away. */
+.brancha-map { --file-line-width: 100%; }
+.brancha-map .markdown-preview-sizer { max-width: none; width: 100%; }
+:is(.brancha-dashboard, .brancha-map) .image-embed {
+  width: 100%; max-width: 100%; overflow-x: auto;
+}
+:is(.brancha-dashboard, .brancha-map) .image-embed img[src$=".svg"],
+:is(.brancha-dashboard, .brancha-map) .image-embed img[src*=".svg?"] {
+  display: block; width: 100%; height: auto; max-height: none;
+  max-width: none; object-fit: contain;
+}
+.brancha-dashboard .image-embed img[src*="-mindmap-"] { min-width: 1100px; }
+.brancha-dashboard .image-embed img[src*="-dashboard-"] { min-width: 720px; }
+.brancha-map .image-embed img[src$=".svg"],
+.brancha-map .image-embed img[src*=".svg?"] { min-width: 1100px; }
+
+/* Interactive pages already provide Home navigation. Hide only the redundant
+   generated paragraph immediately preceding a successfully rendered plugin. */
+.brancha-interactive .markdown-preview-section>.el-p:has(>p>a[data-href="Generated/Navigation/Home"]):has(+.el-pre .bi) { display:none; }
+.brancha-interactive { --file-margins:16px 24px; }
+.brancha-interactive .markdown-preview-sizer { padding-top:8px; }

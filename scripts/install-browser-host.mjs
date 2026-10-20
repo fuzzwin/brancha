@@ -1,0 +1,11 @@
+import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import crypto from 'node:crypto';import {fileURLToPath} from 'node:url';
+import {loadConfig} from './config.mjs';import {atomic,atomicText} from '../skills/brancha/scripts/storage.mjs';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),{configFile}=loadConfig(process.argv[2]),manifest=JSON.parse(fs.readFileSync(path.join(root,'browser-extension/manifest.json'),'utf8'));
+if(!['darwin','linux'].includes(process.platform))throw Error('Windows native host registration must use the documented registry entry; no partial install was made.');
+const id=crypto.createHash('sha256').update(Buffer.from(manifest.key,'base64')).digest('hex').slice(0,32).replace(/[0-9a-f]/g,c=>String.fromCharCode(97+parseInt(c,16)));
+const dir=path.join(path.dirname(configFile),'browser-host'),launcher=path.join(dir,'launch.sh'),q=s=>"'"+s.replaceAll("'","'\\''")+"'";
+atomicText(launcher,'#!/bin/sh\nexec '+q(process.execPath)+' '+q(path.join(root,'scripts/browser-native-host.mjs'))+' '+q('--config='+configFile)+' "$@"\n');fs.chmodSync(launcher,0o700);
+const target=process.platform==='darwin'?path.join(os.homedir(),'Library/Application Support/Google/Chrome/NativeMessagingHosts/com.brancha.capture.json'):path.join(os.homedir(),'.config/google-chrome/NativeMessagingHosts/com.brancha.capture.json');
+if(fs.existsSync(target))fs.copyFileSync(target,target+'.'+Date.now()+'.backup',fs.constants.COPYFILE_EXCL);
+atomic(target,{name:'com.brancha.capture',description:'Local-only Brancha visible chat receipts',path:launcher,type:'stdio',allowed_origins:['chrome-extension://'+id+'/']});
+console.log(JSON.stringify({installedHost:true,extensionInstalled:false,extensionId:id,extensionDirectory:path.join(root,'browser-extension'),next:'Load this unpacked extension in Chrome, then activate an exact chat and project from its popup. No chat was enabled by this installer.'}));

@@ -1,6 +1,6 @@
 {
   "name": "brancha",
-  "version": "0.7.1",
+  "version": "0.15.0",
   "private": true,
   "description": "Local project memory, visual maps and automatic Codex checkpoints with Obsidian views",
   "type": "module",
@@ -14,7 +14,17 @@
     "doctor": "node scripts/doctor.mjs",
     "checkpoint": "node scripts/checkpoint.mjs",
     "mcp-config": "node scripts/mcp-config.mjs",
-    "obsidian-style": "node scripts/obsidian-style.mjs"
+    "obsidian-style": "node scripts/obsidian-style.mjs",
+    "obsidian-bookmarks": "node scripts/obsidian-bookmarks.mjs",
+    "mapper": "node scripts/mapper.mjs",
+    "project-index": "node scripts/project-index.mjs",
+    "obsidian-interactive": "node scripts/obsidian-interactive.mjs",
+    "reviewer": "node scripts/reviewer.mjs",
+    "chat-privacy": "node scripts/chat-privacy.mjs",
+    "catch-up": "node scripts/catch-up.mjs",
+    "browser-host": "node scripts/install-browser-host.mjs",
+    "claude-hook": "node scripts/install-claude-hook.mjs",
+    "desktop-hook": "node scripts/install-desktop-hook.mjs"
   },
   "license": "MIT"
 }
