@@ -1,8 +1,17 @@
 # Branchi
 
-Branchi helps you pick up a project without starting from scratch. It keeps your original goal, saved conversations, decisions, useful links and next steps together in a visual map.
+**Stop digging through old chats. Pick up where you left off.**
 
-Use it when your work stretches across several chats, you keep exploring different ideas, or you need to return after a break. You can add records by hand, or connect supported AI tools to save useful updates.
+Branchi gives your AI work a memory and a map. It connects your saved chat updates, decisions, dependencies and branching ideas around the project they belong to. Come back tomorrow, next week or whenever you are ready, see where things stand and continue from a clear next step.
+
+With supported capture and AI mapping set up, Branchi builds that picture as you work in the chats you choose to include. You can also add updates by hand.
+
+- **Remember the decisions.** Keep what you chose, why you chose it and the alternatives you considered.
+- **See what depends on what.** Find the steps you can start and the work waiting on something else.
+- **Come back to side ideas.** Keep offshoots connected to the original project and park them for another day.
+- **Return with context.** Open the project goal, saved progress, sources and next action together. Use a handover to continue with a connected AI tool.
+
+Your next session can start with the project, instead of reconstructing the story from scattered messages.
 
 ## See Branchi in action
 
