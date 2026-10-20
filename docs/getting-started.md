@@ -1,8 +1,19 @@
 # Start here: Branchi for everyday projects
 
-Branchi is a memory and a visual map for a project. It helps you answer: **What was I trying to do? What did I decide? What have I saved? What should I do next?**
+**Stop digging through old chats. Pick up where you left off.**
 
-You do not need to think in diagrams. Start with a goal and a few useful updates; Branchi turns the saved records into dashboards, maps and a handover you can return to.
+Branchi gives your AI work a memory and a map. It connects your saved chat updates, decisions, dependencies and branching ideas around the project they belong to. Come back tomorrow, next week or whenever you are ready, see where things stand and continue from a clear next step.
+
+With supported capture and AI mapping set up, Branchi builds that picture as you work in the chats you choose to include. You can also add updates by hand.
+
+- **Remember the decisions.** Keep what you chose, why you chose it and the alternatives you considered.
+- **See what depends on what.** Find the steps you can start and the work waiting on something else.
+- **Come back to side ideas.** Keep offshoots connected to the original project and park them for another day.
+- **Return with context.** Open the project goal, saved progress, sources and next action together. Use a handover to continue with a connected AI tool.
+
+Your next session can start with the project, instead of reconstructing the story from scattered messages.
+
+You do not need to think in diagrams. Start with one goal and a few useful updates; Branchi turns the saved records into views you can explore and a handover you can return to.
 
 ## A visual example
 

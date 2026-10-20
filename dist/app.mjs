@@ -48,9 +48,9 @@ function render(){renderCapture();document.body.classList.toggle('dashboard-proj
  $('#save-status').textContent=storageOK?(localToken?'Live · shared with Obsidian':'Saved in this browser'):'Storage unavailable';
  $('#projects').innerHTML=w.projects.map(p=>`<button class="project-link ${p.id===projectId&&!overview?'active':''}" data-project="${p.id}"><span class="project-bullet"></span>${esc(p.title)}</button>`).join('');
  $$('#projects button').forEach(b=>b.onclick=()=>selectedProject(b.dataset.project));
- $('#title').textContent=overview?'Pick up the thread.':p?.title||'Make room for your next idea.';
+ $('#title').textContent=overview?'Pick up where you left off.':p?.title||'Make room for your next idea.';
  $('#eyebrow').textContent=overview?'YOUR WORK, CONNECTED':'ONE PROJECT. THE WHOLE PICTURE.';
- $('#subtitle').textContent=overview?'Your projects, recent changes and the next steps waiting for you.':p?'Keep the original goal in sight. Let the thinking branch out.':'Start with what you want to achieve. Branchi will keep the trail.';
+ $('#subtitle').textContent=overview?'Your saved chats, decisions, dependencies and side ideas — connected, ready for your next session.':p?'Keep the original goal in sight. Let the thinking branch out.':'Start with what you want to achieve. Branchi will keep the trail.';
  $('#breadcrumb').textContent=overview?'Your workspace / Overview':'Your workspace / '+(p?.title||'New beginning');
  $('#resume').disabled=!p;$('#capture').disabled=!p;
  const pr=p?progress(w,p):{done:0,total:0};
