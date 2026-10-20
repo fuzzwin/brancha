@@ -9,9 +9,9 @@ export function claudeHook(config,input){
  // A direct anchored human prompt is exact-chat activation, never transcript instructions.
  let activated=false;
  if(input.hook_event_name==='UserPromptSubmit'&&typeof input.prompt==='string'){
-  const activate=input.prompt.trim().match(/^(?:Brainch|Brancha) this chat for (.{1,150}?)\.?$/i);
-  if(activate){const w=JSON.parse(fs.readFileSync(paths(config).file,'utf8')),name=activate[1].toLowerCase(),matches=w.projects.filter(p=>p.title.toLowerCase()===name||p.id===activate[1]);if(matches.length!==1)throw Error('Brancha activation needs one exact existing project title.');setChatPermission(config,input.session_id,'include',{projectId:matches[0].id});activated=true;}
-  if(/^Exclude this chat from Brancha[.!]?$/i.test(input.prompt.trim())){setChatPermission(config,input.session_id,'exclude');return {excluded:true};}
+  const activate=input.prompt.trim().match(/^(?:Brainch|Branchi) this chat for (.{1,150}?)\.?$/i);
+  if(activate){const w=JSON.parse(fs.readFileSync(paths(config).file,'utf8')),name=activate[1].toLowerCase(),matches=w.projects.filter(p=>p.title.toLowerCase()===name||p.id===activate[1]);if(matches.length!==1)throw Error('Branchi activation needs one exact existing project title.');setChatPermission(config,input.session_id,'include',{projectId:matches[0].id});activated=true;}
+  if(/^Exclude this chat from Branchi[.!]?$/i.test(input.prompt.trim())){setChatPermission(config,input.session_id,'exclude');return {excluded:true};}
  }
  // No transcript path is opened, and excluded prompts are never persisted.
  if(!sessionAllowed(config,input.session_id)||controls(config).paused)return {captured:false,reason:'excluded or paused'};
@@ -34,8 +34,8 @@ export function claudeHook(config,input){
 }
 if(process.argv[1]&&pathToFileURL(path.resolve(process.argv[1])).href===import.meta.url){
  let feedback={};
- try{const raw=fs.readFileSync(0,'utf8');if(Buffer.byteLength(raw)>128000)throw Error('Hook input exceeds 128 KB');const {config}=loadConfig();const result=claudeHook(config,JSON.parse(raw));if(result.activated)feedback={hookSpecificOutput:{hookEventName:'UserPromptSubmit',additionalContext:'Brancha is enabled for this exact conversation and selected project. Future completed visible replies are saved locally automatically; no other chat was included.'}};}
- catch(e){console.error('Brancha Claude capture: '+redact(e.message));}
+ try{const raw=fs.readFileSync(0,'utf8');if(Buffer.byteLength(raw)>128000)throw Error('Hook input exceeds 128 KB');const {config}=loadConfig();const result=claudeHook(config,JSON.parse(raw));if(result.activated)feedback={hookSpecificOutput:{hookEventName:'UserPromptSubmit',additionalContext:'Branchi is enabled for this exact conversation and selected project. Future completed visible replies are saved locally automatically; no other chat was included.'}};}
+ catch(e){console.error('Branchi Claude capture: '+redact(e.message));}
  // Advisory only. Never block, continue the agent, or request tools.
  console.log(JSON.stringify(feedback));
 }

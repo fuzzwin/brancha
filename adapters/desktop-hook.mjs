@@ -14,11 +14,11 @@ export function desktopHook(config,input){
  if(typeof input.session_id!=='string'||typeof input.turn_id!=='string'||!input.turn_id||input.turn_id.length>200)throw Error('A stable session and turn identity is required.');
  let activated=false;
  if(input.hook_event_name==='UserPromptSubmit'&&typeof input.prompt==='string'){
-  const prompt=input.prompt.trim(),match=prompt.match(/^(?:Brainch|Brancha) this chat for (.{1,150}?)\.?$/i);
-  if(/^Exclude this chat from Brancha[.!]?$/i.test(prompt)){setChatPermission(config,input.session_id,'exclude');return {excluded:true};}
+  const prompt=input.prompt.trim(),match=prompt.match(/^(?:Brainch|Branchi) this chat for (.{1,150}?)\.?$/i);
+  if(/^Exclude this chat from Branchi[.!]?$/i.test(prompt)){setChatPermission(config,input.session_id,'exclude');return {excluded:true};}
   if(match){
    const w=JSON.parse(fs.readFileSync(paths(config).file,'utf8')),name=match[1].toLowerCase(),matches=w.projects.filter(p=>p.title.toLowerCase()===name||p.id===match[1]);
-   if(matches.length!==1)throw Error('Choose one exact existing Brancha project title.');
+   if(matches.length!==1)throw Error('Choose one exact existing Branchi project title.');
    if(controls(config).paused)return {captured:false,reason:'paused'};
    setChatPermission(config,input.session_id,'include',{projectId:matches[0].id});activated=true;
   }
@@ -58,8 +58,8 @@ export function runDesktopHook(){
  try{
   const raw=fs.readFileSync(0,'utf8');if(Buffer.byteLength(raw)>128000)throw Error('Hook input exceeds 128 KB');
   const {config}=loadConfig(),result=desktopHook(config,JSON.parse(raw));
-  if(result.activated)feedback={hookSpecificOutput:{hookEventName:'UserPromptSubmit',additionalContext:'Brancha is enabled for this exact local conversation and selected project. Completed responses save automatically; other chats remain off. Do not save a duplicate manual checkpoint.'}};
- }catch(e){feedback={systemMessage:'Brancha desktop capture needs attention: '+redact(e.message)};}
+  if(result.activated)feedback={hookSpecificOutput:{hookEventName:'UserPromptSubmit',additionalContext:'Branchi is enabled for this exact local conversation and selected project. Completed responses save automatically; other chats remain off. Do not save a duplicate manual checkpoint.'}};
+ }catch(e){feedback={systemMessage:'Branchi desktop capture needs attention: '+redact(e.message)};}
  // Advisory JSON only: never block or continue a turn, and never invoke a model.
  console.log(JSON.stringify(feedback));
 }

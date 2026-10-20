@@ -1,8 +1,8 @@
-# Use Brancha across chats
+# Use Branchi across chats
 
-Select your connected Brancha plugin in a new ChatGPT chat, then say:
+Select your connected Branchi plugin in a new ChatGPT chat, then say:
 
-> Use Brancha for this chat. List my projects and resume the project I name. Save meaningful decisions, branches, evidence and next steps without asking each time. Before I switch projects, checkpoint meaningful unsaved work in the outgoing project and resume the named incoming project. Preserve original requests and do not create duplicate projects. Reread the current revision before each write because other chats may be working too.
+> Use Branchi for this chat. List my projects and resume the project I name. Save meaningful decisions, branches, evidence and next steps without asking each time. Before I switch projects, checkpoint meaningful unsaved work in the outgoing project and resume the named incoming project. Preserve original requests and do not create duplicate projects. Reread the current revision before each write because other chats may be working too.
 
 An explicit existing project name is enough to switch. Ask only when the intended project is ambiguous. A switch without new work needs no empty checkpoint. Records remain self-reported sources until evidence supports stronger claims.
 

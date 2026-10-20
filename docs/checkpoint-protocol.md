@@ -2,7 +2,7 @@
 
 The versioned envelope is a small interchange format for trusted local integrations. It records a selected result, not a raw transcript, hidden reasoning, screenshots, shell instructions or credentials. External tools are never executed by the importer.
 
-Copy an example under `examples/checkpoints/`, replace the fictional project ID with an existing Brancha project, and read the current revision using the skill helper or MCP tools. Then:
+Copy an example under `examples/checkpoints/`, replace the fictional project ID with an existing Branchi project, and read the current revision using the skill helper or MCP tools. Then:
 
 ```sh
 npm run checkpoint -- my-checkpoint.json EXPECTED_REVISION
@@ -33,11 +33,11 @@ Verification stages are separate: implementation (`unknown`, `in_progress`, `rep
 
 A `run` records `phase` (propose, probe, compose, reflect), `outcome` (unknown, passed, failed, blocked), `decision` (undecided, keep, revise, reject), `hypothesis`, `baseline`, `observation`, `lesson`, and `artifacts` (label/ref pairs). An adopted improvement requires a passing observation and at least one artifact reference. Those references are stored without fetching or executing them; their presence does not authenticate their content.
 
-This uses the [Harness²](https://github.com/google-research/harness2) idea of testing candidate changes and retaining evidence-supported lessons. Brancha supplies the receipt and project continuity, not Harness²'s recursive execution engine. If a user independently runs Harness², a small trusted wrapper can select its results and construct this envelope. Keep baseline conditions and configuration consistent. Never automatically copy a whole run directory, harness instructions, evaluation data or private traces.
+This uses the [Harness²](https://github.com/google-research/harness2) idea of testing candidate changes and retaining evidence-supported lessons. Branchi supplies the receipt and project continuity, not Harness²'s recursive execution engine. If a user independently runs Harness², a small trusted wrapper can select its results and construct this envelope. Keep baseline conditions and configuration consistent. Never automatically copy a whole run directory, harness instructions, evaluation data or private traces.
 
-[ARTEMIS](https://github.com/google/artemis) is optional for Android work. Its device tools and trace/status evidence can inform a selected project checkpoint. The Artemis example shows an envelope an integration constructs after inspecting a result; it is not a direct parser for an Artemis trace file and is not proof a device test ran. Review useful evidence first, reference the trace, and keep acceptance separate. Brancha does not install ADB, models, accessibility helpers or a phone controller.
+[ARTEMIS](https://github.com/google/artemis) is optional for Android work. Its device tools and trace/status evidence can inform a selected project checkpoint. The Artemis example shows an envelope an integration constructs after inspecting a result; it is not a direct parser for an Artemis trace file and is not proof a device test ran. Review useful evidence first, reference the trace, and keep acceptance separate. Branchi does not install ADB, models, accessibility helpers or a phone controller.
 
-Both upstream projects publish Apache-2.0 licenses. No code from either is vendored in this implementation; Brancha's implementation remains MIT. If future contributions copy upstream code, preserve the applicable license, notices and provenance. Native upstream adapters should be separate optional contributions with fictional fixtures and tested upstream format versions.
+Both upstream projects publish Apache-2.0 licenses. No code from either is vendored in this implementation; Branchi's implementation remains MIT. If future contributions copy upstream code, preserve the applicable license, notices and provenance. Native upstream adapters should be separate optional contributions with fictional fixtures and tested upstream format versions.
 
 ## Dependencies and reimports
 

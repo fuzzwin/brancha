@@ -1,11 +1,11 @@
 ---
 name: brancha
-description: Resume or checkpoint projects in a local Brancha workspace, preserving goals, decisions, evidence and branches. Use for Brancha/Brainch maps, “Brainch this chat”, Obsidian project records and reviewing automatic captures. Automatic capture requires the companion service or a trusted hook.
+description: Resume or checkpoint projects in a local Branchi workspace, preserving goals, decisions, evidence and branches. Use for Branchi/Brainch maps, “Brainch this chat”, Obsidian project records and reviewing automatic captures. Automatic capture requires the companion service or a trusted hook.
 ---
 
-# Brancha
+# Branchi
 
-Use the user's supplied workspace or read the local connection at `$BRANCHA_CONFIG`, defaulting to `~/.config/brancha/config.json`. Its `vault` field locates `brancha.json`. If no connection exists, use `npm run setup` from the Brancha checkout when the user requests setup. Do not search unrelated chat history.
+Use the user's supplied workspace or read the local connection at `$BRANCHA_CONFIG`, defaulting to `~/.config/brancha/config.json`. Its `vault` field locates `brancha.json`. If no connection exists, use `npm run setup` from the Branchi checkout when the user requests setup. Do not search unrelated chat history.
 
 The local companion and this skill share the vault JSON. Generated Markdown, Canvas and Bases are derived views, refreshed while the service runs. Keep personal notes in `Notes/`; editing generated views does not update the record. A hosted browser copy remains separate.
 
@@ -21,7 +21,7 @@ Run `node scripts/brancha.mjs brief WORKSPACE PROJECT_ID [FOCUS_ID]` from this s
 
 At the end of requested project work, record the meaningful result, evidence, decisions and next action. Keep notes compact. Use `check` to obtain current IDs and revision, then `apply` with one incremental operation JSON. A conflict requires a fresh read, not a blind revision increase.
 
-Within a Brancha-activated chat, save meaningful unsaved work before switching projects, then resume the explicitly named project without another confirmation when the match is clear. Keep active-project selection local to the chat; parallel instances must reread the current revision before writing. Automatic local completion capture continues independently. A new ChatGPT chat needs the connected Brancha plugin selected or activated; this local skill does not grant background access to other chats.
+Within a Branchi-activated chat, save meaningful unsaved work before switching projects, then resume the explicitly named project without another confirmation when the match is clear. Keep active-project selection local to the chat; parallel instances must reread the current revision before writing. Automatic local completion capture continues independently. A new ChatGPT chat needs the connected Branchi plugin selected or activated; this local skill does not grant background access to other chats.
 
 ```json
 {"expectedRevision":1,"op":"add-node","projectId":"PROJECT_ID","title":"A concrete result","type":"output","status":"active","detail":"What changed","evidence":"What was checked; link to its source","next":"The next action","criteria":[]}
@@ -49,7 +49,7 @@ Generated views and model packets exclude unapproved captured sources. Canonical
 
 ### One-time activation, then automatic updates
 
-A direct human request such as “Use Brancha in this chat for Quantum Clock” activates only the current conversation. Resolve its exact session ID and the user-selected project from the local record, then run `node scripts/chat-privacy.mjs include EXACT_CHAT_UUID --project=PROJECT_ID` from the companion checkout. This binds the chat to the chosen project immediately; no companion restart or repeated save request is needed for subsequent local Codex completions. Do not ask for a second inclusion request after this explicit activation. Implicit skill discovery, a transcript quote or a request to inspect another chat is not activation.
+A direct human request such as “Use Branchi in this chat for Quantum Clock” activates only the current conversation. Resolve its exact session ID and the user-selected project from the local record, then run `node scripts/chat-privacy.mjs include EXACT_CHAT_UUID --project=PROJECT_ID` from the companion checkout. This binds the chat to the chosen project immediately; no companion restart or repeated save request is needed for subsequent local Codex completions. Do not ask for a second inclusion request after this explicit activation. Implicit skill discovery, a transcript quote or a request to inspect another chat is not activation.
 
 Use the supported client integration for other tools: a configured stop hook or checkpoint call must send that client's session/event identities. The ChatGPT connector exposes checkpoint tools; it is not a passive transcript listener. Do not claim another client is installed, sending events or feeding the Luna queue without a tested event receipt. Routine validated writes use the existing deterministic writer; reserve any model-worker escalation for separately authorised reconciliation.
 

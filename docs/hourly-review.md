@@ -1,6 +1,6 @@
-# Twice-daily and manual Brancha catch-up
+# Twice-daily and manual Branchi catch-up
 
-Brancha 0.13.0 has two stages: a bounded GPT-6 Luna High reviewer and a deterministic update worker. Immediate completion capture and the Low mapper continue independently.
+Branchi 0.13.0 has two stages: a bounded GPT-6 Luna High reviewer and a deterministic update worker. Immediate completion capture and the Low mapper continue independently.
 
 The local scheduler invokes `node scripts/catch-up.mjs` twice daily. It first recovers the saved-receipt handoff, then runs one bounded High batch. Home's **Check now** writes a local request that the running companion handles within its polling interval. Both paths share the same lock, cursors, daily budget and durable receipts. No separate open-ended action model is needed to update the vault.
 
@@ -32,6 +32,6 @@ From a configured checkout: enable the mapper, run `npm run reviewer -- enable`,
 
 The current implementation uses a fixed, versioned review harness, source-grounding checks, receipts, duplicate suppression, failure retention and regression tests. These expose measurable failures for subsequent improvements. They do not autonomously rewrite prompts, source code or safeguards.
 
-Google Research's harness2 is **not installed or embedded**. Its upstream README describes Propose–Probe–Compose and persistent evidence-supported lessons, Linux/Python 3.12 setup, and model-backed benchmark dependencies. Its documented executor defaults include unrestricted networking and Codex without its sandbox. Those defaults are not adopted by Brancha. The useful pattern here is a proposal checked against evidence before adoption, with results retained. Full recursive harness experiments would be a separate isolated development workflow with a baseline, fixed evaluation cases and explicit adoption criteria.
+Google Research's harness2 is **not installed or embedded**. Its upstream README describes Propose–Probe–Compose and persistent evidence-supported lessons, Linux/Python 3.12 setup, and model-backed benchmark dependencies. Its documented executor defaults include unrestricted networking and Codex without its sandbox. Those defaults are not adopted by Branchi. The useful pattern here is a proposal checked against evidence before adoption, with results retained. Full recursive harness experiments would be a separate isolated development workflow with a baseline, fixed evaluation cases and explicit adoption criteria.
 
 Sources: [harness2 upstream](https://github.com/google-research/harness2), [OpenAI iterative repair example](https://developers.openai.com/cookbook/examples/codex/build_iterative_repair_loops_with_codex), [scheduled tasks](https://learn.chatgpt.com/docs/automations?surface=app).

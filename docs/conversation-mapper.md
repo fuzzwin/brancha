@@ -1,12 +1,12 @@
 # Luna conversation mapper
 
-Automatic mapping is the primary Brancha workflow. Fresh v0.13 setups enable it for individually activated sources; existing configurations retain their settings. See [automatic mapping](automatic-mapping.md) for the end-to-end workflow and supported-client boundaries. Obsidian remains primary. The collector reads new **visible user messages and final assistant responses** from supported local Codex logs after each completed turn. It ignores reasoning, tool bodies, subagents and scheduled review inputs. It does not passively read every cloud ChatGPT chat; those still need an activated connection/checkpoint or a future adapter.
+Automatic mapping is the primary Branchi workflow. Fresh v0.13 setups enable it for individually activated sources; existing configurations retain their settings. See [automatic mapping](automatic-mapping.md) for the end-to-end workflow and supported-client boundaries. Obsidian remains primary. The collector reads new **visible user messages and final assistant responses** from supported local Codex logs after each completed turn. It ignores reasoning, tool bodies, subagents and scheduled review inputs. It does not passively read every cloud ChatGPT chat; those still need an activated connection/checkpoint or a future adapter.
 
 The mapper uses the signed-in Codex CLI, pinned to `gpt-6-luna`, with Low effort and High escalation only when ambiguity is flagged and budget remains. No new API key is created. Model availability depends on client/account: test the actual installed runner. The older standalone CLI on the development Mac rejected Luna, while the newer CLI already bundled with ChatGPT succeeded. The macOS enable command prefers that existing bundled client. It does not install or update software, and never substitutes another model.
 
 ## Enable and inspect
 
-From this checkout, after normal Brancha setup and `codex login`:
+From this checkout, after normal Branchi setup and `codex login`:
 
 ```sh
 npm run mapper -- enable
@@ -30,7 +30,7 @@ Pending proposals do not displace the project's next concrete task or count as r
 
 ## Reliability and failures
 
-The runner uses read-only, ephemeral Codex execution with user-config loading, shell execution, multi-agent tools and web search disabled for the extraction process. Transcript instructions are untrusted input. Tool use is rejected. The final structured result is validated before any project write. No separate API key or copied sign-in token is stored by Brancha.
+The runner uses read-only, ephemeral Codex execution with user-config loading, shell execution, multi-agent tools and web search disabled for the extraction process. Transcript instructions are untrusted input. Tool use is rejected. The final structured result is validated before any project write. No separate API key or copied sign-in token is stored by Branchi.
 
 Job files and receipts live privately under `.brancha/mapper`. A workspace lock and per-job event marker prevent duplicate application; model processing occurs outside the workspace lock. Canonical writes re-read and validate the current record, preserve original scope and make a backup. Call reservations survive restart. A failed run is retained rather than retried on every poll. Review its cause, then explicitly retry with `npm run mapper -- retry JOB_ID` if appropriate. This retains the prior attempt and daily budget. Interrupted jobs are marked failed after their dead worker lock is recovered.
 

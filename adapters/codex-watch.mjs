@@ -32,7 +32,7 @@ export class CodexWatcher{
      const v=r.payload;if(!v||cursor.subagent)continue;
      if(r.type==='response_item'&&v.type==='message'&&v.role==='user'){
       const raw=(v.content||[]).filter(c=>['input_text','text'].includes(c.type)).map(c=>c.text||'').join('\n');
-      if(/^Automation: Brancha maintenance/m.test(raw))cursor.maintenanceTurn=true;
+      if(/^Automation: Branchi maintenance/m.test(raw))cursor.maintenanceTurn=true;
      }
      if(r.type==='response_item'&&v.type==='message'&&v.role==='user'){
       const raw=(v.content||[]).filter(c=>['input_text','text'].includes(c.type)).map(c=>c.text||'').join('\n');

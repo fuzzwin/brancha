@@ -133,7 +133,7 @@
 .bi-status progress { accent-color:var(--bi-state-stroke); }
 .bi-status progress::-webkit-progress-value { background:var(--bi-state-stroke); }
 @container (max-width:480px) { .bi-legend dl { grid-template-columns:1fr; } .bi-legend dd { margin-bottom:8px; } }
-/* Override Obsidian's progress[value] accent only inside Brancha panels. */
+/* Override Obsidian's progress[value] accent only inside Branchi panels. */
 .bi .bi-status progress[value]::-webkit-progress-value { background-color:var(--bi-state-stroke); }
 .bi .bi-stream progress[value]::-webkit-progress-value { background-color:#86a478; }
 
@@ -149,7 +149,7 @@
 .bi-chat-artifacts { max-height:380px; overflow:auto; padding-right:14px; }
 .bi-chat-reports { max-height:650px; overflow:auto; }
 
-/* Comfortable desktop density, scoped to Brancha rather than app-wide zoom. */
+/* Comfortable desktop density, scoped to Branchi rather than app-wide zoom. */
 .bi { font-size:14px; line-height:1.45; }
 .bi h1 { font-size:26px; line-height:1.2; }
 .bi h2 { font-size:19px; margin-bottom:12px!important; }

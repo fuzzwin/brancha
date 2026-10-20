@@ -5,7 +5,7 @@ test('live service captures completion, refreshes vault and exposes pause contro
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'brancha-service-')),vault=path.join(dir,'vault'),sessions=path.join(dir,'sessions'),configPath=path.join(dir,'config.json');fs.mkdirSync(vault);fs.mkdirSync(sessions);fs.writeFileSync(path.join(vault,'brancha.json'),JSON.stringify(blank()));fs.writeFileSync(configPath,JSON.stringify({vault,capturePolicy:{mode:'approved',approvedSessionIds:['live']},sessionsDirectory:sessions,port:51317,pollMs:50}));
  const child=spawn(process.execPath,[path.join(root,'companion/service.mjs'),configPath]);let output='',err='';child.stderr.on('data',b=>err+=b);
  try{
- await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Service readiness timeout: '+err)),4000);child.stdout.on('data',b=>{output+=b;if(output.includes('Brancha live:')){clearTimeout(timer);resolve();}});child.once('exit',c=>{clearTimeout(timer);reject(Error('Service exited '+c+': '+err));});});
+ await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Service readiness timeout: '+err)),4000);child.stdout.on('data',b=>{output+=b;if(output.includes('Branchi live:')){clearTimeout(timer);resolve();}});child.once('exit',c=>{clearTimeout(timer);reject(Error('Service exited '+c+': '+err));});});
  const base='http://127.0.0.1:51317',html=await(await fetch(base)).text(),token=html.match(/brancha-local-token" content="([a-f0-9]+)"/)[1],headers={'X-Brancha-Token':token};
  const get=async()=>await(await fetch(base+'/api/workspace',{headers})).json();
  const until=async check=>{for(let i=0;i<80;i++){const v=await get();if(check(v))return v;await new Promise(r=>setTimeout(r,25));}throw Error('Expected state missing: '+err);};
@@ -33,7 +33,7 @@ test('portable companion starts without Codex installed and generates views',asy
  fs.writeFileSync(configPath,JSON.stringify({vault,captureEnabled:false,port:51318}));
  const child=spawn(process.execPath,[path.join(root,'companion/service.mjs'),configPath]);let output='',err='';child.stderr.on('data',b=>err+=b);
  try{
-  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Readiness timeout: '+err)),4000);child.stdout.on('data',b=>{output+=b;if(output.includes('Brancha live:')){clearTimeout(timer);resolve();}});child.once('exit',c=>{clearTimeout(timer);reject(Error('Exited '+c+': '+err));});});
+  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Readiness timeout: '+err)),4000);child.stdout.on('data',b=>{output+=b;if(output.includes('Branchi live:')){clearTimeout(timer);resolve();}});child.once('exit',c=>{clearTimeout(timer);reject(Error('Exited '+c+': '+err));});});
   const html=await(await fetch('http://127.0.0.1:51318')).text(),token=html.match(/brancha-local-token" content="([a-f0-9]+)"/)[1];
   const state=await(await fetch('http://127.0.0.1:51318/api/workspace',{headers:{'x-brancha-token':token}})).json();
   assert.equal(state.capture.enabled,false);assert.equal(state.capture.adapter,'portable-checkpoint');assert(fs.existsSync(path.join(vault,'Generated','Records.md')));assert(!fs.existsSync(path.join(vault,'.brancha','codex-cursors.json')));

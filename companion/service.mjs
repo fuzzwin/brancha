@@ -31,4 +31,4 @@ const reviewerTimer=setInterval(()=>{reviewer?.tick().catch(e=>status(config,{re
 companion.server.on('error',()=>{clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);status(config,{enabled:false,error:'Companion server could not start.'});});
 function stop(){if(exiting)return;exiting=true;clearInterval(reviewerTimer);clearInterval(timer);clearInterval(cloudTimer);clearInterval(mapperTimer);clearInterval(indexTimer);status(config,{enabled:false,stoppedAt:new Date().toISOString()});companion.stop();}
 process.on('SIGINT',stop);process.on('SIGTERM',stop);
-console.log('Brancha '+(watcher?'automatic Codex capture':'portable checkpoints')+' is active. Config: '+configFile);
+console.log('Branchi '+(watcher?'automatic Codex capture':'portable checkpoints')+' is active. Config: '+configFile);

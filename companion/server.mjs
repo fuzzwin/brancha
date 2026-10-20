@@ -54,7 +54,7 @@ function refresh(){const r=read(),day=new Date().toLocaleDateString('en-CA');if(
  }
  try{const previous=JSON.parse(fs.readFileSync(assetManifest,'utf8'));if(previous.version===1&&Array.isArray(previous.files))priorAssets=previous.files.filter(name=>typeof name==='string'&&assetPattern.test(name));}catch{}
  for(const [name,original]of Object.entries(views).sort(([a],[b])=>Number(!a.endsWith('.svg'))-Number(!b.endsWith('.svg')))){if(name==='brancha.json')continue;let content=name.endsWith('.md')?original.replaceAll('[[','[[Generated/'):original;if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}const target=path.join(generated,name);if(name.endsWith('.md')&&content.includes('```brancha-')&&fs.existsSync(target)&&fs.readFileSync(target,'utf8')===content)continue;atomicText(target,content);}
- atomicText(path.join(generated,'START HERE.md'),'---\ncssclasses: brancha-dashboard\n---\n# Pick up the thread\n\n[[Generated/Navigation/Home|Open Brancha Home →]]\n\n[[Generated/Navigation/Today|Today and yesterday]] · [[Generated/Dashboards/index|All projects]] · [[Generated/Navigation/Review|Needs a look]] · [[Generated/Navigation/Connections|Connections and freshness]] · [[Generated/Navigation/How to use|How to use]]\n\nHome brings together the goal, next action, dashboards, maps and resume briefs. These pages update while the companion runs. Keep personal writing in Notes; generated pages are refreshed.');
+ atomicText(path.join(generated,'START HERE.md'),'---\ncssclasses: brancha-dashboard\n---\n# Pick up the thread\n\n[[Generated/Navigation/Home|Open Branchi Home →]]\n\n[[Generated/Navigation/Today|Today and yesterday]] · [[Generated/Dashboards/index|All projects]] · [[Generated/Navigation/Review|Needs a look]] · [[Generated/Navigation/Connections|Connections and freshness]] · [[Generated/Navigation/How to use|How to use]]\n\nHome brings together the goal, next action, dashboards, maps and resume briefs. These pages update while the companion runs. Keep personal writing in Notes; generated pages are refreshed.');
  const retained=[];for(const name of priorAssets)if(!assets.includes(name)){try{fs.unlinkSync(path.join(generated,name));}catch(e){if(e.code!=='ENOENT')retained.push(name);}}
  atomic(assetManifest,{version:1,files:[...new Set([...assets,...retained])]});
  const names=Object.keys(views).filter(n=>n!=='brancha.json'),retainedPages=[];
@@ -108,13 +108,13 @@ const server=http.createServer(async(req,res)=>{res.setHeader('Cache-Control','n
   if(shared[url.pathname]){res.writeHead(200,{'Content-Type':url.pathname.endsWith('.css')?'text/css':'text/javascript'});return res.end(fs.readFileSync(path.join(base,shared[url.pathname])));}
   const relative=url.pathname==='/'?'live.html':url.pathname==='/editor'?'index.html':decodeURIComponent(url.pathname).slice(1);
   const dest=path.resolve(base,'dist',relative);if(!dest.startsWith(path.join(base,'dist')+path.sep))return send(403,{error:'Invalid path'});
-  let data=fs.readFileSync(dest);if(['index.html','live.html'].includes(relative))data=Buffer.from(data.toString().replace('<head>',`<head><meta name="brancha-local-token" content="${token}">`).replace('<body>',relative==='index.html'?'<body><div style="padding:12px 24px;background:#e9eee4;color:#263a31">Record editor · same live workspace · <a href="/">Return to Brancha Home →</a></div>':'<body>'));
+  let data=fs.readFileSync(dest);if(['index.html','live.html'].includes(relative))data=Buffer.from(data.toString().replace('<head>',`<head><meta name="brancha-local-token" content="${token}">`).replace('<body>',relative==='index.html'?'<body><div style="padding:12px 24px;background:#e9eee4;color:#263a31">Record editor · same live workspace · <a href="/">Return to Branchi Home →</a></div>':'<body>'));
   res.writeHead(200,{'Content-Type':({'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml'})[path.extname(dest)]||'text/plain'});res.end(data);
  }catch(e){send(e.code==='ENOENT'?404:400,{error:e.message});}
 });
 const timer=setInterval(()=>{try{refresh();}catch(e){lastError=e.message;}},1000);
 server.on('error',e=>{clearInterval(timer);console.error(e.message);process.exitCode=1;});
-server.listen(port,'127.0.0.1',()=>console.log(`Brancha live: ${origin}\nVault: ${vault}\nKeep this process running. Ctrl+C stops live updates.`));
+server.listen(port,'127.0.0.1',()=>console.log(`Branchi live: ${origin}\nVault: ${vault}\nKeep this process running. Ctrl+C stops live updates.`));
 function stop(){clearInterval(timer);server.close();}
 return {server,stop};
 }

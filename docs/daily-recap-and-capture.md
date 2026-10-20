@@ -1,12 +1,12 @@
 # Daily recaps and optional client capture
 
-Daily recaps now assemble automatically from included saved work, without extra model calls. Open **Home → Daily recap** or the **Brancha · Daily recaps** bookmark. Each page shows work by project, source-linked decisions, explicitly recorded reasons, branches, tasks/results and where to resume. The current day updates while you work; after midnight it is the previous day's recap. The latest 31 recorded dates are available. These are living projections: late mapping and later review status may update them. Missing rationale is labelled, not invented. Queue/allowance gaps remain visible. The computer and companion must run to capture and refresh.
+Daily recaps now assemble automatically from included saved work, without extra model calls. Open **Home → Daily recap** or the **Branchi · Daily recaps** bookmark. Each page shows work by project, source-linked decisions, explicitly recorded reasons, branches, tasks/results and where to resume. The current day updates while you work; after midnight it is the previous day's recap. The latest 31 recorded dates are available. These are living projections: late mapping and later review status may update them. Missing rationale is labelled, not invented. Queue/allowance gaps remain visible. The computer and companion must run to capture and refresh.
 
 Luna's structured extraction now supports a rationale and an exact rationale quote from the same source. Missing reasons use empty values. Existing proposals without reasons are not given invented explanations or silently replayed. This is visible source analysis, not recovery of hidden model reasoning.
 
 ## Ordinary ChatGPT and Claude web chats
 
-The new **Brancha Local Capture** Chrome extension uses a native messaging bridge. Rendered visible user requests and assistant responses go to the configured local canonical record; the existing intake and Luna mapper handle them. It does not read cookies, authentication storage, private APIs or other browser pages. No chat data is uploaded by the adapter. Each exact chat must be activated with a chosen project from the extension popup. **Also capture currently visible replies** is a separate opt-in for late activation; unloaded/hidden/unavailable history is not recovered.
+The new **Branchi Local Capture** Chrome extension uses a native messaging bridge. Rendered visible user requests and assistant responses go to the configured local canonical record; the existing intake and Luna mapper handle them. It does not read cookies, authentication storage, private APIs or other browser pages. No chat data is uploaded by the adapter. Each exact chat must be activated with a chosen project from the extension popup. **Also capture currently visible replies** is a separate opt-in for late activation; unloaded/hidden/unavailable history is not recovered.
 
 The extension waits for generation to stop and the visible response to remain stable for eight seconds. New receipts are replay-safe and an offline outbox remains only in browser local storage. Unknown origins and subframes are rejected. Pause/exclusion stop canonical writes; Stop this chat also clears its local delivery queue. DOM selectors are best effort: changed site markup, closed/background tabs and unloaded history can reduce coverage. Check the popup and source receipt, rather than assuming capture succeeded. This is not an official ChatGPT/Claude transcript webhook.
 
@@ -18,9 +18,9 @@ Run `npm run claude-hook` to add the optional **UserPromptSubmit** and **Stop** 
 
 > Brainch this chat for My project
 
-The hook matches only a direct activation prompt and an exact existing project title. Quoted instructions do not activate capture. Subsequent completed main-agent responses are queued durably, then imported and mapped by the companion. A temporary canonical lock does not lose the receipt. No transcript file is opened; hidden reasoning, tools and subagents are excluded. “Exclude this chat from Brancha” stops it. The installer includes no existing conversation. Verify an actual Claude-generated completion to prove delivery from the installed application.
+The hook matches only a direct activation prompt and an exact existing project title. Quoted instructions do not activate capture. Subsequent completed main-agent responses are queued durably, then imported and mapped by the companion. A temporary canonical lock does not lose the receipt. No transcript file is opened; hidden reasoning, tools and subagents are excluded. “Exclude this chat from Branchi” stops it. The installer includes no existing conversation. Verify an actual Claude-generated completion to prove delivery from the installed application.
 
-For another computer, run `npm run claude-hook` after standard Brancha setup. Existing settings/hooks are preserved and changed files backed up. Remove only the Brancha command entries to uninstall.
+For another computer, run `npm run claude-hook` after standard Branchi setup. Existing settings/hooks are preserved and changed files backed up. Remove only the Branchi command entries to uninstall.
 
 ## ChatGPT Work and hosted Connect
 

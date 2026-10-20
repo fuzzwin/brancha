@@ -1,6 +1,6 @@
-# Portable Brancha
+# Portable Branchi
 
-Brancha's core is a local JSON project record. The browser and generated Obsidian views read that record. AI tools connect through optional adapters. No storage vendor, AI provider, model account, cloud service or Obsidian installation is required for the local runtime.
+Branchi's core is a local JSON project record. The browser and generated Obsidian views read that record. AI tools connect through optional adapters. No storage vendor, AI provider, model account, cloud service or Obsidian installation is required for the local runtime.
 
 Requires Node.js 22 or later. This version was exercised on macOS; a GitHub Actions matrix is supplied for Windows, macOS and Linux. A configured CI job is not evidence that those remote jobs have run.
 
@@ -19,7 +19,7 @@ Installing instructions or a connector does not create passive access to all cha
 ## Set up on another computer
 
 ```sh
-git clone https://github.com/fuzzwin/brancha.git
+git clone https://github.com/fuzzwin/branchi.git
 cd brancha
 npm run setup -- --no-codex
 npm run doctor
@@ -47,7 +47,7 @@ Use the generated `node` command directly. Do not configure `npm run` as the MCP
 
 Starter:
 
-> Use Brancha to list my projects, then resume PROJECT NAME. Keep the original goal and evidence visible. Save meaningful milestones and unsaved work before project switches without asking me to repeat the save request. Keep the chosen project in this conversation and reread the revision before each write.
+> Use Branchi to list my projects, then resume PROJECT NAME. Keep the original goal and evidence visible. Save meaningful milestones and unsaved work before project switches without asking me to repeat the save request. Keep the chosen project in this conversation and reread the revision before each write.
 
 For parallel chats: read current state, use a new requestId for each new checkpoint, and reuse it only for retries of identical content. A stale revision requires a fresh read and reconciliation. A connected local client can read the configured workspace; separate private configs/vaults are the boundary for personal versus work data. A session allowlist is not access control for an MCP client with filesystem access.
 
@@ -75,7 +75,7 @@ Open the configured vault, then `Generated/START HERE.md` or `Generated/Dashboar
 npm run obsidian-style
 ```
 
-This installs and enables CSS scoped to generated Brancha maps and records. It backs up the existing snippet and appearance settings, preserves other settings/snippets, and leaves personal notes untouched. Restore the listed backups to undo it. Native Obsidian rendering still needs visual inspection; passing SVG geometry tests alone does not prove native readability.
+This installs and enables CSS scoped to generated Branchi maps and records. It backs up the existing snippet and appearance settings, preserves other settings/snippets, and leaves personal notes untouched. Restore the listed backups to undo it. Native Obsidian rendering still needs visual inspection; passing SVG geometry tests alone does not prove native readability.
 
 ## Versions and diagnosis
 

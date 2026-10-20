@@ -43,7 +43,7 @@ async function render(){
   identity=await api('/api/identity');if(mine!==sequence)return;
   document.querySelector('#workspace-identity').textContent=identity.name+' · revision '+identity.revision+' · same record as Obsidian';
   const open=document.querySelector('#open-obsidian');open.href=obsidianLink(page);open.textContent='Open in main Obsidian ↗';
-  if(!page.startsWith('Generated/')){root.replaceChildren();el(root,'h1','Your personal Obsidian note');el(root,'p','Personal notes stay in Obsidian. This live browser shares Brancha’s generated project and chat views.');const a=el(root,'a','Open this note in Obsidian ↗');a.className='obsidian-note';a.href=obsidianLink(page);return;}
+  if(!page.startsWith('Generated/')){root.replaceChildren();el(root,'h1','Your personal Obsidian note');el(root,'p','Personal notes stay in Obsidian. This live browser shares Branchi’s generated project and chat views.');const a=el(root,'a','Open this note in Obsidian ↗');a.className='obsidian-note';a.href=obsidianLink(page);return;}
   if(page.endsWith('.svg')){const raw=await read(page);if(mine!==sequence)return;root.replaceChildren();root.className='note';root.append(safeSvg(raw,document));return;}
   const text=await read(page.endsWith('.md')?page:page+'.md');if(mine!==sequence)return;root.replaceChildren();
   const block=text.match(/```(brancha-home|brancha-chats|brancha-chat|brancha-interactive|brancha-timeline|brancha-map)\n([^`]*?)```/);
@@ -55,7 +55,7 @@ async function render(){
    current.onload();
   }else await markdown(text,page);
   document.querySelector('#connection').textContent='Connected locally · same generated views as Obsidian · refreshed '+new Date().toLocaleTimeString();
- }catch(error){if(mine!==sequence)return;root.replaceChildren();el(root,'h1','This view is unavailable');el(root,'p',error.message);const home=el(root,'a','Return to Brancha Home');home.href='#Generated%2FNavigation%2FHome';document.querySelector('#connection').textContent='Check the Brancha companion connection.';}
+ }catch(error){if(mine!==sequence)return;root.replaceChildren();el(root,'h1','This view is unavailable');el(root,'p',error.message);const home=el(root,'a','Return to Branchi Home');home.href='#Generated%2FNavigation%2FHome';document.querySelector('#connection').textContent='Check the Branchi companion connection.';}
 }
 document.addEventListener('click',event=>{const link=event.target.closest('a');if(!link?.getAttribute('href')?.startsWith('#'))return;event.preventDefault();try{navigate(decodeURIComponent(link.getAttribute('href').slice(1)||'Generated/Navigation/Home'));}catch{navigate('Generated/Navigation/Home');}});
 window.addEventListener('popstate',()=>{backCount=history.state?.branchaDepth||0;render();});window.addEventListener('hashchange',()=>{backCount=history.state?.branchaDepth||0;render();});await render();

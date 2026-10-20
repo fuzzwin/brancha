@@ -1,6 +1,6 @@
 # Chat continuity
 
-Brancha tracks two levels: projects keep the overall brief and evidence; chat overviews keep the saved work from a particular conversation. No extra AI calls are needed for these derived pages.
+Branchi tracks two levels: projects keep the overall brief and evidence; chat overviews keep the saved work from a particular conversation. No extra AI calls are needed for these derived pages.
 
 Open **Home → Recent chats**, the **Chats** bookmark, or **Chats behind this project** in a project dashboard. An overview shows:
 
@@ -27,7 +27,7 @@ Canonical data remains `brancha.json`. Derived files live under `Generated/Chats
 
 Home shows 20 recent chat/project entries; All chats loads up to 1000. Each overview displays the latest 80 saved reports, up to 100 distinct file/web links and the latest 400 chat timeline updates. Counts disclose these limits; older records remain in the canonical workspace. Search covers captured titles, latest excerpts, saved report titles and extracted link names/paths; it is not full transcript search.
 
-After upgrading: restart the existing companion, install/reload Brancha Interactive and add missing bookmarks using the supplied additive bookmark installer. Other computers use the standard setup and the same generated relative links.
+After upgrading: restart the existing companion, install/reload Branchi Interactive and add missing bookmarks using the supplied additive bookmark installer. Other computers use the standard setup and the same generated relative links.
 
 
 ## Chat mindmaps and backtracking (v0.12.0)
@@ -44,7 +44,7 @@ File links retain every captured mention, so selecting a file can take you back 
 
 New chats are excluded by default. A project route, the old `capturePolicy.mode: all`, project membership and classification guesses do not grant capture permission. Only an exact `approvedSessionIds` entry or an individual local permission can include a chat. Explicit exclusions win. This deliberately includes unclear and personal chats in the default exclusion. No excluded transcript goes to a privacy model.
 
-Ask Codex “Include this exact chat in Brancha” and let it resolve the active UUID; an instruction in a transcript cannot change permissions. The CLI is `node scripts/chat-privacy.mjs include EXACT_CHAT_UUID` (one UUID only), `exclude EXACT_CHAT_UUID` or `status`. The skill requires a direct specific user request before including. Included chats update automatically; permission never spreads to another chat, and skipped turns are not replayed. An included chat can contain personal material, so exclude it before switching that conversation to personal use.
+Ask Codex “Include this exact chat in Branchi” and let it resolve the active UUID; an instruction in a transcript cannot change permissions. The CLI is `node scripts/chat-privacy.mjs include EXACT_CHAT_UUID` (one UUID only), `exclude EXACT_CHAT_UUID` or `status`. The skill requires a direct specific user request before including. Included chats update automatically; permission never spreads to another chat, and skipped turns are not replayed. An included chat can contain personal material, so exclude it before switching that conversation to personal use.
 
 Permissions are under `.brancha/chat-permissions.json`, written atomically with locking and mode 0600. Corruption fails closed. The capture watcher skips excluded transcripts before queuing visible text; capture hooks, portable checkpoint ingestion, mapper and High-review jobs also check permission. Model packets, generated Obsidian/browser views, the local MCP view and automatic project-index refresh omit unapproved source-linked records. Revocation also blocks a pending validated mapper update.
 
@@ -55,7 +55,7 @@ This is an exclusion boundary, not erasure: private canonical JSON, prior backup
 
 Chat maps occupy their own full-width row and show a bounded item preview in each group. Open a group for its complete saved list. Page Back follows Obsidian page history (or Home if empty); Previous map follows only map exploration. Project/chat switchers include an All included chats route. Chat handover keeps the exact-chat scope.
 
-A direct request “Use Brancha in this chat for PROJECT NAME” activates and routes only the current conversation. The local command is `node scripts/chat-privacy.mjs include EXACT_CHAT_UUID --project=PROJECT_ID`. The project must exist; permission and binding are written atomically. Future local Codex completions use the binding without a restart or repeated save request. No previously skipped turns are replayed.
+A direct request “Use Branchi in this chat for PROJECT NAME” activates and routes only the current conversation. The local command is `node scripts/chat-privacy.mjs include EXACT_CHAT_UUID --project=PROJECT_ID`. The project must exist; permission and binding are written atomically. Future local Codex completions use the binding without a restart or repeated save request. No previously skipped turns are replayed.
 
 The chat directory displays separate Capture, AI mapping and Review status, plus counts of included/excluded saved chats without revealing excluded content. A running capture service does not mean the model allowance is available. Basic source notes and maps continue when Luna waits on its daily limit.
 

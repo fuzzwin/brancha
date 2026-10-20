@@ -9,7 +9,7 @@ const {config}=loadConfig(process.argv[2]);
 const cli=process.env.OBSIDIAN_CLI||(process.platform==='darwin'&&fs.existsSync('/Applications/Obsidian.app/Contents/MacOS/obsidian-cli')?'/Applications/Obsidian.app/Contents/MacOS/obsidian-cli':'obsidian');
 const run=(...args)=>execFileSync(cli,[`vault=${path.basename(config.vault)}`,...args],{encoding:'utf8',timeout:15000}).trim();
 const actual=run('vault','info=path');
-if(fs.realpathSync(actual)!==fs.realpathSync(config.vault))throw Error('The selected Obsidian vault is not the configured Brancha vault. No bookmarks changed.');
+if(fs.realpathSync(actual)!==fs.realpathSync(config.vault))throw Error('The selected Obsidian vault is not the configured Branchi vault. No bookmarks changed.');
 const w=validate(JSON.parse(fs.readFileSync(path.join(config.vault,'brancha.json'),'utf8')));
 const existing=JSON.parse(run('bookmarks','verbose','format=json'));
 if(!Array.isArray(existing))throw Error('Unexpected bookmark response; no bookmarks changed.');

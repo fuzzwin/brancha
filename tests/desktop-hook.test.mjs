@@ -25,7 +25,7 @@ test('desktop hooks activate one direct chat, save visible work, and deduplicate
 test('desktop capture never enables from quoted responses or reads a transcript, and exclusions stop capture',()=>{
  const f=fixture();assert(!desktopHook(f.config,{...prompt,prompt:'Please quote: Brainch this chat for Example build'}).staged);assert(!chatAllowed(f.config,prompt.session_id));
  desktopHook(f.config,{...stop,last_assistant_message:prompt.prompt,transcript_path:'/definitely-not-readable'});assert.equal(f.read().events.length,0);
- desktopHook(f.config,prompt);desktopHook(f.config,{...prompt,turn_id:'two',prompt:'Exclude this chat from Brancha'});desktopHook(f.config,{...stop,turn_id:'two'});assert.equal(f.read().events.length,0);
+ desktopHook(f.config,prompt);desktopHook(f.config,{...prompt,turn_id:'two',prompt:'Exclude this chat from Branchi'});desktopHook(f.config,{...stop,turn_id:'two'});assert.equal(f.read().events.length,0);
  assert.equal(fs.existsSync(path.join(paths(f.config).state,'desktop-prompts')),true);
 });
 test('locked desktop receipts survive restart, pause and exclusion without duplicate writes',()=>{
@@ -40,7 +40,7 @@ test('subagent/continued responses, pause and missing identities do not create d
 });
 test('desktop installer preserves other hooks, is idempotent, and never writes trust state',()=>{
  const f=fixture(),target=path.join(f.root,'hooks.json'),other={hooks:{Stop:[{hooks:[{type:'command',command:'existing-check'}]}]},note:'preserve'};atomic(target,other);
- const first=installDesktopHooks(target,{root:'/example/Brancha folder',node:'/example/node'});assert(first.changed);assert(first.trustRequired);assert(first.backup);const d=JSON.parse(fs.readFileSync(target,'utf8'));assert.deepEqual(d.hooks.Stop[0],other.hooks.Stop[0]);assert.equal(d.note,'preserve');assert.equal(d.hooks.UserPromptSubmit.length,1);assert.equal(d.hooks.Stop.length,2);assert(!installDesktopHooks(target,{root:'/example/Brancha folder',node:'/example/node'}).changed);
- assert.equal(fs.statSync(target).mode&0o777,0o600);assert(!fs.existsSync(path.join(f.root,'hook-trust.json')));assert.match(first.command,/Brancha folder/);
+ const first=installDesktopHooks(target,{root:'/example/Branchi folder',node:'/example/node'});assert(first.changed);assert(first.trustRequired);assert(first.backup);const d=JSON.parse(fs.readFileSync(target,'utf8'));assert.deepEqual(d.hooks.Stop[0],other.hooks.Stop[0]);assert.equal(d.note,'preserve');assert.equal(d.hooks.UserPromptSubmit.length,1);assert.equal(d.hooks.Stop.length,2);assert(!installDesktopHooks(target,{root:'/example/Branchi folder',node:'/example/node'}).changed);
+ assert.equal(fs.statSync(target).mode&0o777,0o600);assert(!fs.existsSync(path.join(f.root,'hook-trust.json')));assert.match(first.command,/Branchi folder/);
  const before='{"hooks":{"Stop":{}}}';fs.writeFileSync(target,before);assert.throws(()=>installDesktopHooks(target),/Invalid Stop/);assert.equal(fs.readFileSync(target,'utf8'),before);
 });

@@ -1,16 +1,18 @@
-# Brancha
+# Branchi
+
+Previously called Brancha. Branchi connects AI conversations, project decisions, evidence and next steps in a visual workspace. Existing installations continue to use the `brancha` configuration directory, `brancha.json`, plugin IDs and integration commands for compatibility; no vault migration is required.
 
 **Automatic mapping is the main workflow:** work in an enabled chat → supported capture → Luna decisions/tasks/branches → source-linked Obsidian maps. Twice-daily incremental High catch-up is the safety net; the skill is the manual fallback. [Set up automatic mapping](docs/automatic-mapping.md). Local Codex is automatic; GPT/Claude coverage depends on a tested client integration.
 
 Keep the thread across AI projects: goals, decisions, branches, evidence, next steps and a visual map you can return to.
 
-Obsidian is the primary project workspace. Brancha generates a dashboard, a Pele mindmap, evidence notes and reusable templates for every project; its local browser is a companion view of the same record.
+Obsidian is the primary project workspace. Branchi generates a dashboard, a Pele mindmap, evidence notes and reusable templates for every project; its local browser is a companion view of the same record.
 
-Brancha is a local Node.js companion, browser workspace and portable skill. It renders diagrams with [Pele](https://pele.run/) and generates linked notes, project maps, a Canvas overview, a Bases table and resume briefs for Obsidian.
+Branchi is a local Node.js companion, browser workspace and portable skill. It renders diagrams with [Pele](https://pele.run/) and generates linked notes, project maps, a Canvas overview, a Bases table and resume briefs for Obsidian.
 
 ## Desktop first
 
-Use Brancha alongside local Codex work and Obsidian. No browser extension is required for that workflow. Run `npm run desktop-hook` for local-only ChatGPT Work/Codex hooks, then review and trust their exact definitions; ordinary Chat mode currently has explicit connector checkpoints, not a verified passive listener. [Desktop setup and exact coverage](docs/desktop-workflow.md). Web capture and ChatGPT Sites are optional entry points.
+Use Branchi alongside local Codex work and Obsidian. No browser extension is required for that workflow. Run `npm run desktop-hook` for local-only ChatGPT Work/Codex hooks, then review and trust their exact definitions; ordinary Chat mode currently has explicit connector checkpoints, not a verified passive listener. [Desktop setup and exact coverage](docs/desktop-workflow.md). Web capture and ChatGPT Sites are optional entry points.
 
 ## One live workspace
 
@@ -21,28 +23,28 @@ Open the configured Obsidian vault or http://127.0.0.1:51207/ for the same live 
 - **Portable Local MCP:** shared resume/checkpoint tools for compatible AI clients, using the local record without a cloud service or Codex session folder.
 - **Checkpoint CLI:** a versioned receipt format for trusted hooks, test tools and other integrations.
 - **Codex Local:** automatic local completion capture, the browser map and live generated Obsidian views.
-- **Brancha Connect for ChatGPT:** a private cloud MCP service and skill for resuming projects and saving checkpoints during an activated task. It stays available while the Mac is off; it cannot passively watch every ChatGPT chat.
+- **Branchi Connect for ChatGPT:** a private cloud MCP service and skill for resuming projects and saving checkpoints during an activated task. It stays available while the Mac is off; it cannot passively watch every ChatGPT chat.
 
 An optional approved bridge appends new ChatGPT checkpoints to the local map and Obsidian. Local Codex captures stay local. See [ChatGPT setup and connection boundaries](cloud/README.md).
 
-In the app, **Use with ChatGPT** explains both entry points and gives you a starter for the selected project. Activate Brancha in that ChatGPT task, then save a first checkpoint to verify the connection. The local capture bar reports the cloud bridge separately from Codex capture.
+In the app, **Use with ChatGPT** explains both entry points and gives you a starter for the selected project. Activate Branchi in that ChatGPT task, then save a first checkpoint to verify the connection. The local capture bar reports the cloud bridge separately from Codex capture.
 
 ## Quick start
 
 Requires Node.js 22+. Codex session files are needed only for its optional automatic capture adapter. Obsidian is optional. No packages, model API keys or paid API requests are required by the capture adapter.
 
 ```sh
-git clone https://github.com/fuzzwin/brancha.git
-cd brancha
+git clone https://github.com/fuzzwin/branchi.git
+cd branchi
 npm run setup
 npm start
 ```
 
 For other AI tools, run setup with `--no-codex`. Then run `npm run doctor` to inspect the configuration. See [portable setup](docs/portable-setup.md) for MCP connection snippets and [checkpoint protocol](docs/checkpoint-protocol.md) for optional Harness²/ARTEMIS receipts.
 
-Moving to a new Mac or PC? Follow [Brancha on another computer](docs/another-computer.md) for the Obsidian-first setup, bringing your real projects, ChatGPT activation and cross-computer limits.
+Moving to a new Mac or PC? Follow [Branchi on another computer](docs/another-computer.md) for the Obsidian-first setup, bringing your real projects, ChatGPT activation and cross-computer limits.
 
-Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Brancha`) and then `Generated/START HERE.md` or `Generated/Dashboards/index.md`. `Generated/Brancha.canvas` provides a visual entrance to the same dashboards. Each project links to a clean dependency mindmap, with a compact editable Canvas and full evidence in linked notes.
+Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Branchi`) and then `Generated/START HERE.md` or `Generated/Dashboards/index.md`. `Generated/Brancha.canvas` provides a visual entrance to the same dashboards. Each project links to a clean dependency mindmap, with a compact editable Canvas and full evidence in linked notes.
 
 Setup writes a private connection to `~/.config/brancha/config.json`. Choose another vault with `npm run setup -- --vault /absolute/path/to/vault`. Existing configs are preserved. A fresh installation starts with fictional examples; creating your first project or receiving the first automatic checkpoint starts your real workspace. Unmatched automatic captures appear in **Codex Inbox**.
 
@@ -69,7 +71,7 @@ The default adapter watches local Codex session files. On first activation it re
 - Common credential formats are masked on a best-effort basis. Treat captured final responses as private data; redaction is not a guarantee that arbitrary confidential information has been removed.
 - The app shows capture status, last checkpoint and a Pause/Resume control. Paused activity is skipped rather than imported later.
 
-The adapter uses the observed `session_meta` and `event_msg/task_complete` JSONL format. Codex's transcript format is not a stable interface; a future version may require an adapter update. This version is tested against the locally observed Codex 0.154.0 completion format. This automatic watcher does not observe cloud chats, ChatGPT web conversations, Claude, Cursor or other AI tools. Brancha Connect provides explicit project checkpoints for ChatGPT through its optional cloud plugin.
+The adapter uses the observed `session_meta` and `event_msg/task_complete` JSONL format. Codex's transcript format is not a stable interface; a future version may require an adapter update. This version is tested against the locally observed Codex 0.154.0 completion format. This automatic watcher does not observe cloud chats, ChatGPT web conversations, Claude, Cursor or other AI tools. Branchi Connect provides explicit project checkpoints for ChatGPT through its optional cloud plugin.
 
 The workspace has an 8 MB safety limit. If reached, capture reports an error and retains pending work in its private cursor queue. Export/archive old checkpoints before continuing. Local backups are retained; users should manage their disk usage.
 
@@ -79,7 +81,7 @@ Edit the private config, then restart the service:
 
 ```json
 {
-  "vault": "/absolute/path/to/Brancha",
+  "vault": "/absolute/path/to/Branchi",
   "sessionsDirectory": "/absolute/path/to/.codex/sessions",
   "port": 51207,
   "pollMs": 3000,
@@ -101,11 +103,11 @@ Use exact chat routes for shared folders containing unrelated work. `node script
 
 Copy `skills/brancha` into your tool's skill directory (for example `~/.codex/skills/brancha`) or install the manual plugin package. The skill reads the local connection and helps you resume projects, review reports, record actual evidence and map decisions. It is reusable instructions plus validated helpers; the service supplies automatic capture.
 
-Try: “Use Brancha to resume this project” or “Review the latest captured checkpoint and update the verified project state.” Installing a skill does not grant blanket permission for external actions.
+Try: “Use Branchi to resume this project” or “Review the latest captured checkpoint and update the verified project state.” Installing a skill does not grant blanket permission for external actions.
 
 ## Run at login on macOS
 
-After setup, stop any manually running Brancha process, then run:
+After setup, stop any manually running Branchi process, then run:
 
 ```sh
 node scripts/login-service.mjs
@@ -151,11 +153,11 @@ MIT licensed. The bundled Pele 1.7.0 library is MIT licensed; its original licen
 
 ## Interactive Obsidian dashboards
 
-Run `npm run obsidian-interactive` to install the bundled local plugin into your configured vault, then enable **Brancha Interactive** in Obsidian. Restart the companion after upgrading. Project bookmarks open dashboard cards and clickable Pele maps; portable notes remain linked as a fallback. [Setup and interaction guide](docs/obsidian-interactive.md).
+Run `npm run obsidian-interactive` to install the bundled local plugin into your configured vault, then enable **Branchi Interactive** in Obsidian. Restart the companion after upgrading. Project bookmarks open dashboard cards and clickable Pele maps; portable notes remain linked as a fallback. [Setup and interaction guide](docs/obsidian-interactive.md).
 
 ## Home and bounded review (0.9.0)
 
-Brancha Home lists projects and recent captured chats, with search, handovers and timelines. Dashboard and timeline Home buttons return there. Known chat names come from the local Codex name index when available, restricted to already captured IDs. `npm run reviewer -- enable` enables the separate Luna High review worker after the mapper is enabled and the companion restarts. Home’s Check now and the hourly desktop task use the same grounded, proposal-only updater and eight-call reviewer limit. [Workflow and limits](docs/hourly-review.md).
+Branchi Home lists projects and recent captured chats, with search, handovers and timelines. Dashboard and timeline Home buttons return there. Known chat names come from the local Codex name index when available, restricted to already captured IDs. `npm run reviewer -- enable` enables the separate Luna High review worker after the mapper is enabled and the companion restarts. Home’s Check now and the hourly desktop task use the same grounded, proposal-only updater and eight-call reviewer limit. [Workflow and limits](docs/hourly-review.md).
 
 
 ### Find work by chat

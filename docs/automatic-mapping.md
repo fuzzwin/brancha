@@ -1,6 +1,6 @@
 # Automatic mapping is the main workflow
 
-Brancha is Obsidian first. Work in an individually enabled conversation; a supported client integration sends visible completed work; Luna extracts source-linked decisions, tasks and offshoots; a validated writer updates the local record and generated maps. Original project requests, accepted work and human notes are preserved. Uncertain interpretations retain a review flag and reason. No new project is guessed or silently created by the model.
+Branchi is Obsidian first. Work in an individually enabled conversation; a supported client integration sends visible completed work; Luna extracts source-linked decisions, tasks and offshoots; a validated writer updates the local record and generated maps. Original project requests, accepted work and human notes are preserved. Uncertain interpretations retain a review flag and reason. No new project is guessed or silently created by the model.
 
 Desktop setup is the primary path; a browser extension is optional. See [desktop workflow and exact coverage](desktop-workflow.md).
 
@@ -9,7 +9,7 @@ Desktop setup is the primary path; a browser extension is optional. See [desktop
 1. Run `npm run setup`, then `npm run doctor`. Fresh configurations enable Luna mapping and High catch-up with bounded defaults. Existing configurations are preserved; use `npm run mapper -- enable` and `npm run reviewer -- enable` if those layers were disabled. `--no-ai` explicitly creates a capture-only setup.
 2. Use a supported installed Codex CLI signed in to the account. Model availability is checked by the actual runner; a configuration flag does not prove access. No API key is created and no model is silently substituted.
 3. Start the companion, or install the existing login service on macOS. Activate only the intended conversation: “Brainch this chat for PROJECT NAME”. The skill resolves its exact UUID and binds it with `node scripts/chat-privacy.mjs include EXACT_CHAT_UUID --project=PROJECT_ID`. Subsequent local Codex completions need no save request. New, personal and ambiguous chats stay excluded until specifically activated.
-4. Install Brancha Interactive and its scoped styles using the existing installer. Open the Home bookmark, choose a project or chat, and follow the map back to saved sources. Existing themes are preserved.
+4. Install Branchi Interactive and its scoped styles using the existing installer. Open the Home bookmark, choose a project or chat, and follow the map back to saved sources. Existing themes are preserved.
 5. Configure a twice-daily local desktop automation (for example 09:00 and 18:00 local time) to run `node scripts/catch-up.mjs` from the checkout. Follow the quiet/failure behavior in `docs/hourly-review.md`. A copied vault does not copy this machine's schedule.
 
 ## Immediate path and incremental safety net
