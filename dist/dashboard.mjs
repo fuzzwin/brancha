@@ -28,7 +28,7 @@ export function mountDashboard(container,w,projectId,actions={}){
  container.querySelector('#dashboard-new-decision').onclick=()=>actions.onDecision?.();
  container.querySelector('#dashboard-copy-checkin').onclick=()=>actions.onCopy?.(`# ${p.title} · check-in\n\n${a.template.prompts.map(q=>q+'\n').join('\n')}\nEvidence reference:\nNext concrete action:`);
  const host=container.querySelector('#dashboard-mindmap');
- const diagram=mount(host,mindmap.source,{fontSize:15,padding:26,images:false,links:false,zoom:{always:true,controls:false,maxScale:3},idPrefix:'dashboardMindmap',onRender:()=>{
+ const diagram=mount(host,mindmap.source,{fontSize:15,padding:26,maxWidth:0,images:false,links:false,zoom:{always:true,controls:true,maxScale:3},idPrefix:'dashboardMindmap',onRender:()=>{
   for(const el of host.querySelectorAll('.pele-node[data-id]')){
    const id=el.getAttribute('data-id');if(!id.startsWith('item_'))continue;const n=w.nodes.find(n=>n.id===id.slice(5));if(!n)continue;
    el.dataset.status=n.status;el.setAttribute('role','button');el.setAttribute('tabindex','0');el.setAttribute('aria-label','Open '+n.title);el.onclick=()=>jump(n.id);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump(n.id);}};
