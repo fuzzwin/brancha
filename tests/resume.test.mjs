@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {demo, contextBrief, event} from '../dist/core.mjs';
+import {demo, contextBrief, event, nextAction} from '../dist/core.mjs';
 
 test('a fresh instance receives recent checkpoints even with many older active tasks', () => {
   const w = demo(), p = w.projects[0], template = w.nodes.find(n => n.projectId === p.id);
@@ -13,6 +13,21 @@ test('a fresh instance receives recent checkpoints even with many older active t
   assert(brief.indexOf(checkpoint.title) < brief.indexOf('Older task 0'));
   assert(brief.includes('## Continue from here\n\n'+checkpoint.next));
   assert.equal(JSON.stringify(w), before);
+});
+
+test('passive reports do not displace ready work and unmet prerequisites are respected',()=>{
+ const w=demo(),p=w.projects[0];
+ w.nodes=w.nodes.filter(n=>n.projectId!==p.id);
+ w.edges=[];
+ const make=(id,status,next,extra={})=>({id,projectId:p.id,title:id,type:'task',status,next,criteria:[],...extra});
+ w.nodes.push(make('first','active','Finish the prerequisite.'),make('later','active','Do the dependent task.'),make('report','reported_done','Review this captured report.',{type:'source',capture:{provider:'codex'}}));
+ w.edges.push({id:'dependency',from:'first',to:'later',type:'depends_on'});
+ event(w,p.id,'Captured a response','report');
+ assert.equal(nextAction(w,p.id),'Finish the prerequisite.');
+ w.nodes.find(n=>n.id==='first').status='blocked';
+ assert.equal(nextAction(w,p.id),'Choose the next unmet criterion and identify one concrete action.');
+ w.nodes.find(n=>n.id==='first').status='done';
+ assert.equal(nextAction(w,p.id),'Do the dependent task.');
 });
 
 test('recent local checkpoint next actions take precedence over older active tasks and cloud notes',()=>{

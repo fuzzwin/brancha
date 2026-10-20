@@ -59,3 +59,21 @@ test('native diagrams get new content addresses when evidence or activity change
  const refs=text=>[...text.matchAll(/!\[\[(Diagrams\/[^\]]+\.svg)\]\]/g)].map(m=>m[1]);
  const old=refs(before),next=refs(after);assert.equal(old.length,2);assert.equal(next.length,2);assert.notDeepEqual(old,next);for(const name of next)assert(two[name]);assert.deepEqual(refs(obsidianFiles(w)['Dashboards/project.md']),next);
 });
+
+test('native overview puts actionable work ahead of maps and distinguishes relationship types',()=>{
+ const w=demo(),files=obsidianFiles(w),p=w.projects[0],note=files[`Dashboards/${p.id}.md`];
+ assert(note.indexOf('## Ready to move')<note.indexOf('## Project mindmap'));
+ assert(note.includes('[[Dashboards/index|All projects]]'));
+ const canvas=JSON.parse(files[`Maps/${p.id}.canvas`]);
+ const labels={depends_on:'must precede',branches_from:'offshoot',implements:'goal to work',informs:'context'};
+ for(const edge of canvas.edges)assert.equal(edge.label,labels[w.edges.find(e=>e.id===edge.id).type]);
+});
+
+test('sparse activity is compact and gains a trend only after two active days',()=>{
+ const {w}=fixture();
+ const empty=dashboardSvg(projectAnalytics(w,'project',{at,timeZone:'UTC'}));
+ assert(empty.includes('viewBox="0 0 1100 190"'));assert(empty.includes('No saved updates yet'));
+ w.events.push({id:'a',projectId:'project',at:'2026-10-19T12:00:00Z',text:'one'});
+ w.events.push({id:'b',projectId:'project',at:'2026-10-20T02:00:00Z',text:'two'});
+ assert(dashboardSvg(projectAnalytics(w,'project',{at,timeZone:'UTC'})).includes('viewBox="0 0 1100 340"'));
+});

@@ -19,6 +19,7 @@ export const uid = () => 'b'+globalThis.crypto.randomUUID().replaceAll('-','');
 export const now = () => new Date().toISOString();
 export const blank = () => ({schemaVersion:1,revision:0,demo:false,projects:[],nodes:[],edges:[],events:[]});
 export const label = x => x.replaceAll('_',' ');
+export const flowLabel = type => ({depends_on:'must precede',branches_from:'offshoot',implements:'goal to work',informs:'context'})[type]||label(type);
 export function event(w,projectId,text,nodeId=null){w.events.push({id:uid(),at:now(),projectId,nodeId,text});w.revision++;}
 export function validate(w){
   const fail=m=>{throw Error(m)};
@@ -107,8 +108,9 @@ export function reconcileImportedEdges(w,source,relationships){
  return {changed};
 }
 export function nextAction(w,projectId){
- for(const e of [...w.events].reverse()){const n=w.nodes.find(n=>n.id===e.nodeId&&n.projectId===projectId&&n.type==='source');if(n?.next?.trim())return n.next;}
- return w.nodes.find(n=>n.projectId===projectId&&n.status==='active'&&n.next)?.next||'Choose the next unmet criterion and identify one concrete action.';
+ for(const e of [...w.events].reverse()){const n=w.nodes.find(n=>n.id===e.nodeId&&n.projectId===projectId&&n.type==='source'&&!n.capture&&!['done','parked'].includes(n.status));if(n?.next?.trim())return n.next;}
+ const ready=w.nodes.filter(n=>n.projectId===projectId&&!['source','goal'].includes(n.type)&&['active','planned'].includes(n.status)&&n.next?.trim()&&prerequisites(w,n.id).every(p=>p.status==='done'));
+ return ready.find(n=>n.status==='active')?.next||ready[0]?.next||'Choose the next unmet criterion and identify one concrete action.';
 }
 export function contextBrief(w,projectId,focusId=null){
   const p=w.projects.find(p=>p.id===projectId);if(!p)throw Error('Choose a project first.');
@@ -126,7 +128,7 @@ export function contextBrief(w,projectId,focusId=null){
 export function mermaid(w,projectId){
   const ns=w.nodes.filter(n=>!projectId||n.projectId===projectId);const ids=new Set(ns.map(n=>n.id));
   const safe=s=>s.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n',' ');
-  return ['flowchart LR',...ns.map(n=>`  ${n.id}["${safe(n.title.length>76?n.title.slice(0,73)+'…':n.title)} · ${statusLabel(n.status)}"]`),...w.edges.filter(e=>ids.has(e.from)&&ids.has(e.to)).map(e=>`  ${e.from} -->|"${label(e.type)}"| ${e.to}`)].join('\n');
+  return ['flowchart LR',...ns.map(n=>`  ${n.id}["${safe(n.title.length>76?n.title.slice(0,73)+'…':n.title)} · ${statusLabel(n.status)}"]`),...w.edges.filter(e=>ids.has(e.from)&&ids.has(e.to)).map(e=>`  ${e.from} -->|"${flowLabel(e.type)}"| ${e.to}`)].join('\n');
 }
 export function layout(w,projectId){
   const ns=w.nodes.filter(n=>!projectId||n.projectId===projectId),ids=new Set(ns.map(n=>n.id)),levels=new Map();
@@ -142,7 +144,7 @@ export function vaultFiles(w){
   const color=n=>({done:'4',blocked:'1',active:'5',parked:'6'})[n.status]||'3';
   for(const p of w.projects){
     const positioned=layout(w,p.id),ids=new Set(positioned.map(n=>n.id));
-    files[`Maps/${p.id}.canvas`]=JSON.stringify({nodes:positioned.map(n=>({id:n.id,type:'text',text:`## ${n.title}\n**${statusLabel(n.status)}** · ${n.type}\n\n${n.next||n.detail}\n\n[[Items/${n.id}|Evidence and details →]]`,x:n.x*1.35,y:n.y*1.65,width:350,height:240,color:color(n)})),edges:w.edges.filter(e=>ids.has(e.from)&&ids.has(e.to)).map(e=>({id:e.id,fromNode:e.from,fromSide:'right',toNode:e.to,toSide:'left',toEnd:'arrow',label:label(e.type)}))},null,2);
+    files[`Maps/${p.id}.canvas`]=JSON.stringify({nodes:positioned.map(n=>({id:n.id,type:'text',text:`## ${n.title}\n**${statusLabel(n.status)}** · ${n.type}\n\n${n.next||n.detail}\n\n[[Items/${n.id}|Evidence and details →]]`,x:n.x*1.35,y:n.y*1.65,width:350,height:240,color:color(n)})),edges:w.edges.filter(e=>ids.has(e.from)&&ids.has(e.to)).map(e=>({id:e.id,fromNode:e.from,fromSide:'right',toNode:e.to,toSide:'left',toEnd:'arrow',label:flowLabel(e.type)}))},null,2);
     files[ppath(p)]=files[ppath(p)].replace('## Work',`[[Maps/${p.id}.canvas|Open this project map →]]\n\n## Work`);
   }
   const connections=new Map();for(const e of w.edges){const a=w.nodes.find(n=>n.id===e.from),b=w.nodes.find(n=>n.id===e.to);if(a.projectId!==b.projectId)connections.set(a.projectId+'_'+b.projectId,{id:'project_'+a.projectId+'_'+b.projectId,fromNode:a.projectId,fromSide:'right',toNode:b.projectId,toSide:'left',toEnd:'arrow',label:'informs'});}
