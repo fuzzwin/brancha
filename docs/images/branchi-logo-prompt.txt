@@ -1,0 +1,10 @@
+Branchi wordmark
+Generated with the built-in image-generation tool using a user-supplied style reference.
+
+Final generation prompt:
+Use case: logo-brand.
+Asset type: a compact horizontal wordmark for the open-source project Branchi, for the top of its GitHub README.
+Input image: style reference only. Use the supplied logo's friendly rounded black lettering and small organic green-leaf / warm ochre branch idea, but make a new polished wordmark with the new name.
+Text (verbatim): "Branchi" — exactly B r a n c h i, uppercase B and lowercase ranchi. Do not write Brainch, Brancha, Branchy, or any other word.
+Design: bold, rounded, clean black geometric sans-serif lettering. The final lowercase i is a small warm ochre twig with a subtle side branch and two simple muted olive-green leaves, clean black outlines, and a leaf taking the place of its dot. The twig must still read naturally as the final i in Branchi. Keep letter spacing harmonious and make the whole name immediately readable at small sizes.
+Composition: one wordmark only, horizontal, centered on a plain pure white background. Use a wide canvas approximately 3:1. The logo should occupy about 80% of the width with restrained white margins and ample room above the leaf. Flat crisp vector-like edges, minimal detail, no texture, no shadow, no gradient, no mockup, no tagline, no watermark. No parentheses around letters. Match the warmth and simplicity of the reference.
