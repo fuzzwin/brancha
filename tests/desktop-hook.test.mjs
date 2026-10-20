@@ -41,6 +41,7 @@ test('subagent/continued responses, pause and missing identities do not create d
 test('desktop installer preserves other hooks, is idempotent, and never writes trust state',()=>{
  const f=fixture(),target=path.join(f.root,'hooks.json'),other={hooks:{Stop:[{hooks:[{type:'command',command:'existing-check'}]}]},note:'preserve'};atomic(target,other);
  const first=installDesktopHooks(target,{root:'/example/Branchi folder',node:'/example/node'});assert(first.changed);assert(first.trustRequired);assert(first.backup);const d=JSON.parse(fs.readFileSync(target,'utf8'));assert.deepEqual(d.hooks.Stop[0],other.hooks.Stop[0]);assert.equal(d.note,'preserve');assert.equal(d.hooks.UserPromptSubmit.length,1);assert.equal(d.hooks.Stop.length,2);assert(!installDesktopHooks(target,{root:'/example/Branchi folder',node:'/example/node'}).changed);
- assert.equal(fs.statSync(target).mode&0o777,0o600);assert(!fs.existsSync(path.join(f.root,'hook-trust.json')));assert.match(first.command,/Branchi folder/);
+ // Windows does not expose POSIX owner-only mode bits; trust and preservation checks still run.
+ if(process.platform!=='win32')assert.equal(fs.statSync(target).mode&0o777,0o600);assert(!fs.existsSync(path.join(f.root,'hook-trust.json')));assert.match(first.command,/Branchi folder/);
  const before='{"hooks":{"Stop":{}}}';fs.writeFileSync(target,before);assert.throws(()=>installDesktopHooks(target),/Invalid Stop/);assert.equal(fs.readFileSync(target,'utf8'),before);
 });

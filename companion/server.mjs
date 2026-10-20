@@ -22,7 +22,7 @@ const listen=options.listen??(captureConfig?.view!=='obsidian');
 function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=JSON.parse(fs.readFileSync(capturePaths(captureConfig).status,'utf8'));}catch{}return {...latest,paused:controls(captureConfig).paused===true};}
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 let lastHash='',lastDay='',lastError='',lastNavigation='',viewNames=new Set(),navigationNames=new Set();
-const identity={name:path.basename(vault),vault,localUrl:listen?'http://127.0.0.1:'+port:null,obsidianHome:'obsidian://open?path='+encodeURIComponent(path.join(vault,'Generated/Navigation/Home.md'))};
+const identity={name:path.basename(vault),vault,localUrl:listen?'http://127.0.0.1:'+port:null,obsidianHome:'obsidian://open?path='+encodeURIComponent(path.join(vault,'Generated/Navigation/Home.md').split(path.sep).join('/'))};
 function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');const canonical=validate(JSON.parse(raw)),w=captureConfig?privacyView(captureConfig,canonical):canonical;return {raw,canonical,w,etag:hash(raw),viewKey:hash(raw+JSON.stringify(captureConfig?chatPermissions(captureConfig):{}))};}
 function refreshNavigation(r){
  const guide=fs.existsSync(path.join(vault,'Notes','Brancha guide.md')),names=fs.existsSync(path.join(vault,'Notes','Brancha name ideas.md'));

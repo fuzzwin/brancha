@@ -20,6 +20,6 @@ test('capture keeps branch snapshots through branch switches and renders source-
 test('explicit project repository follows work even when the chat opens in a shared non-repository folder',()=>{
  const dir=fixture(),vault=path.join(dir,'vault');fs.mkdirSync(vault);
  const config={vault,sessionProjects:{chat:'build'},projectRepositories:{build:dir}};
- assert.equal(observeGit(config,{sessionId:'chat',cwd:'/private/tmp'}).root,fs.realpathSync(dir));
+ assert.equal(fs.realpathSync.native(observeGit(config,{sessionId:'chat',cwd:'/private/tmp'}).root),fs.realpathSync.native(dir));
  config.projectRepositories.build=path.join(dir,'missing');assert.equal(observeGit(config,{sessionId:'chat',cwd:dir}),null);
 });

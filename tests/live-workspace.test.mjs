@@ -6,7 +6,7 @@ test('live browser shares Obsidian views, preserves record editing and protects 
  try{
   const base='http://127.0.0.1:51335',html=await(await fetch(base)).text();assert(html.includes('live.mjs'));assert(html.includes('Open main Obsidian'));const token=html.match(/brancha-local-token" content="([a-f0-9]+)"/)[1],headers={'x-brancha-token':token};
   assert.equal((await fetch(base+'/api/identity')).status,403);assert.equal((await fetch(base+'/api/identity',{headers:{...headers,Origin:'https://example.com'}})).status,403);
-  const identity=await(await fetch(base+'/api/identity',{headers})).json();assert.equal(identity.vault,vault);assert.equal(identity.name,path.basename(vault));assert(identity.obsidianHome.includes('Generated%2FNavigation%2FHome.md'));
+  const identity=await(await fetch(base+'/api/identity',{headers})).json();assert.equal(identity.vault,vault);assert.equal(identity.name,path.basename(vault));assert(identity.obsidianHome.includes('Generated%2FNavigation%2FHome.md'));assert.equal(new URL(identity.obsidianHome).searchParams.get('path'),path.join(vault,'Generated/Navigation/Home.md').split(path.sep).join('/'));
   const view=async file=>fetch(base+'/api/view?path='+encodeURIComponent(file),{headers});
   for(const file of ['Generated/Interactive/home.json','Generated/Interactive/'+project+'.json','Generated/Interactive/chat-'+project+'-local-chat.json','Generated/Recaps/index.md','Generated/Explorers/'+project+'.md','Generated/Explorers/chat-'+project+'-local-chat.md','Generated/Branches/'+project+'.md']){
    const response=await view(file);assert.equal(response.status,200,file);const data=await response.json();assert.equal(data.content,fs.readFileSync(path.join(vault,file),'utf8'));
