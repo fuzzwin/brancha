@@ -99,15 +99,20 @@ function lockChild(t,args){
 test('dead-owner lock recovery follows process exit and never steals live or legacy locks',async t=>{
  const f=fixture(t),child=lockChild(t,[f.dir]);let output='';await new Promise((resolve,reject)=>{child.once('error',reject);child.stdout.on('data',b=>{output+=b;if(output.includes('held'))resolve();});child.once('exit',c=>reject(Error('Worker exited '+c)));});
  const lock=path.join(f.dir,'workspace.lock');assert.throws(()=>acquireLock(lock),e=>e.code==='EEXIST');
- child.kill('SIGTERM');await once(child,'exit');const release=acquireLock(lock);release();assert(!fs.existsSync(lock));
- fs.writeFileSync(lock,'');assert.throws(()=>acquireLock(lock),e=>e.code==='EEXIST');assert.equal(fs.readFileSync(lock,'utf8'),'');
+ child.kill('SIGTERM');await once(child,'exit');const release=acquireLock(lock);release();assert.deepEqual(fs.readdirSync(lock),[]);
+ fs.rmdirSync(lock);fs.writeFileSync(lock,'');assert.throws(()=>acquireLock(lock),e=>e.code==='EEXIST');assert.equal(fs.readFileSync(lock,'utf8'),'');
 });
 
 test('concurrent processes serialize updates with no recovery sentinel or lost writes',async t=>{
  const f=fixture(t);fs.writeFileSync(path.join(f.dir,'count'),'0');
  const children=Array.from({length:5},()=>lockChild(t,[f.dir,'stress']));
  const results=await Promise.all(children.map(child=>new Promise((resolve,reject)=>{let error='';child.stderr.on('data',b=>error+=b);child.once('error',reject);child.once('exit',code=>code===0?resolve(code):reject(Error(error)));})));
- assert.equal(results.length,5);assert.equal(fs.readFileSync(path.join(f.dir,'count'),'utf8'),'100');assert(!fs.existsSync(path.join(f.dir,'workspace.lock')));
+ assert.equal(results.length,5);assert.equal(fs.readFileSync(path.join(f.dir,'count'),'utf8'),'100');assert.deepEqual(fs.readdirSync(path.join(f.dir,'workspace.lock')),[]);
+});
+test('lock release keeps a stable container and only removes its own claim',t=>{
+ const f=fixture(t),lock=path.join(f.dir,'workspace.lock'),original=fs.rmdirSync;
+ fs.rmdirSync=()=>{throw Error('A lock operation must not remove its shared container');};
+ try{for(let i=0;i<5;i++){const release=acquireLock(lock);assert.equal(fs.readdirSync(lock).filter(n=>n.endsWith('.json')).length,1);release();assert.deepEqual(fs.readdirSync(lock),[]);}}finally{fs.rmdirSync=original;}
 });
 
 test('cloud pull rejects cross-origin credential redirects without contacting their destination',async t=>{

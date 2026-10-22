@@ -7,13 +7,14 @@ import {atomic} from './storage.mjs';
 const host=os.hostname(),claimName=/^[a-f0-9-]{36}\.json$/;
 const busy=()=>Object.assign(Error('Workspace is being updated; read the current state before retrying.'),{code:'EEXIST'});
 // A directory of immutable identities implements the bakery lock. There is no
-// shared recovery sentinel to orphan, and dead claims can be removed by their
-// unique names without ever unlinking a replacement owner's lock.
+ // shared recovery sentinel to orphan, and dead claims can be removed by their
+ // unique names without ever unlinking a replacement owner's lock. Keep the
+ // container stable: removing an empty directory can race another publisher's
+ // exclusive open (including EINVAL on macOS/APFS).
 export function acquireLock(directory) {
  const token=crypto.randomUUID(),file=path.join(directory,token+'.json');let published=false;
  const release=()=>{
   if(published){try{fs.unlinkSync(file);}catch(e){if(e.code!=='ENOENT')throw e;}published=false;}
-  try{fs.rmdirSync(directory);}catch(e){if(!['ENOENT','ENOTEMPTY','EEXIST','EPERM','EBUSY','EACCES'].includes(e.code))throw e;}
  };
  const scan=()=>{
   const entries=[];
@@ -40,8 +41,8 @@ export function acquireLock(directory) {
   if(scan().some(o=>o.choosing||o.ticket<ticket||o.ticket===ticket&&o.token<token))throw busy();
   return release;
  }catch(e){
-  // An empty directory may disappear while another contender publishes. This
-  // is contention, not permission to proceed without a claim.
+  // External cleanup can still remove a container during publication. Fail
+  // closed; never proceed without a successfully published unique claim.
   try{release();}catch{}
   if(['ENOENT','ENOTDIR','EISDIR','EPERM','EBUSY','EACCES'].includes(e.code))throw busy();throw e;
  }

@@ -1,3 +1,4 @@
+import {acquireLock} from '../skills/brancha/scripts/locking.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -29,10 +30,10 @@ test('desktop capture never enables from quoted responses or reads a transcript,
  assert.equal(fs.existsSync(path.join(paths(f.config).state,'desktop-prompts')),true);
 });
 test('locked desktop receipts survive restart, pause and exclusion without duplicate writes',()=>{
- const f=fixture();desktopHook(f.config,prompt);fs.writeFileSync(paths(f.config).file+'.lock','');assert(desktopHook(f.config,stop).queued);assert.equal(f.read().events.length,0);fs.unlinkSync(paths(f.config).file+'.lock');
+ const f=fixture();let release;desktopHook(f.config,prompt);release=acquireLock(paths(f.config).file+'.lock');assert(desktopHook(f.config,stop).queued);assert.equal(f.read().events.length,0);release();
  atomic(paths(f.config).control,{paused:true});assert(drainDesktopHooks(f.config).skipped);assert.equal(f.read().events.length,0);
  atomic(paths(f.config).control,{paused:false});assert.equal(drainDesktopHooks(f.config).processed,1);assert.equal(f.read().events.length,1);assert.equal(drainDesktopHooks(f.config).processed,0);
- desktopHook(f.config,{...prompt,turn_id:'two',prompt:'Another visible request'});fs.writeFileSync(paths(f.config).file+'.lock','');desktopHook(f.config,{...stop,turn_id:'two'});fs.unlinkSync(paths(f.config).file+'.lock');setChatPermission(f.config,prompt.session_id,'exclude');drainDesktopHooks(f.config);assert.equal(f.read().events.length,1);
+ desktopHook(f.config,{...prompt,turn_id:'two',prompt:'Another visible request'});release=acquireLock(paths(f.config).file+'.lock');desktopHook(f.config,{...stop,turn_id:'two'});release();setChatPermission(f.config,prompt.session_id,'exclude');drainDesktopHooks(f.config);assert.equal(f.read().events.length,1);
 });
 test('subagent/continued responses, pause and missing identities do not create desktop records',()=>{
  const f=fixture();desktopHook(f.config,prompt);assert.equal(desktopHook(f.config,{...stop,agent_id:'child'}).captured,false);assert.equal(desktopHook(f.config,{...stop,stop_hook_active:true}).captured,false);

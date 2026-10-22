@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {atomic,paths,controls,sessionAllowed,routeProject,redact,status} from './capture.mjs';
 import {validate,event} from '../dist/core.mjs';
-import {privacyView,permissionEpoch,consentMatches,privacyFingerprint} from './chat-privacy.mjs';
+import {privacyView,permissionEpoch,consentMatches,privacyFingerprint,chatPermissions} from './chat-privacy.mjs';
 
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 const read=(file,fallback)=>{try{return JSON.parse(fs.readFileSync(file,'utf8'));}catch(e){if(e.code==='ENOENT')return fallback;throw e;}};
@@ -13,11 +13,22 @@ const day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Melbourne',ye
 export function acceptedSource(w,input){
  const matches=n=>{const p=n?.capture||n?.checkpoint;return p?.sessionId===input.sessionId&&(p.turnId||p.eventId)===input.turnId&&(p.provider||'codex')===(input.provider||'codex');};
  const saved=[...w.events].reverse().map(e=>({event:e,node:e.capture||(e.checkpointId?e.after:null)})).find(x=>matches(x.node));
- const node=saved?.node||w.nodes.find(matches);return node?{node,projectId:saved?.event.projectId||node.projectId}:null;
+ const node=saved?.node||w.nodes.find(matches);return node?{node,sourceEventId:saved?.event.id,projectId:saved?.event.projectId||node.projectId}:null;
 }
 export function capturedBinding(w,input){const source=acceptedSource(w,input);return source?{sourceNodeId:source.node.id,projectId:source.projectId}:null;}
-export function reconcileMapperJob(w,job){const source=acceptedSource(w,job),p=source?.node.capture||source?.node.checkpoint;if(source){job.sourceNodeId=source.node.id;job.projectId=source.projectId;if(!Object.hasOwn(job,'permissionEpoch'))job.permissionEpoch=p.permissionEpoch??null;}return job;}
-export const mapperProject=(config,job,w)=>capturedBinding(w,job)?.projectId||job.projectId||routeProject(config,job,w);
+export function reconcileMapperJob(w,job){const source=acceptedSource(w,job),p=source?.node.capture||source?.node.checkpoint;if(source){job.sourceNodeId=source.node.id;job.sourceProjectId=source.projectId;job.projectId=source.projectId==='codex_inbox'&&job.promotedProjectId?job.promotedProjectId:source.projectId;if(!Object.hasOwn(job,'permissionEpoch'))job.permissionEpoch=p.permissionEpoch??null;}return job;}
+export function mapperProject(config,job,w){
+ const captured=capturedBinding(w,job)?.projectId;
+ if(captured&&captured!=='codex_inbox')return captured;
+ if(captured==='codex_inbox'){
+  // Only an exact chat assignment promotes unassigned history. Keep its original
+  // source ownership, and latch the first concrete destination before dispatch.
+  const selected=job.promotedProjectId||chatPermissions(config).chats[job.sessionId]?.projectId||config.sessionProjects?.[job.sessionId];
+  if(selected&&selected!=='codex_inbox'&&w.projects.some(p=>p.id===selected)){job.promotedProjectId=selected;return selected;}
+  return 'codex_inbox';
+ }
+ return job.projectId||routeProject(config,job,w);
+}
 // Consent changes and the start of a transmission have a single local order.
 // Release immediately after invocation; never hold the canonical lock while
 // waiting for a model. Recheck before every later call and before applying data.
@@ -99,7 +110,7 @@ export class ConversationMapper{
   try{
    const jobs=fs.readdirSync(this.jobs).filter(f=>f.endsWith('.json')).map(f=>({file:path.join(this.jobs,f),job:read(path.join(this.jobs,f))}));
    const permissionSnapshot=privacyFingerprint(this.config),workspace=privacyView(this.config,validate(read(paths(this.config).file)));
-   for(const x of jobs)if(x.job.state==='needs_route'&&sessionAllowed(this.config,x.job.sessionId)&&routeProject(this.config,x.job,workspace)!=='codex_inbox'){x.job.state='pending';atomic(x.file,x.job);}
+   for(const x of jobs)if(x.job.state==='needs_route'&&sessionAllowed(this.config,x.job.sessionId)&&mapperProject(this.config,x.job,workspace)!=='codex_inbox'){x.job.state='pending';atomic(x.file,x.job);}
    const next=jobs.filter(x=>['pending','ready'].includes(x.job.state)&&this.clock()-x.job.queuedAt>=(this.config.mapper.debounceMs??30000)).sort((a,b)=>a.job.queuedAt-b.job.queuedAt)[0];
    status(this.config,{mapperEnabled:true,mapperPending:jobs.filter(x=>['pending','ready','running'].includes(x.job.state)).length,mapperFailed:jobs.filter(x=>x.job.state==='failed').length,mapperNeedsRoute:jobs.some(x=>x.job.state==='needs_route'),mapperError:jobs.filter(x=>x.job.state==='failed').at(-1)?.job.error||null});if(!next)return;
    const {job,file}=next;
@@ -146,15 +157,15 @@ export function applyMappedProposals(config,job,result,projectId){
   if(controls(config).paused)return {retry:true,reason:'paused'};
   if(!job.permissionFingerprint||!consentMatches(config,job)||(job.consentGroup||[]).some(j=>!consentMatches(config,j))||job.permissionFingerprint&&privacyFingerprint(config)!==job.permissionFingerprint)return {excluded:true,items:0};
   const w=validate(read(file)),marker='mapper_'+job.id.slice(0,24);
-  const binding=capturedBinding(w,job);if((binding?.projectId||job.projectId)&&projectId!==(binding?.projectId||job.projectId))return {excluded:true,items:0,reason:'captured project changed'};
+  const binding=capturedBinding(w,job);if(projectId!==mapperProject(config,job,w))return {excluded:true,items:0,reason:'captured project changed'};
   if(w.events.some(e=>e.mapperJobId===job.id))return {duplicate:true};
   if(!w.projects.some(p=>p.id===projectId))throw Error('Mapped project no longer exists.');
   const source=job.sourceNodeId||w.nodes.find(n=>n.projectId===projectId&&n.capture?.sessionId===job.sessionId&&n.capture?.turnId===job.turnId)?.id,goal=w.nodes.find(n=>n.projectId===projectId&&n.type==='goal');
   const mapped=new Map();
   for(const item of result.items){
    const id=marker+'_'+item.key;mapped.set(item.key,id);
-   w.nodes.push({id,projectId,title:redact(item.title),type:item.kind,status:'planned',detail:'LUNA MAPPED PROPOSAL — review against the visible source before accepting.\n\n'+redact(item.detail),evidence:`Session ${job.sessionId}; turn ${job.turnId}; message ${item.sourceId}. Exact excerpt: ${redact(item.quote)}`,next:'',criteria:[],rationale:redact(item.rationale||''),mapper:{rationaleQuote:redact(item.rationaleQuote||''),jobId:job.id,provider:job.provider||'codex',sessionId:job.sessionId,turnId:job.turnId,reviewState:'proposed',needsReview:result.needsReview,reviewReason:redact(result.reason),sourceId:item.sourceId,quote:redact(item.quote),receipts:job.receipts||[]}});
-   const from=w.nodes.some(n=>n.id===source&&n.projectId===projectId&&(n.capture?.turnId===job.turnId||n.checkpoint?.eventId===job.turnId&&n.checkpoint?.sessionId===job.sessionId&&n.checkpoint?.provider===job.provider))?source:goal?.id;if(from)w.edges.push({id:id+'_context',from,to:id,type:'informs'});
+   w.nodes.push({id,projectId,title:redact(item.title),type:item.kind,status:'planned',detail:'LUNA MAPPED PROPOSAL — review against the visible source before accepting.\n\n'+redact(item.detail),evidence:`Session ${job.sessionId}; turn ${job.turnId}; message ${item.sourceId}. Exact excerpt: ${redact(item.quote)}`,next:'',criteria:[],rationale:redact(item.rationale||''),mapper:{sourceNodeId:source,sourceProjectId:binding?.projectId||projectId,sourceEventId:acceptedSource(w,job)?.sourceEventId,...(job.promotedProjectId?{promotedProjectId:job.promotedProjectId}:{}),rationaleQuote:redact(item.rationaleQuote||''),jobId:job.id,provider:job.provider||'codex',sessionId:job.sessionId,turnId:job.turnId,reviewState:'proposed',needsReview:result.needsReview,reviewReason:redact(result.reason),sourceId:item.sourceId,quote:redact(item.quote),receipts:job.receipts||[]}});
+   const from=w.nodes.some(n=>n.id===source&&(n.projectId===projectId||binding?.projectId==='codex_inbox'&&job.promotedProjectId===projectId&&n.projectId==='codex_inbox')&&(n.capture?.turnId===job.turnId||n.checkpoint?.eventId===job.turnId&&n.checkpoint?.sessionId===job.sessionId&&n.checkpoint?.provider===job.provider))?source:goal?.id;if(from)w.edges.push({id:id+'_context',from,to:id,type:'informs'});
   }
   for(const e of result.relations)w.edges.push({id:marker+'_e'+w.edges.length,from:mapped.get(e.from),to:mapped.get(e.to),type:e.type});
   event(w,projectId,`Luna mapped ${result.items.length} conversation proposal${result.items.length===1?'':'s'}; source-linked and unverified.`,result.items.length?mapped.values().next().value:null);w.events.at(-1).mapperJobId=job.id;

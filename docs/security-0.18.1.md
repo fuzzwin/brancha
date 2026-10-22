@@ -32,18 +32,25 @@ or deploy a hosted service.
   Explicitly submitting a historical checkpoint is different from replaying an
   automatic queue: its source time is preserved and its acceptance time/epoch
   are recorded separately. Browser outboxes and desktop/Claude staged prompts
-  also retain the original epoch. Lock contention does not spend model budget,
+  also retain the original epoch. Each content tab supplies its own activation
+  generation; the background never upgrades stale packets to renewed consent.
+  Every tab rebaselines after a generation change, including suspended tabs. Lock contention does not spend model budget,
   and a waiting High escalation retains its Low result without repeating Low.
 - Canonical writers share a process-owned directory-claim lock. Unique claim
   names and bakery ordering serialize contenders without deleting another
-  owner's replacement lock. Only positively dead local PIDs are reclaimed.
+  owner's replacement lock. The empty container remains stable between claims;
+  release removes only its own claim, avoiding a macOS publication/rmdir race.
+  Only positively dead local PIDs are reclaimed.
   Unknown, malformed, foreign-host and legacy ownerless file locks fail closed;
   inspect those manually after confirming no old writer remains. Do not mix
   running old and new writer versions during deployment. This is a local
   filesystem protocol, not a distributed lock for concurrently synced machines.
 - Moving a chat's route creates a separate source for the new project, preserving
   the previous project's source history and manual relationships. Historical
-  ambiguous relationships are not silently rewritten.
+  ambiguous relationships are not silently rewritten. Unassigned Inbox receipts
+  may resume after an exact chat assignment: the first concrete destination is
+  persisted, while the original Inbox source/event remain unchanged. Concrete
+  A-to-B rebindings never move already accepted A work.
 - Cloud pull, connection authentication and initial seed upload reject redirects,
   so custom credential headers and private seed bodies cannot follow them.
 
@@ -58,7 +65,7 @@ fictional. Cloud redirects use two loopback origins with fake credentials.
 The initial patch passed 170 tests locally. Additional independent review then
 found consent, transmission and routing paths needing correction. Seven new
 fictional regressions reproduced those failures against that source. The
-expanded `tests/consent-provenance.test.mjs` now contains 13 regressions covering
+expanded `tests/consent-provenance.test.mjs` covers further regressions covering
 the corrections, legacy model results, hook/browser queues, contention budgets
 and paused/resumed High dispatch. Independent focused verification passed 30
 tests after the corrections. The corrected full serial suite passed **183/183**,
@@ -87,7 +94,9 @@ not a formal concurrency proof or exhaustive crash-point analysis.
    new `locking.mjs` dependency. Do not run setup against existing settings.
    Reads/startup also honour the canonical lock: a legacy ownerless file can
    prevent startup as well as writes. Inspect it only after all old writers are
-   stopped. If browser capture is used, update extension 0.14.1 and the native
+   stopped. For rollback to an older file-lock writer, inspect and remove only a
+   known-empty new lock container after all writers are stopped; never remove
+   live/unknown claims automatically. If browser capture is used, update extension 0.14.2 and the native
    helper together, then reactivate the exact chat to obtain its epoch ticket.
 5. Restart through the existing launcher and verify capture, permissions,
    generated views, canonical revision and rollback. Preserve paused/disabled
