@@ -97,7 +97,10 @@ not a formal concurrency proof or exhaustive crash-point analysis.
    stopped. For rollback to an older file-lock writer, inspect and remove only a
    known-empty new lock container after all writers are stopped; never remove
    live/unknown claims automatically. If browser capture is used, update extension 0.14.2 and the native
-   helper together, then reactivate the exact chat to obtain its epoch ticket.
+   helper together. For each legacy already-included browser chat, use **Disable,
+   then Enable this exact chat** to mint a fresh epoch ticket. Clicking Enable
+   alone can retain a missing legacy ticket; capture then fails closed. This is
+   an availability migration, not permission to replay earlier visible replies.
 5. Restart through the existing launcher and verify capture, permissions,
    generated views, canonical revision and rollback. Preserve paused/disabled
    choices. Do not overwrite Notes, configuration, backups or canonical JSON.

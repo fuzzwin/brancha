@@ -10,6 +10,8 @@ For another window or device on the same account, select the same connected plug
 
 Another account, workspace, AI provider or custom GPT needs a compatible authenticated tool connection of its own. A copied instruction is not an installed integration. Do not put local service credentials into prompts, public packages or custom instructions. The owner-private deployment does not automatically grant another account access.
 
-The ChatGPT workflow runs within an activated conversation. It does not passively observe every conversation. Local Codex capture is a separate service; the optional bridge appends cloud checkpoints to the local record and generated Obsidian views while the Mac is online.
+The ChatGPT workflow runs within an activated conversation. It does not passively observe every conversation. Local Codex capture is a separate service; the optional bridge appends cloud checkpoints to the local record and selected localhost/Obsidian views while the desktop is online.
 
 For a daily review, inspect only accessible chats in the requested local date range. A chat's updated timestamp is not proof that work completed that day. Preserve source timestamps, mark active runs as pending, flag unavailable content, and keep unmatched chats separate rather than guessing from a shared directory. Summarise approved project changes; do not upload full captured transcripts.
+
+The current optional bridge copies all eligible cloud-origin records from the connected workspace, not a per-project selection. Pairing and two-way exchange are planned. See [two independent setups, first use and the sync plan](two-setups-and-sync.md).

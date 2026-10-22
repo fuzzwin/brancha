@@ -1,5 +1,8 @@
 # Branchi example images
 
+For the 0.21 development release, see [new image provenance](release-0.21-images.md).
+The screenshots described below are the retained 0.18 examples for comparison.
+
 These are real screenshots of the published Branchi browser interface, taken on 21 October 2026. They use a separate fictional workspace, not a real user vault or live project. The app source used was commit `d8b3d2f60bda89f49706dcc92412dc5bf7d079e6`.
 
 ## What is in the example
