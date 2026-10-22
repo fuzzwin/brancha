@@ -57,7 +57,7 @@ export class CodexWatcher{
    }finally{fs.closeSync(fd);}
   }
   if(paused){atomic(this.file,this.data);status(this.config,{lastScanAt:new Date().toISOString(),paused:true});return;}
-  const pending=[];for(const input of this.data.queue){try{if(!sessionAllowed(this.config,input.sessionId))continue;const result=capture(this.config,input);if(result.retry)pending.push(input);else if(result.captured||result.reason==='duplicate')this.mapper?.enqueue(input);}catch(e){pending.push(input);status(this.config,{error:e.message});break;}}
+  const pending=[];for(const input of this.data.queue){try{if(!sessionAllowed(this.config,input.sessionId))continue;const result=capture(this.config,input);if(result.retry)pending.push(input);else if(result.captured||result.reason==='duplicate')this.mapper?.enqueue({...input,...(result.nodeId?{sourceNodeId:result.nodeId,projectId:result.projectId}:{})});}catch(e){pending.push(input);status(this.config,{error:e.message});break;}}
   // Retain unprocessed entries on failure; capture's session/turn key makes replay safe.
   if(pending.length){const first=this.data.queue.findIndex(x=>x===pending[0]);this.data.queue=this.data.queue.slice(first);}else this.data.queue=[];
   atomic(this.file,this.data);status(this.config,{lastScanAt:new Date().toISOString(),paused});

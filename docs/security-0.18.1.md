@@ -20,6 +20,20 @@ or deploy a hosted service.
   cannot replay an earlier turn even when its timestamp is absent or invalid.
   Existing configuration approvals retain their existing watcher cursors; this
   patch does not grant or revoke any approval.
+  Accepted receipts retain their consent epoch and captured project through
+  intake, mapper jobs and reviewer runs. Consent and pause are checked before
+  each Low/High transmission and again under the canonical lock before applying
+  results or publishing a review note. A call already started before revocation
+  cannot be recalled; renewal never authorises its later escalation or result.
+  Model results require a matching permission snapshot. Legacy ready results
+  without that proof require explicit review. Legacy raw jobs may recover exact
+  source/project/epoch from a saved receipt; current consent is never stamped
+  retroactively onto an older receipt.
+  Explicitly submitting a historical checkpoint is different from replaying an
+  automatic queue: its source time is preserved and its acceptance time/epoch
+  are recorded separately. Browser outboxes and desktop/Claude staged prompts
+  also retain the original epoch. Lock contention does not spend model budget,
+  and a waiting High escalation retains its Low result without repeating Low.
 - Canonical writers share a process-owned directory-claim lock. Unique claim
   names and bakery ordering serialize contenders without deleting another
   owner's replacement lock. Only positively dead local PIDs are reclaimed.
@@ -41,13 +55,21 @@ reported defects, Windows junctions, partial/restarted consent boundaries,
 interrupted lock owners and competing writer processes. All fixtures are
 fictional. Cloud redirects use two loopback origins with fake credentials.
 
-Final validation: 170/170 tests passed serially, including 11 new security
-regressions. The initial parallel run passed 167/169 and hit existing one-second
-Git and four-second service-start timeouts under load; the serial full rerun
-passed. An independent source/fixture review found the renewed-consent queue
-case above; it was fixed and rechecked with no remaining findings. Lock stress
-serialized 100 writes across five child processes. This is practical regression
-coverage, not a formal concurrency proof or exhaustive crash-point analysis.
+The initial patch passed 170 tests locally. Additional independent review then
+found consent, transmission and routing paths needing correction. Seven new
+fictional regressions reproduced those failures against that source. The
+expanded `tests/consent-provenance.test.mjs` now contains 13 regressions covering
+the corrections, legacy model results, hook/browser queues, contention budgets
+and paused/resumed High dispatch. Independent focused verification passed 30
+tests after the corrections. The corrected full serial suite passed **183/183**,
+including all 24 security regressions. Earlier local attempts exposed an
+unavailable fixed fixture port and one-second Git subprocess timeouts under load;
+the port fixture now requests an available OS port, isolated Git tests passed,
+and the complete rerun passed. Cross-platform CI remains separate evidence;
+do not infer a green matrix from this Windows run. Lock stress serializes 100
+writes across five children with
+bounded deadlines and guaranteed cleanup. This is practical regression coverage,
+not a formal concurrency proof or exhaustive crash-point analysis.
 
 ## Deployment plan (separate approval and maintenance step)
 
@@ -63,6 +85,10 @@ coverage, not a formal concurrency proof or exhaustive crash-point analysis.
    CLI/MCP writers are inactive before replacing reviewed code. Keep the test
    companion distinct. Update standalone skill helpers together, including the
    new `locking.mjs` dependency. Do not run setup against existing settings.
+   Reads/startup also honour the canonical lock: a legacy ownerless file can
+   prevent startup as well as writes. Inspect it only after all old writers are
+   stopped. If browser capture is used, update extension 0.14.1 and the native
+   helper together, then reactivate the exact chat to obtain its epoch ticket.
 5. Restart through the existing launcher and verify capture, permissions,
    generated views, canonical revision and rollback. Preserve paused/disabled
    choices. Do not overwrite Notes, configuration, backups or canonical JSON.

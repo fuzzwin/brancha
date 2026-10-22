@@ -92,8 +92,12 @@ test('renewed consent rejects durable queued turns without trustworthy timestamp
 });
 
 const worker=fileURLToPath(new URL('./fixtures/lock-worker.mjs',import.meta.url));
+function lockChild(t,args){
+ const child=spawn(process.execPath,[worker,...args]),timer=setTimeout(()=>child.kill('SIGKILL'),50000);child.once('exit',()=>clearTimeout(timer));
+ t.after(async()=>{clearTimeout(timer);if(child.exitCode===null&&child.signalCode===null){const exited=once(child,'exit');child.kill('SIGKILL');await exited;}});return child;
+}
 test('dead-owner lock recovery follows process exit and never steals live or legacy locks',async t=>{
- const f=fixture(t),child=spawn(process.execPath,[worker,f.dir]);let output='';await new Promise((resolve,reject)=>{child.once('error',reject);child.stdout.on('data',b=>{output+=b;if(output.includes('held'))resolve();});child.once('exit',c=>reject(Error('Worker exited '+c)));});
+ const f=fixture(t),child=lockChild(t,[f.dir]);let output='';await new Promise((resolve,reject)=>{child.once('error',reject);child.stdout.on('data',b=>{output+=b;if(output.includes('held'))resolve();});child.once('exit',c=>reject(Error('Worker exited '+c)));});
  const lock=path.join(f.dir,'workspace.lock');assert.throws(()=>acquireLock(lock),e=>e.code==='EEXIST');
  child.kill('SIGTERM');await once(child,'exit');const release=acquireLock(lock);release();assert(!fs.existsSync(lock));
  fs.writeFileSync(lock,'');assert.throws(()=>acquireLock(lock),e=>e.code==='EEXIST');assert.equal(fs.readFileSync(lock,'utf8'),'');
@@ -101,7 +105,7 @@ test('dead-owner lock recovery follows process exit and never steals live or leg
 
 test('concurrent processes serialize updates with no recovery sentinel or lost writes',async t=>{
  const f=fixture(t);fs.writeFileSync(path.join(f.dir,'count'),'0');
- const children=Array.from({length:5},()=>spawn(process.execPath,[worker,f.dir,'stress']));
+ const children=Array.from({length:5},()=>lockChild(t,[f.dir,'stress']));
  const results=await Promise.all(children.map(child=>new Promise((resolve,reject)=>{let error='';child.stderr.on('data',b=>error+=b);child.once('error',reject);child.once('exit',code=>code===0?resolve(code):reject(Error(error)));})));
  assert.equal(results.length,5);assert.equal(fs.readFileSync(path.join(f.dir,'count'),'utf8'),'100');assert(!fs.existsSync(path.join(f.dir,'workspace.lock')));
 });

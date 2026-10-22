@@ -21,6 +21,8 @@ export function chatAllowed(config,id){
 export function privacyFingerprint(config){return JSON.stringify({permissions:chatPermissions(config),policy:config.capturePolicy||{}});}
 export function workspaceEtag(config,raw){return crypto.createHash('sha256').update(raw+'\0'+(config?privacyFingerprint(config):'')).digest('hex');}
 export function captureBoundary(config,id){return chatPermissions(config).chats[id]?.captureBoundary||null;}
+export const permissionEpoch=(config,id)=>captureBoundary(config,id)?.epoch??null;
+export const consentMatches=(config,input)=>chatAllowed(config,input.sessionId)&&(input.permissionEpoch??null)===permissionEpoch(config,input.sessionId);
 export function setChatPermission(config,id,decision,{projectId}={}){
  if(!valid(id)||!['include','exclude'].includes(decision))throw Error('Specify one exact chat ID and include or exclude; group and wildcard approvals are not supported.');
  if(decision==='include'&&config.capturePolicy?.excludedSessionIds?.includes(id))throw Error('This exact chat is explicitly excluded in the configuration. Remove that exclusion before including it.');

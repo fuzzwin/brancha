@@ -5,11 +5,26 @@ import crypto from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {atomic,paths,controls,sessionAllowed,routeProject,redact,status} from './capture.mjs';
 import {validate,event} from '../dist/core.mjs';
-import {privacyView} from './chat-privacy.mjs';
+import {privacyView,permissionEpoch,consentMatches,privacyFingerprint} from './chat-privacy.mjs';
 
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 const read=(file,fallback)=>{try{return JSON.parse(fs.readFileSync(file,'utf8'));}catch(e){if(e.code==='ENOENT')return fallback;throw e;}};
 const day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Melbourne',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+export function acceptedSource(w,input){
+ const matches=n=>{const p=n?.capture||n?.checkpoint;return p?.sessionId===input.sessionId&&(p.turnId||p.eventId)===input.turnId&&(p.provider||'codex')===(input.provider||'codex');};
+ const saved=[...w.events].reverse().map(e=>({event:e,node:e.capture||(e.checkpointId?e.after:null)})).find(x=>matches(x.node));
+ const node=saved?.node||w.nodes.find(matches);return node?{node,projectId:saved?.event.projectId||node.projectId}:null;
+}
+export function capturedBinding(w,input){const source=acceptedSource(w,input);return source?{sourceNodeId:source.node.id,projectId:source.projectId}:null;}
+export function reconcileMapperJob(w,job){const source=acceptedSource(w,job),p=source?.node.capture||source?.node.checkpoint;if(source){job.sourceNodeId=source.node.id;job.projectId=source.projectId;if(!Object.hasOwn(job,'permissionEpoch'))job.permissionEpoch=p.permissionEpoch??null;}return job;}
+export const mapperProject=(config,job,w)=>capturedBinding(w,job)?.projectId||job.projectId||routeProject(config,job,w);
+// Consent changes and the start of a transmission have a single local order.
+// Release immediately after invocation; never hold the canonical lock while
+// waiting for a model. Recheck before every later call and before applying data.
+export function dispatchWithConsent(config,jobs,invoke,fingerprint){
+ let release;try{release=acquireLock(paths(config).file+'.lock');}catch(e){if(e.code==='EEXIST')return {retry:true};throw e;}
+ try{if(controls(config).paused)return {paused:true};if(jobs.some(j=>!consentMatches(config,j))||fingerprint&&privacyFingerprint(config)!==fingerprint)return {excluded:true};return {value:invoke()};}finally{release();}
+}
 export function visibleUserText(text){
  let s=String(text||'');if(s.includes('## My request:'))s=s.slice(s.lastIndexOf('## My request:')+14);
  s=s.replace(/<external_codex_apps_open_page>[\s\S]*?<\/external_codex_apps_open_page>/g,'');
@@ -68,11 +83,13 @@ export class ConversationMapper{
   if(!this.config.mapper?.enabled||input.mapperExcluded||controls(this.config).paused||!sessionAllowed(this.config,input.sessionId))return false;
   if(!/^[a-zA-Z0-9_.:-]{1,150}$/.test(input.sessionId||'')||!/^[a-zA-Z0-9_.:-]{1,150}$/.test(input.turnId||''))return false;
   const provider=input.provider||'codex';
+  const epoch=permissionEpoch(this.config,input.sessionId);if(Object.hasOwn(input,'permissionEpoch')&&!consentMatches(this.config,input))return false;
   const key=hash(provider==='codex'?input.sessionId+':'+input.turnId:JSON.stringify([provider,input.sessionId,input.turnId])),file=path.join(this.jobs,key+'.json');
   if(fs.existsSync(file))return false;
   const messages=(input.messages||[]).filter(m=>m.text?.trim()).slice(-8).map((m,i)=>({id:key.slice(0,16)+'_'+i,role:m.role==='user'?'user':'assistant',text:redact(m.text).slice(0,m.role==='user'?10000:8000)}));
   if(!messages.length)return false;
-  const job={version:1,id:key,sessionId:input.sessionId,turnId:input.turnId,provider,...(input.sourceNodeId?{sourceNodeId:input.sourceNodeId,projectId:input.projectId}:{}),cwd:input.cwd,at:input.at||new Date().toISOString(),queuedAt:this.clock(),state:'pending',messages};
+  const workspace=validate(read(paths(this.config).file)),accepted=acceptedSource(workspace,{...input,provider}),acceptedEpoch=(accepted?.node.capture||accepted?.node.checkpoint)?.permissionEpoch??null;if(accepted&&!Object.hasOwn(input,'permissionEpoch')&&acceptedEpoch!==epoch)return false;const binding=capturedBinding(workspace,{...input,provider}),projectId=binding?.projectId||input.projectId||routeProject(this.config,input,workspace);
+  const job={version:1,id:key,sessionId:input.sessionId,turnId:input.turnId,provider,permissionEpoch:epoch,...(binding||input.sourceNodeId?binding||{sourceNodeId:input.sourceNodeId,projectId}:projectId!=='codex_inbox'?{projectId}:{}),cwd:input.cwd,at:input.at||new Date().toISOString(),queuedAt:this.clock(),state:'pending',messages};
   try{fs.writeFileSync(file,JSON.stringify(job,null,2),{flag:'wx',mode:0o600});return true;}catch(e){if(e.code==='EEXIST')return false;throw e;}
  }
  async tick(){
@@ -81,30 +98,41 @@ export class ConversationMapper{
   this.busy=true;
   try{
    const jobs=fs.readdirSync(this.jobs).filter(f=>f.endsWith('.json')).map(f=>({file:path.join(this.jobs,f),job:read(path.join(this.jobs,f))}));
-   const workspace=privacyView(this.config,validate(read(paths(this.config).file)));
+   const permissionSnapshot=privacyFingerprint(this.config),workspace=privacyView(this.config,validate(read(paths(this.config).file)));
    for(const x of jobs)if(x.job.state==='needs_route'&&sessionAllowed(this.config,x.job.sessionId)&&routeProject(this.config,x.job,workspace)!=='codex_inbox'){x.job.state='pending';atomic(x.file,x.job);}
    const next=jobs.filter(x=>['pending','ready'].includes(x.job.state)&&this.clock()-x.job.queuedAt>=(this.config.mapper.debounceMs??30000)).sort((a,b)=>a.job.queuedAt-b.job.queuedAt)[0];
    status(this.config,{mapperEnabled:true,mapperPending:jobs.filter(x=>['pending','ready','running'].includes(x.job.state)).length,mapperFailed:jobs.filter(x=>x.job.state==='failed').length,mapperNeedsRoute:jobs.some(x=>x.job.state==='needs_route'),mapperError:jobs.filter(x=>x.job.state==='failed').at(-1)?.job.error||null});if(!next)return;
    const {job,file}=next;
-   if(!sessionAllowed(this.config,job.sessionId)){job.state='excluded';atomic(file,job);return;}
-   const w=workspace,projectId=routeProject(this.config,job,w);
+   reconcileMapperJob(workspace,job);
+   const exclude=()=>{job.state='excluded';atomic(file,job);};
+   if(!consentMatches(this.config,job)){exclude();return;}
+   if(job.state==='ready'&&!job.permissionFingerprint){job.state='needs_review';job.error='Legacy model result lacks a permission snapshot; explicit review required.';atomic(file,job);return;}
+   const w=workspace,binding=capturedBinding(w,job),projectId=mapperProject(this.config,job,w);if(binding)Object.assign(job,binding);job.projectId=projectId;
    if(projectId==='codex_inbox'||!w.projects.some(p=>p.id===projectId)){job.state='needs_route';atomic(file,job);status(this.config,{mapperNeedsRoute:true});return;}
    const packet={sessionId:job.sessionId,turnId:job.turnId,project:{id:projectId,title:w.projects.find(p=>p.id===projectId).title},context:w.nodes.filter(n=>n.projectId===projectId&&['goal','decision','branch'].includes(n.type)&&!n.mapper).slice(-8).map(n=>({id:n.id,title:n.title,status:n.status})),messages:job.messages};
    if(job.state!=='ready'){
     const budgetFile=path.join(this.root,'budget.json');let budget=read(budgetFile,{date:day(),calls:0,high:0});if(budget.date!==day())budget={date:day(),calls:0,high:0};
     const reserve=high=>{if(budget.calls>=(this.config.mapper.maxCallsPerDay??20)||(high&&budget.high>=(this.config.mapper.maxHighPerDay??3)))return false;budget.calls++;if(high)budget.high++;atomic(budgetFile,budget);return true;};
-    if(!reserve(false)){status(this.config,{mapperBudgetExhausted:true});return;}
     job.state='running';atomic(file,job);
     try{
-     let result=await this.runner(packet,{effort:'low',directory:path.join(this.root,'runner'),executable:this.config.mapper.executable||'codex',timeoutMs:this.config.mapper.timeoutMs||90000});job.receipts=[result.receipt];
+     let result;if(job.lowResult){if(job.permissionFingerprint!==permissionSnapshot){exclude();return;}result={value:job.lowResult,receipt:job.receipts?.[0]};}else{
+     const started=dispatchWithConsent(this.config,[job],()=>reserve(false)?this.runner(packet,{effort:'low',directory:path.join(this.root,'runner'),executable:this.config.mapper.executable||'codex',timeoutMs:this.config.mapper.timeoutMs||90000}):null,permissionSnapshot);
+     if(started.retry||started.paused){job.state='pending';atomic(file,job);return;}if(started.excluded){exclude();return;}
+     if(!started.value){job.state='pending';atomic(file,job);status(this.config,{mapperBudgetExhausted:true});return;}
+     job.permissionFingerprint=permissionSnapshot;
+     result=await started.value;job.receipts=[result.receipt];if(!consentMatches(this.config,job)){exclude();return;}}
      validateExtraction(result.value,packet);
-     if(result.value.needsReview&&reserve(true)){const reviewed=await this.runner({...packet,lowProposal:result.value},{effort:'high',directory:path.join(this.root,'runner'),executable:this.config.mapper.executable||'codex',timeoutMs:this.config.mapper.timeoutMs||90000});validateExtraction(reviewed.value,packet);job.receipts.push(reviewed.receipt);result=reviewed;}
-     job.result=result.value;job.state='ready';atomic(file,job);
+     if(result.value.needsReview){
+      const high=dispatchWithConsent(this.config,[job],()=>reserve(true)?this.runner({...packet,lowProposal:result.value},{effort:'high',directory:path.join(this.root,'runner'),executable:this.config.mapper.executable||'codex',timeoutMs:this.config.mapper.timeoutMs||90000}):null,permissionSnapshot);
+      if(high.excluded){exclude();return;}if(high.retry||high.paused){job.lowResult=result.value;job.state='pending';atomic(file,job);return;}
+      if(high.value){const reviewed=await high.value;if(!consentMatches(this.config,job)){exclude();return;}validateExtraction(reviewed.value,packet);job.receipts.push(reviewed.receipt);result=reviewed;}
+     }
+     delete job.lowResult;job.result=result.value;job.state='ready';atomic(file,job);
     }catch(e){job.state='failed';job.error=redact(e.message).slice(0,1500);if(e.receipt)job.receipts=[...(job.receipts||[]),e.receipt];atomic(file,job);status(this.config,{mapperError:job.error});return;}
    }
    if(controls(this.config).paused)return;
    const result=validateExtraction(job.result,packet);const applied=applyMappedProposals(this.config,job,result,projectId);
-   if(applied.retry)return;
+   if(applied.retry)return;if(applied.excluded){exclude();return;}
    job.state='done';job.applied=applied;job.completedAt=new Date().toISOString();atomic(file,job);
    status(this.config,{mapperLastAt:job.completedAt,mapperLastSession:job.sessionId,mapperLastItems:result.items.length,mapperLastModel:'gpt-6-luna',mapperLastEffort:job.receipts?.at(-1)?.reasoningEffort,mapperError:null,mapperBudgetExhausted:false});
   }finally{this.busy=false;fs.closeSync(fd);fs.unlinkSync(lock);}
@@ -115,7 +143,10 @@ export function applyMappedProposals(config,job,result,projectId){
  validateExtraction(result,{messages:job.messages});
  const file=paths(config).file;let release;try{release=acquireLock(file+'.lock');}catch(e){if(e.code==='EEXIST')return {retry:true};throw e;}
  try{
+  if(controls(config).paused)return {retry:true,reason:'paused'};
+  if(!job.permissionFingerprint||!consentMatches(config,job)||(job.consentGroup||[]).some(j=>!consentMatches(config,j))||job.permissionFingerprint&&privacyFingerprint(config)!==job.permissionFingerprint)return {excluded:true,items:0};
   const w=validate(read(file)),marker='mapper_'+job.id.slice(0,24);
+  const binding=capturedBinding(w,job);if((binding?.projectId||job.projectId)&&projectId!==(binding?.projectId||job.projectId))return {excluded:true,items:0,reason:'captured project changed'};
   if(w.events.some(e=>e.mapperJobId===job.id))return {duplicate:true};
   if(!w.projects.some(p=>p.id===projectId))throw Error('Mapped project no longer exists.');
   const source=job.sourceNodeId||w.nodes.find(n=>n.projectId===projectId&&n.capture?.sessionId===job.sessionId&&n.capture?.turnId===job.turnId)?.id,goal=w.nodes.find(n=>n.projectId===projectId&&n.type==='goal');

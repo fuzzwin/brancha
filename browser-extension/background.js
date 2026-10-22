@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
    const {enabled={}}=await chrome.storage.local.get('enabled');
    if(message.op==='enabled')return {enabled:!!enabled[url]};
    if(message.op!=='capture'||!enabled[url])return {captured:false,reason:'not activated'};
-   const packet={op:'capture',url,turnKey:String(message.turnKey||'').slice(0,300),request:String(message.request||'').slice(0,6000),summary:String(message.summary||'').slice(0,12000)};
+   const packet={op:'capture',url,permissionEpoch:enabled[url]?.permissionEpoch??null,turnKey:String(message.turnKey||'').slice(0,300),request:String(message.request||'').slice(0,6000),summary:String(message.summary||'').slice(0,12000)};
    try{const result=await native(packet);if(!result.retry)return result;}catch{}
    // Persistent local-only outbox, serialised by the service worker message queue.
    const {outbox=[]}=await chrome.storage.local.get('outbox');if(outbox.length>=100)throw Error('Local delivery queue is full; open Branchi before continuing capture.');
@@ -27,7 +27,7 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
   let url;try{url=conversation(tab?.url);}catch{if(message.op==='status')return {supported:false};throw Error('Open an existing ChatGPT or Claude chat first.');}
   const result=await native({op:message.op,url,...(message.op==='activate'?{projectId:message.projectId}:{})});
   if(['activate','deactivate'].includes(message.op)){
-   const {enabled={}}=await chrome.storage.local.get('enabled');enabled[url]=message.op==='activate';await chrome.storage.local.set({enabled});
+   const {enabled={}}=await chrome.storage.local.get('enabled');enabled[url]=message.op==='activate'?{permissionEpoch:result.permissionEpoch??null}:false;await chrome.storage.local.set({enabled});
    if(message.op==='deactivate'){const {outbox=[]}=await chrome.storage.local.get('outbox');await chrome.storage.local.set({outbox:outbox.filter(p=>p.url!==url)});}
    await chrome.tabs.sendMessage(tab.id,{op:message.op,includeVisible:!!message.includeVisible});
   }
