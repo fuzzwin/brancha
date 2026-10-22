@@ -1,3 +1,4 @@
+import {activityDate} from '../dist/core.mjs';
 import {styleGeneratedFiles} from './presentation.mjs';
 import {nextAction,projectAnalytics,statusLabel} from '../dist/core.mjs';
 import {dailyRecapFiles} from './daily-recap.mjs';
@@ -24,14 +25,14 @@ export function navigationFiles(w,{at=new Date(),timeZone=Intl.DateTimeFormat().
  const tableLink=(path,title)=>link(path,title).replaceAll('|','\\|');
  const latest=(events)=>{
   const e=events.find(e=>!/^Connected |^Luna mapped 0 conversation proposals/.test(e.text))||events[0];
-  return e?tableLink(e.nodeId?'Items/'+e.nodeId:'Activity/'+e.at.slice(0,10),clip(e.text,70)):'No saved update';
+  return e?tableLink(e.nodeId?'Items/'+e.nodeId:'Activity/'+activityDate(e.at),clip(e.text,70)):'No saved update';
  };
  const todayRows=analyses.map(({p,a})=>`| ${tableLink('Dashboards/'+p.id,p.title)} | ${eventsFor(today,p.id).length} / ${eventsFor(yesterday,p.id).length} | ${a.ready.length} / ${a.waiting.length} | ${clip(p.id==='codex_inbox'?'Review unrouted captures':a.next)} | ${latest(eventsFor(today,p.id))} |`).join('\n');
  const yesterdayRows=w.projects.filter(p=>eventsFor(yesterday,p.id).length).map(p=>`| ${tableLink('Dashboards/'+p.id,p.title)} | ${eventsFor(yesterday,p.id).length} | ${latest(eventsFor(yesterday,p.id))} |`).join('\n');
  const detailGroups=w.projects.map(p=>{
   const events=dated.filter(x=>x.e.projectId===p.id&&[today,yesterday].includes(x.day));
   if(!events.length)return '';
-  return `> [!example]- ${text(p.title)} · ${events.length} saved update${events.length===1?'':'s'}\n> ${link('Dashboards/'+p.id,'Dashboard')} · ${link('Resume/'+p.id,'Resume')}\n>\n`+events.slice(0,3).map(({e,day})=>`> - ${day===today?'Today':'Yesterday'} ${new Date(e.at).toLocaleTimeString('en-AU',{timeZone,hour:'2-digit',minute:'2-digit'})} · ${clip(e.text,100)} · ${link(e.nodeId?'Items/'+e.nodeId:'Activity/'+e.at.slice(0,10),'Source')}`).join('\n')+`\n>\n> ${[...new Set(events.map(x=>x.e.at.slice(0,10)))].map(day=>link('Activity/'+day,'Full activity '+day+' UTC')).join(' · ')}`;
+  return `> [!example]- ${text(p.title)} · ${events.length} saved update${events.length===1?'':'s'}\n> ${link('Dashboards/'+p.id,'Dashboard')} · ${link('Resume/'+p.id,'Resume')}\n>\n`+events.slice(0,3).map(({e,day})=>`> - ${day===today?'Today':'Yesterday'} ${new Date(e.at).toLocaleTimeString('en-AU',{timeZone,hour:'2-digit',minute:'2-digit'})} · ${clip(e.text,100)} · ${link(e.nodeId?'Items/'+e.nodeId:'Activity/'+activityDate(e.at),'Source')}`).join('\n')+`\n>\n> ${[...new Set(events.map(x=>activityDate(x.e.at)))].map(day=>link('Activity/'+day,'Full activity '+day+' UTC')).join(' · ')}`;
  }).filter(Boolean).join('\n\n');
  const personal=[hasIndex?'[[Notes/Project index|Project index and deep dives]]':'',hasGuide?'[[Notes/Branchi guide|Your saved links and quick guide]]':'',hasNames?'[[Notes/Branchi name ideas|Name ideas]]':''].filter(Boolean).join(' · ');
  const cards=analyses.map(({p,a})=>`> [!abstract] ${text(p.title)}\n> **${a.originalGoals.done} / ${a.originalGoals.total} goals with evidence** · ${a.ready.length} ready · ${a.waiting.length} waiting\n>\n> **Next:** ${text(nextAction(w,p.id))}\n>\n> ${link('Dashboards/'+p.id,'Dashboard')} · ${link('Resume/'+p.id,'Resume with AI')} · ${link('Maps/'+p.id,'Dependencies')} · ${link('Projects/'+p.id,'Original brief')}`).join('\n\n');

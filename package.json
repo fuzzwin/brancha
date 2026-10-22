@@ -1,6 +1,6 @@
 {
   "name": "branchi",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "private": true,
   "description": "Local project memory, visual maps and automatic Codex checkpoints with Obsidian views",
   "type": "module",

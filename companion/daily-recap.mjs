@@ -1,3 +1,4 @@
+import {activityDate} from '../dist/core.mjs';
 import {chatCatalog} from './chats.mjs';
 import {receiptPath} from './chat-map.mjs';
 import {nextAction,statusLabel} from '../dist/core.mjs';
@@ -22,7 +23,7 @@ export function dailyRecap(w,day,{at=new Date().toISOString(),timeZone='Australi
   const latest=scoped.flatMap(c=>c.reports).sort((a,b)=>Date.parse(a.at)-Date.parse(b.at)).at(-1);
   projects.push({id:p.id,title:p.title,chats:scoped.map(c=>({sessionId:c.sessionId,title:c.title,path:c.path,provider:c.provider,reportCount:c.reports.length})),
    reports:scoped.flatMap(c=>c.reports.map(r=>({...r,source:receiptPath(c,r),chatPath:c.path}))).sort((a,b)=>Date.parse(a.at)-Date.parse(b.at)),
-   updates:events.filter(e=>!e.capture&&!e.mapperJobId&&!e.checkpointId&&!/^Connected |^Removed .*connection/.test(e.text||'')).map(e=>({text:e.text,path:e.nodeId?'Items/'+e.nodeId:'Activity/'+e.at.slice(0,10)})),
+   updates:events.filter(e=>!e.capture&&!e.mapperJobId&&!e.checkpointId&&!/^Connected |^Removed .*connection/.test(e.text||'')).map(e=>({text:e.text,path:e.nodeId?'Items/'+e.nodeId:'Activity/'+activityDate(e.at)})),
    decisions:records.filter(n=>n.type==='decision'),branches:records.filter(n=>n.type==='branch'),tasks:records.filter(n=>n.type==='task'),results:records.filter(n=>n.type==='output'),
    next:latest?.next||nextAction(w,p.id),eventCount:events.length});
  }

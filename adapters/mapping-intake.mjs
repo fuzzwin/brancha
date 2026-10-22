@@ -24,7 +24,7 @@ export class MappingIntake {
    if(checked>=100){remaining=true;break;}checked++;
    const request=visibleUserText(pv.request||''),body=String(n.detail||'').replace(/^AUTOMATIC CHECKPOINT[^\n]*\n*/,'').trim();
    if(sessionAllowed(this.config,pv.sessionId)&&!/<heartbeat>|^Automation:/m.test(request)&&body){
-    queued+=Number(this.mapper.enqueue({sessionId:pv.sessionId,turnId:pv.turnId||pv.eventId,provider:pv.provider||'codex',...(n.checkpoint?{projectId:n.projectId,sourceNodeId:n.id}:{}),cwd:pv.cwd,at:pv.at||e.at,messages:[...(request?[{role:'user',text:request}]:[]),{role:'assistant',text:body}]}));
+    queued+=Number(this.mapper.enqueue({sessionId:pv.sessionId,turnId:pv.turnId||pv.eventId,provider:pv.provider||'codex',projectId:e.projectId||n.projectId,sourceNodeId:n.id,permissionEpoch:pv.permissionEpoch??null,cwd:pv.cwd,at:pv.at||e.at,messages:[...(request?[{role:'user',text:request}]:[]),{role:'assistant',text:body}]}));
    }
    seen.add(e.id);
   }

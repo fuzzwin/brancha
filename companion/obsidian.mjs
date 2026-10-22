@@ -1,3 +1,4 @@
+import {activityDate} from '../dist/core.mjs';
 import {styleGeneratedFiles} from './presentation.mjs';
 import {programMapFiles} from './program-map.mjs';
 import {createHash} from 'node:crypto';
@@ -33,7 +34,7 @@ export function obsidianFiles(w,{chatTitles={}}={}){
   const note=files[`Dashboards/${p.id}.md`],parts=note.split(/(?=^## )/m),sections=new Map(parts.slice(1).map(part=>[part.split('\n')[0],part]));
   const header=parts[0].replace('[[Maps/', '[[Dashboards/index|All projects]] · [[Maps/');
   const rhythm=sections.get('## Work rhythm · last 14 days')?.replace(/## Work rhythm[^\n]+\n/,'## Recent updates\n')||'';
-  const recent=a.recent.map(e=>{const title=(e.text||'Saved update').replace(/[\r\n|\[\]]/g,' ').slice(0,120);return `- ${new Date(e.at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} · [[Activity/${e.at.slice(0,10)}|${title}]]`;}).join('\n');
+  const recent=a.recent.map(e=>{const title=(e.text||'Saved update').replace(/[\r\n|\[\]]/g,' ').slice(0,120);return `- ${new Date(e.at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} · [[Activity/${activityDate(e.at)}|${title}]]`;}).join('\n');
   files[`Dashboards/${p.id}.md`]=header+[sections.get('## At a glance'),sections.get('## Ready to move'),sections.get('## Needs a look'),sections.get('## Project mindmap'),rhythm+recent+'\n\n',sections.get('## Decisions and offshoots'),sections.get('## Latest evidence and reports'),sections.get('## Next check-in')].filter(Boolean).join('');
  }
  for(const p of w.projects){

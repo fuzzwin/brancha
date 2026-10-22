@@ -4,7 +4,7 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {loadConfig} from '../scripts/config.mjs';
 import {paths,atomic,digest,sessionAllowed,controls,redact,capture,status} from './capture.mjs';
-import {setChatPermission} from './chat-privacy.mjs';
+import {setChatPermission,permissionEpoch} from './chat-privacy.mjs';
 import {visibleUserText} from './conversation-mapper.mjs';
 
 // Both local-only Work and Codex use the documented Codex hook event schema.
@@ -28,12 +28,12 @@ export function desktopHook(config,input){
  status(config,{desktopHookLastEventAt:new Date().toISOString(),desktopHookError:null});
  if(input.hook_event_name==='UserPromptSubmit'){
   const request=redact(visibleUserText(input.prompt||'')).slice(0,6000);
-  if(request)atomic(promptFile,{request});
+  if(request)atomic(promptFile,{request,permissionEpoch:permissionEpoch(config,input.session_id)});
   return {staged:!!request,activated};
  }
  if(input.stop_hook_active||!input.last_assistant_message)return {captured:false,reason:'not a main completed response'};
- let request='';try{request=JSON.parse(fs.readFileSync(promptFile,'utf8')).request||'';}catch(e){if(e.code!=='ENOENT')throw e;}
- const packet={sessionId:input.session_id,turnId:input.turn_id,cwd:input.cwd,git:observeGit(config,{sessionId:input.session_id,cwd:input.cwd}),message:redact(input.last_assistant_message).slice(0,14000),request,adapter:'desktop-stop-hook',at:new Date().toISOString()};
+ let saved={};try{saved=JSON.parse(fs.readFileSync(promptFile,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
+ const packet={sessionId:input.session_id,turnId:input.turn_id,permissionEpoch:saved.permissionEpoch??null,cwd:input.cwd,git:observeGit(config,{sessionId:input.session_id,cwd:input.cwd}),message:redact(input.last_assistant_message).slice(0,14000),request:saved.request||'',adapter:'desktop-stop-hook',at:new Date().toISOString()};
  const folder=path.join(root,'desktop-inbox'),file=path.join(folder,key+'.json');fs.mkdirSync(folder,{recursive:true});
  // A completed turn is durable before attempting the shared canonical lock.
  if(!fs.existsSync(file))try{fs.writeFileSync(file,JSON.stringify(packet),{flag:'wx',mode:0o600});}catch(e){if(e.code!=='EEXIST')throw e;}

@@ -11,9 +11,10 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
   if(sender.tab){
    if(sender.frameId!==0)throw Error('Only the main chat frame is supported');const url=conversation(sender.url);
    const {enabled={}}=await chrome.storage.local.get('enabled');
-   if(message.op==='enabled')return {enabled:!!enabled[url]};
+   if(message.op==='enabled')return {enabled:!!enabled[url],permissionEpoch:enabled[url]?.permissionEpoch??null};
    if(message.op!=='capture'||!enabled[url])return {captured:false,reason:'not activated'};
-   const packet={op:'capture',url,turnKey:String(message.turnKey||'').slice(0,300),request:String(message.request||'').slice(0,6000),summary:String(message.summary||'').slice(0,12000)};
+   if(typeof message.permissionEpoch!=='string'||message.permissionEpoch!==enabled[url]?.permissionEpoch)return {captured:false,reason:'before-consent'};
+   const packet={op:'capture',url,permissionEpoch:message.permissionEpoch,turnKey:String(message.turnKey||'').slice(0,300),request:String(message.request||'').slice(0,6000),summary:String(message.summary||'').slice(0,12000)};
    try{const result=await native(packet);if(!result.retry)return result;}catch{}
    // Persistent local-only outbox, serialised by the service worker message queue.
    const {outbox=[]}=await chrome.storage.local.get('outbox');if(outbox.length>=100)throw Error('Local delivery queue is full; open Branchi before continuing capture.');
@@ -27,9 +28,10 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
   let url;try{url=conversation(tab?.url);}catch{if(message.op==='status')return {supported:false};throw Error('Open an existing ChatGPT or Claude chat first.');}
   const result=await native({op:message.op,url,...(message.op==='activate'?{projectId:message.projectId}:{})});
   if(['activate','deactivate'].includes(message.op)){
-   const {enabled={}}=await chrome.storage.local.get('enabled');enabled[url]=message.op==='activate';await chrome.storage.local.set({enabled});
+   const {enabled={}}=await chrome.storage.local.get('enabled');enabled[url]=message.op==='activate'?{permissionEpoch:result.permissionEpoch??null}:false;await chrome.storage.local.set({enabled});
    if(message.op==='deactivate'){const {outbox=[]}=await chrome.storage.local.get('outbox');await chrome.storage.local.set({outbox:outbox.filter(p=>p.url!==url)});}
-   await chrome.tabs.sendMessage(tab.id,{op:message.op,includeVisible:!!message.includeVisible});
+   const tabs=await chrome.tabs.query({url:['https://chatgpt.com/*','https://claude.ai/*']});
+   await Promise.all(tabs.map(async other=>{let same=false;try{same=conversation(other.url)===url;}catch{}if(same)try{await chrome.tabs.sendMessage(other.id,{op:message.op,permissionEpoch:result.permissionEpoch??null,includeVisible:other.id===tab.id&&!!message.includeVisible});}catch{/* Suspended tabs rebaseline against the generation on their next tick. */}}));
   }
   const {outbox=[]}=await chrome.storage.local.get('outbox');return {...result,queued:outbox.length};
  }).then(reply).catch(e=>reply({error:e.message}));return true;

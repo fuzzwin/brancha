@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {blank, validate, event, reportedStatus, validateRun, redactText} from '../dist/core.mjs';
 import {atomic, paths, controls, digest, sessionAllowed, status} from './capture.mjs';
+import {acquireLock} from '../skills/brancha/scripts/locking.mjs';
+import {permissionEpoch,consentMatches} from './chat-privacy.mjs';
 
 const text = (value, max, required = false) => {
   if (value === undefined && !required) return '';
@@ -38,16 +40,18 @@ export function normaliseCheckpoint(input) {
   return n;
 }
 
-export function ingestCheckpoint(config, input, expectedRevision) {
+export function ingestCheckpoint(config, input, expectedRevision, acceptance={}) {
   const n = normaliseCheckpoint(input);
   if (!sessionAllowed(config, n.sessionId)) return {captured:false,reason:'excluded'};
   if (controls(config).paused) return {captured:false,reason:'paused'};
   const p = paths(config);
   fs.mkdirSync(p.vault,{recursive:true});
-  let fd;
-  try {fd = fs.openSync(p.file + '.lock','wx');}
+  let release;
+  try {release = acquireLock(p.file + '.lock');}
   catch (error) {if(error.code==='EEXIST')return {captured:false,retry:true,reason:'locked'};throw error;}
   try {
+    if (!sessionAllowed(config,n.sessionId)) return {captured:false,reason:'excluded'};
+    if(Object.hasOwn(acceptance,'permissionEpoch')&&!consentMatches(config,{sessionId:n.sessionId,permissionEpoch:acceptance.permissionEpoch}))return {captured:false,reason:'before-consent'};
     if (fs.existsSync(p.file) && fs.statSync(p.file).size > 8*1024*1024) throw Error('Workspace exceeds 8 MB.');
     const w = fs.existsSync(p.file) ? validate(JSON.parse(fs.readFileSync(p.file,'utf8'))) : blank();
     const key = digest(JSON.stringify([n.provider,n.sessionId,n.eventId]));
@@ -63,7 +67,7 @@ export function ingestCheckpoint(config, input, expectedRevision) {
       id:'cp_'+key.slice(0,30),projectId:n.projectId,title:n.title,type:n.kind,status:n.status,detail:n.summary,evidence:n.evidence,next:n.next,criteria:[],rationale:'',alternatives:'',consequence:'',
       recordedStatus:n.recordedStatus,acceptanceCriteria:n.acceptanceCriteria,
       verification:{implementation:n.status==='reported_done'?'reported_done':'unknown',testing:['passed','failed','blocked'].includes(n.run?.outcome)?n.run.outcome:'not_run',acceptance:'pending'},
-      checkpoint:{provider:n.provider,sessionId:n.sessionId,eventId:n.eventId,at:n.at || new Date().toISOString(),sourceRef:n.sourceRef,...(n.request?{request:n.request}:{})},
+      checkpoint:{provider:n.provider,sessionId:n.sessionId,eventId:n.eventId,at:n.at || new Date().toISOString(),acceptedAt:new Date().toISOString(),permissionEpoch:permissionEpoch(config,n.sessionId),sourceRef:n.sourceRef,...(n.request?{request:n.request}:{})},
       ...(n.run?{run:n.run}:{})
     };
     w.nodes.push(node);
@@ -79,5 +83,5 @@ export function ingestCheckpoint(config, input, expectedRevision) {
     atomic(p.file,w);
     status(config,{lastCheckpointAt:node.checkpoint.at,lastCheckpointProvider:n.provider,error:null});
     return {captured:true,projectId:n.projectId,nodeId:node.id,revision:w.revision};
-  } finally {fs.closeSync(fd);fs.unlinkSync(p.file+'.lock');}
+  } finally {release();}
 }

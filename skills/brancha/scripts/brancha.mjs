@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {atomic} from './storage.mjs';
+import {atomic,containedPath} from './storage.mjs';
+import {acquireLock} from './locking.mjs';
 import {blank,validate,uid,now,event,contextBrief,vaultFiles,reconcileImportedEdges} from './core.mjs';
 const [command,file,arg,focus]=process.argv.slice(2);
 const read=f=>{if(fs.statSync(f).size>8*1024*1024)throw Error('Workspace exceeds 8 MB.');return validate(JSON.parse(fs.readFileSync(f,'utf8')));};
@@ -36,10 +37,10 @@ try{
  else if(command==='check'){const w=read(absolute);console.log(JSON.stringify({valid:true,revision:w.revision,projects:w.projects.map(p=>({id:p.id,title:p.title,criteria:p.criteria})),nodes:w.nodes.map(n=>({id:n.id,projectId:n.projectId,title:n.title,status:n.status}))},null,2));}
  else if(command==='brief')console.log(contextBrief(read(absolute),arg,focus));
  else if(command==='export-vault'){
-  if(!arg)throw Error('A new export directory is required.');const out=path.resolve(arg);fs.mkdirSync(out,{recursive:false});for(const [name,content]of Object.entries(vaultFiles(read(absolute)))){const dest=path.join(out,name);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,content,{flag:'wx'});}console.log(JSON.stringify({path:out}));
+  if(!arg)throw Error('A new export directory is required.');const out=path.resolve(arg);fs.mkdirSync(out,{recursive:false});for(const [name,content]of Object.entries(vaultFiles(read(absolute)))){const dest=containedPath(out,name);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,content,{flag:'wx'});}console.log(JSON.stringify({path:out}));
  }else if(command==='apply'){
-  if(!arg)throw Error('Operation JSON path is required.');const lock=absolute+'.lock';const fd=fs.openSync(lock,'wx');let temp;
+  if(!arg)throw Error('Operation JSON path is required.');const release=acquireLock(absolute+'.lock');let temp;
   try{const w=read(absolute),payload=JSON.parse(fs.readFileSync(arg,'utf8')),result=apply(w,payload);const backup=absolute+'.'+Date.now()+'.backup';fs.copyFileSync(absolute,backup,fs.constants.COPYFILE_EXCL);atomic(absolute,w);console.log(JSON.stringify({path:absolute,revision:w.revision,result,backup}));}
-  finally{if(temp&&fs.existsSync(temp))fs.unlinkSync(temp);fs.closeSync(fd);fs.unlinkSync(lock);}
+  finally{if(temp&&fs.existsSync(temp))fs.unlinkSync(temp);release();}
  }else throw Error('Unknown command.');
 }catch(e){console.error(e.message);process.exitCode=1;}
