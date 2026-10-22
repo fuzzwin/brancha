@@ -41,13 +41,17 @@ export function setChatPermission(config,id,decision,{projectId}={}){
  }finally{release();}
 }
 const sourceSession=n=>n?.capture?.sessionId||n?.mapper?.sessionId||n?.checkpoint?.sessionId;
+// In-process view metadata only: never persisted in canonical JSON or exposed
+// as a hidden record identifier/count. Repeated filtering retains incompleteness.
+export const dependencyScope=Symbol.for('branchi.dependencyScopeComplete');
 // A derived view only: the canonical record and its private backups are retained.
 export function privacyView(config,w){
  const allowed=new Map(),ok=id=>{if(!allowed.has(id))allowed.set(id,chatAllowed(config,id));return allowed.get(id);};
  const hidden=new Set(w.nodes.filter(n=>sourceSession(n)&&!ok(sourceSession(n))).map(n=>n.id));
  const nodes=w.nodes.filter(n=>!hidden.has(n.id)),ids=new Set(nodes.map(n=>n.id));
  const events=w.events.filter(e=>!hidden.has(e.nodeId)&&![e.capture,e.before,e.after].some(n=>sourceSession(n)&&!ok(sourceSession(n))));
- return {...w,nodes,edges:w.edges.filter(e=>ids.has(e.from)&&ids.has(e.to)),events};
+ const complete=w[dependencyScope]!==false&&!w.edges.some(e=>e.type==='depends_on'&&(!ids.has(e.from)||!ids.has(e.to)));
+ return {...w,[dependencyScope]:complete,nodes,edges:w.edges.filter(e=>ids.has(e.from)&&ids.has(e.to)),events};
 }
 // Preserve hidden records when the local browser edits its filtered view.
 export function mergePrivateRecords(original,visible,next){

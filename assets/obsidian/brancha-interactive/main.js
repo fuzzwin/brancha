@@ -1,4 +1,5 @@
 const {Plugin,MarkdownRenderChild,Notice}=globalThis.BranchaHost||require('obsidian');
+const PLUGIN_VERSION='0.14.0';
 // Work in CSS pixels; never magnify a small diagram just to fill a wide note.
 // Very narrow or dense maps keep an 11px label floor and can scroll.
 function mapSize({width,height,availableWidth,availableHeight,zoom=1,readable=false,fullWidth=false,fullPage=false,fitAll=false}){
@@ -43,7 +44,7 @@ class Dashboard extends MarkdownRenderChild{
   }catch(e){if(!this.dead){this.containerEl.replaceChildren();this.el(this.containerEl,'p','Dashboard unavailable. Open the portable note below. '+e.message);}}
  }
  el(parent,tag,text,cls){const e=parent.ownerDocument.createElement(tag);if(text!==undefined)e.textContent=String(text);if(cls)e.className=cls;parent.append(e);return e;}
- button(parent,text,action,cls){const b=this.el(parent,'button',text,cls);b.type='button';b.addEventListener('click',action);return b;}
+ button(parent,text,action,cls){const b=this.el(parent,'button',text,cls);b.type='button';b.dataset.action=text;b.addEventListener('click',action);return b;}
  paintStatus(el,id){
   const key=this.data.statusKey?.find(s=>s.id===id);if(!key)return;
   el.dataset.status=id;
@@ -87,21 +88,30 @@ class Dashboard extends MarkdownRenderChild{
   }
  }
  select(key){if(key==='mm_root'){this.focus=null;this.history=[];}else{if(key.startsWith('more_'))key=key.replace('more_','group_');if(!this.data.views[key])return;if(key!==this.focus)this.history.push(this.focus);this.focus=key;}this.zoom=1;this.readable=false;this.draw();this.containerEl.querySelector('.bi-map')?.scrollIntoView({block:'start',behavior:'smooth'});}
+ pageNavigation(root,label){
+  root.classList.add('bi-page-v3');
+  const nav=this.el(root,'nav',undefined,'bi-page-navigation');nav.setAttribute('aria-label','Page navigation');
+  this.button(nav,'← Back',()=>this.back(),'bi-back');
+  this.button(nav,'⌂ Home',()=>this.open('Generated/Navigation/Home'),'bi-home-button');
+  this.el(nav,'span',label,'bi-page-location');
+  const d=this.data,about=this.el(nav,'details',undefined,'bi-about');this.el(about,'summary','About / versions');
+  this.el(about,'p',`App source ${d.software?.appVersion||'not recorded'} · Renderer/plugin ${PLUGIN_VERSION} · Workspace revision ${d.revision??'not recorded'}`);
+  this.el(about,'p',`Generated ${d.generatedAt||(!d.sessionId?d.at:null)||'not recorded'} · Last saved record ${d.analytics?.latest?.at||(d.sessionId?d.at:null)||d.projects?.map(p=>p.lastAt).filter(Boolean).sort().at(-1)||'not recorded'}`);
+  this.el(about,'p','Build commit/channel not recorded. Data revision is not a software version.');return nav;
+ }
  renderNextStep(root,{label,text,action,onAction,hint}){
   const panel=this.el(root,'section',undefined,'bi-resume bi-compact-next'),row=this.el(panel,'div',undefined,'bi-compact-next-row'),copy=this.el(row,'div',undefined,'bi-compact-next-copy');
   this.el(copy,'small',label);this.el(copy,'h2',String(text||'Choose the next recorded action.').split(/;\s*|\.\s+/)[0]);
   this.button(row,action,onAction);const details=this.el(panel,'details',undefined,'bi-next-details');this.el(details,'summary','Full next step and guidance');this.el(details,'p',text);this.el(details,'small',hint,'bi-handover-hint');return panel;
  }
  draw(){
-  const root=this.containerEl,d=this.data,a=d.analytics;this.mapObserver?.disconnect();this.svg=null;root.replaceChildren();
-  if(this.timelineOnly){this.el(root,'h1',`${this.timelineLocked?'Chat':'Project'} timeline · ${d.project.title}`);this.button(root,'← Home',()=>this.open('Generated/Navigation/Home'));this.button(root,'Project dashboard',()=>this.open(`Generated/Dashboards/${this.id}`));this.renderTimeline(root);return;}
+  const root=this.containerEl,d=this.data,a=d.analytics;this.mapObserver?.disconnect();this.svg=null;root.replaceChildren();root.classList.add('bi-project-v3');this.pageNavigation(root,this.timelineOnly?'Timeline':'Project overview');
+  if(this.timelineOnly){this.el(root,'h1',`${this.timelineLocked?'Chat':'Project'} timeline · ${d.project.title}`);this.button(root,'Project dashboard',()=>this.open(`Generated/Dashboards/${this.id}`));this.renderTimeline(root);return;}
   const top=this.el(root,'div',undefined,'bi-top');
-  this.el(top,'h1',d.project.title);
+  const identity=this.el(top,'div',undefined,'bi-page-identity');this.el(identity,'small','YOUR PROJECT','bi-page-eyebrow');this.el(identity,'h1',d.project.title);
   this.quickSwitch(top);
   const saved=this.el(root,'div',undefined,'bi-freshness');this.el(saved,'span',savedStamp(a.latest?.at));this.el(saved,'span',`${a.updates14d} updates in 14 days`);
   const nav=this.el(root,'nav',undefined,'bi-nav');
-  this.button(nav,'← Back',()=>this.back());
-  this.button(nav,'← Home',()=>this.open('Generated/Navigation/Home'));
   this.button(nav,'Chats',()=>root.querySelector('.bi-project-chats')?.scrollIntoView({block:'start',behavior:'smooth'}));
   this.button(nav,'Original plan',()=>this.open(`Generated/Projects/${this.id}`));
   this.button(nav,'Git branches',()=>this.open(`Generated/Branches/${this.id}`));
@@ -210,6 +220,8 @@ class Dashboard extends MarkdownRenderChild{
   if(!d.chats?.length)this.el(chatSection,'p','No included chats with saved turns are linked here. Open the intended Codex chat and ask to include that exact chat in Branchi.');
   this.button(chatSection,'Set up a chat',()=>this.open('Generated/Guides/Chat privacy'));
   for(const chat of d.chats||[]){const row=this.el(chatSection,'div',undefined,'bi-record');this.button(row,chat.title,()=>this.open('Generated/'+chat.path));this.el(row,'small',`${chat.reportCount} saved reports`);this.el(row,'p',chat.summary,'bi-chat-preview');}
+  // Keep existing queue, chat and map controls together instead of burying them below analytics.
+  const workspace=this.el(glance,'div',undefined,'bi-project-workspace'),side=this.el(workspace,'aside',undefined,'bi-project-sidebar');glance.insertBefore(workspace,lower);workspace.insertBefore(panel,side);side.append(todo,chatSection);
   const recent=this.el(root,'details',undefined,'bi-panel');this.el(recent,'summary','Recent updates & review prompts');
   for(const e of a.recent)this.el(recent,'p',`${new Date(e.at).toLocaleString()} · ${e.text}`);
   for(const prompt of a.template.prompts)this.el(recent,'p',prompt);
@@ -314,40 +326,37 @@ class Home extends Dashboard{
  get path(){return this.chatsOnly?'Generated/Interactive/chats.json':'Generated/Interactive/home.json';}
  async refresh(){try{const raw=await this.plugin.app.vault.adapter.read(this.path);if(this.dead||raw===this.previous)return;this.previous=raw;this.data=JSON.parse(raw);if(!Array.isArray(this.data.projects))throw Error('Invalid Home data');this.draw();}catch(e){if(!this.dead){this.containerEl.replaceChildren();this.el(this.containerEl,'p','Home is waiting for the Branchi companion. Open the plain project list below.');}}}
  draw(){
-  const root=this.containerEl,d=this.data,r=d.review;root.replaceChildren();root.classList.add('bi-home');
-  this.el(root,'h1',this.chatsOnly?'Your saved chats':'Branchi Home');if(d.workspace){const identity=this.el(root,'p',`LIVE · ${d.workspace.name} · revision ${d.revision}`,'bi-workspace-identity');identity.title=d.workspace.vault;if(d.workspace.localUrl){const browser=this.el(identity,'a',' · Open localhost');browser.href=d.workspace.localUrl;}}this.el(root,'p',this.chatsOnly?'Find what you worked on, what was saved, and where to continue.':'Pick up where you left off. Your saved decisions, dependencies and side ideas stay connected.','bi-home-intro');const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,'← Back',()=>this.back());this.button(nav,this.chatsOnly?'← Home':'All saved chats',()=>this.open(this.chatsOnly?'Generated/Navigation/Home':'Generated/Chats/index'));this.button(nav,'Start here',()=>this.open('Generated/Navigation/How to use'));this.button(nav,'Daily recap',()=>this.open('Generated/Recaps/index'));this.button(nav,'How Branchi works',()=>this.open('Generated/Guides/How Brancha works'));this.button(nav,'Set up another chat',()=>this.open('Generated/Guides/Chat privacy'));
-  const setup=this.el(root,'div',undefined,'bi-chat-setup');this.el(setup,'span',d.privacy?`${d.privacy.includedSavedChats} included chat${d.privacy.includedSavedChats===1?'':'s'} · ${d.privacy.excludedSavedChats} previously saved chats excluded by your privacy settings.`:'Only individually included chats with saved turns appear here.');
-  const bar=this.el(root,'div',undefined,'bi-home-bar'),input=this.el(bar,'input');input.type='search';input.placeholder='Find a project or chat…';input.setAttribute('aria-label','Find a project or chat');input.value=this.search;
-  const check=this.button(bar,'Check now',async()=>{check.disabled=true;try{const adapter=this.plugin.app.vault.adapter;for(const folder of ['.brancha','.brancha/reviewer'])if(!await adapter.exists(folder))await adapter.mkdir(folder);await adapter.write('.brancha/reviewer/request.json',JSON.stringify({id:Date.now()+'_'+Math.random().toString(16).slice(2),requestedAt:new Date().toISOString()}));new Notice('Check requested. Branchi will review new saved turns and update Obsidian.');check.textContent='Check requested';}catch(e){check.disabled=false;new Notice('Check could not be requested. Open Connection status for setup details.');}});
-  check.disabled=!r.enabled||r.paused||/reviewing|Updating/.test(r.state);
-  const status=this.el(root,'div',undefined,'bi-home-status');this.el(status,'strong',r.paused?'Capture and review are paused':r.enabled?`Luna High review · ${r.state}`:'Automatic review is not configured');
-  this.el(status,'span',r.lastAt?`Last completed ${new Date(r.lastAt).toLocaleString()}`:'No completed High review observed yet.');
-  if(r.automatic&&r.nextCheckAt)this.el(status,'span',`Automatic catch-up · next check ${new Date(r.nextCheckAt).toLocaleTimeString()}`);
-  if(r.backlog)this.el(status,'span',`${r.backlog} saved turns waiting for a later batch.`);
-  if(r.note)this.button(status,'Latest review',()=>this.open(r.note.replace(/\.md$/,'')));
-  this.button(status,'Connection status',()=>this.open('Generated/Navigation/Connections'));
-  const overview=this.el(root,'div',undefined,'bi-home-overview');
-  for(const [value,label]of [[d.projects.length,'Projects'],[d.chatTotal??d.chats.length,'Included chats'],[d.projects.reduce((n,p)=>n+p.ready,0),'Ready to move']]){const stat=this.el(overview,'div');this.el(stat,'strong',value);this.el(stat,'span',label);}
-  if(d.automation){const a=d.automation,pipeline=this.el(root,'div',undefined,'bi-pipeline');for(const [label,state]of [['Capture',a.paused?'Paused':a.captureEnabled?'Enabled':'Not connected'],['AI mapping',a.mapperLimited?`Daily limit · ${a.mapperPending} queued`:a.mapperEnabled?`${a.mapperPending} queued`:'Not enabled'],['Review',r.state]]){const item=this.el(pipeline,'div');this.el(item,'strong',label);this.el(item,'span',state);}}
-  const columns=this.el(root,'div',undefined,this.chatsOnly?'bi-chat-index':'bi-home-columns');
-  const projectSection=this.el(columns,'section',undefined,'bi-panel');projectSection.hidden=this.chatsOnly;this.el(projectSection,'h2',`Your projects · ${d.projects.length}`);
+  const root=this.containerEl,d=this.data,r=d.review,oldInput=root.querySelector('input'),restoreSearch=oldInput&&root.ownerDocument.activeElement===oldInput,selection=restoreSearch?[oldInput.selectionStart,oldInput.selectionEnd]:null;
+  root.replaceChildren();root.classList.add('bi-home','bi-home-v3');this.pageNavigation(root,this.chatsOnly?'Saved chats':'Workspace');root.dataset.layout=this.projectLayout||'compact';if(this.chatsOnly)root.classList.add('bi-home-chats-only');
+  const header=this.el(root,'header',undefined,'bi-home-header'),heading=this.el(header,'div',undefined,'bi-home-heading');this.el(heading,'small','YOUR WORKSPACE','bi-home-eyebrow');this.el(heading,'h1',this.chatsOnly?'Your saved chats':'Branchi Home');this.el(heading,'p',this.chatsOnly?'Find a saved conversation and return to its sources.':'Pick a project. See the next action. Keep moving.','bi-home-intro');
+  const overview=this.el(header,'div',undefined,'bi-home-overview');for(const [value,label]of [[d.projects.length,'Projects'],[d.chatTotal??d.chats.length,'Included chats'],[d.projects.reduce((n,p)=>n+p.ready,0),'Ready to move']]){const stat=this.el(overview,'div');this.el(stat,'strong',value);this.el(stat,'span',label);}
+  if(d.workspace){const identity=this.el(root,'div',undefined,'bi-workspace-identity');identity.title=d.workspace.vault;this.el(identity,'span','LIVE','bi-live-label');this.el(identity,'span',d.workspace.name);this.el(identity,'small',`revision ${d.revision}`);if(d.workspace.localUrl){const browser=this.el(identity,'a','Open localhost ↗');browser.href=d.workspace.localUrl;}}
+  const nav=this.el(root,'nav',undefined,'bi-nav bi-home-nav');this.button(nav,'All saved chats',()=>this.open('Generated/Chats/index'));this.button(nav,'Daily recap',()=>this.open('Generated/Recaps/index'));
+  const tools=this.el(nav,'details',undefined,'bi-home-tools');tools.open=!!this.toolsOpen;tools.addEventListener('toggle',()=>this.toolsOpen=tools.open);this.el(tools,'summary','Tools & setup');const toolsMenu=this.el(tools,'div',undefined,'bi-home-tools-menu');this.button(toolsMenu,'Start here',()=>this.open('Generated/Navigation/How to use'));this.button(toolsMenu,'How Branchi works',()=>this.open('Generated/Guides/How Brancha works'));this.button(toolsMenu,'Set up another chat',()=>this.open('Generated/Guides/Chat privacy'));
+  const bar=this.el(root,'div',undefined,'bi-home-bar'),search=this.el(bar,'div',undefined,'bi-home-search');this.el(search,'span','⌕','bi-search-icon').setAttribute('aria-hidden','true');const input=this.el(search,'input');input.type='search';input.placeholder='Find a project or chat…';input.setAttribute('aria-label','Find a project or chat');input.value=this.search;
+  const check=this.button(bar,'Check now',async()=>{check.disabled=true;try{const adapter=this.plugin.app.vault.adapter;for(const folder of ['.brancha','.brancha/reviewer'])if(!await adapter.exists(folder))await adapter.mkdir(folder);await adapter.write('.brancha/reviewer/request.json',JSON.stringify({id:Date.now()+'_'+Math.random().toString(16).slice(2),requestedAt:new Date().toISOString()}));new Notice('Check requested. Branchi will review new saved turns and update Obsidian.');check.textContent='Check requested';}catch(e){check.disabled=false;new Notice('Check could not be requested. Open Connection status for setup details.');}});check.disabled=!r.enabled||r.paused||/reviewing|Updating/.test(r.state);
+  const automation=this.el(root,'details',undefined,'bi-home-automation');automation.open=!!this.automationOpen;automation.addEventListener('toggle',()=>this.automationOpen=automation.open);const summary=this.el(automation,'summary');this.el(summary,'span','Automation','bi-automation-label');
+  if(d.automation){const a=d.automation;for(const [label,state,tone]of [['Capture',a.paused?'Paused':a.captureEnabled?'On':'Not connected',a.paused?'limited':a.captureEnabled?'ready':'quiet'],['Mapping',a.mapperLimited?`Daily limit · ${a.mapperPending} queued`:a.mapperEnabled?`${a.mapperPending} queued`:'Off',a.mapperLimited?'limited':'quiet'],['Review',r.state,/limit|attention|error/i.test(r.state)?'limited':'quiet']]){const badge=this.el(summary,'span',undefined,'bi-automation-badge');badge.dataset.state=tone;this.el(badge,'span',label);this.el(badge,'strong',state);}}
+  this.el(summary,'span','Details','bi-automation-more');
+  if(d.aiBudget){const budget=d.aiBudget,usage=this.el(root,'div',undefined,'bi-ai-usage');usage.setAttribute('aria-label','Daily AI call usage');for(const [key,label]of [['mapper','Mapping'],['reviewer','Catch-up']]){const b=budget[key],item=this.el(usage,'span',undefined,'bi-ai-usage-item');item.dataset.limited=String(b.limited);this.el(item,'strong',`${label} ${b.used===null?'?':b.used}/${b.limit}`);this.el(item,'span',`${budget.model} ${b.effort} · ${b.enabled?(b.remaining===null?'usage unavailable':b.remaining+' left'):'off'}`);}const reset=this.el(usage,'span',`Resets ${new Date(budget.resetsAt).toLocaleString(undefined,{timeZone:budget.timeZone,day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZoneName:'short'})}`,'bi-ai-reset');reset.title=`Daily call caps across all projects. Reset timezone: ${budget.timeZone}. Calls include reserved/failed attempts; these are not account tokens or credits.`;root.insertBefore(usage,automation);}
+  const status=this.el(automation,'div',undefined,'bi-home-status');this.el(status,'strong',r.paused?'Capture and review are paused':r.enabled?`Luna review · ${r.state}`:'Automatic review is not configured');this.el(status,'span',r.lastAt?`Last completed ${new Date(r.lastAt).toLocaleString()}`:'No completed High review observed yet.');if(r.automatic&&r.nextCheckAt)this.el(status,'span',`Automatic catch-up · next check ${new Date(r.nextCheckAt).toLocaleTimeString()}`);if(r.backlog)this.el(status,'span',`${r.backlog} saved turns waiting for a later batch.`);if(r.note)this.button(status,'Latest review',()=>this.open(r.note.replace(/\.md$/,'')));this.button(status,'Connection status',()=>this.open('Generated/Navigation/Connections'));
+  const setup=this.el(automation,'div',undefined,'bi-chat-setup');this.el(setup,'span',d.privacy?`${d.privacy.includedSavedChats} included chat${d.privacy.includedSavedChats===1?'':'s'} · ${d.privacy.excludedSavedChats} previously saved chats excluded by your privacy settings.`:'Only individually included chats with saved turns appear here.');
+  const results=this.el(root,'p',undefined,'bi-home-search-results');results.setAttribute('aria-live','polite');
+  const columns=this.el(root,'div',undefined,this.chatsOnly?'bi-chat-index':'bi-home-columns'),projectSection=this.el(columns,'section',undefined,'bi-panel bi-home-projects');projectSection.hidden=this.chatsOnly;const projectHeader=this.el(projectSection,'div',undefined,'bi-home-section-head');this.el(projectHeader,'h2','Your projects');const density=this.el(projectHeader,'div',undefined,'bi-home-density');density.setAttribute('aria-label','Project layout');for(const [key,label]of [['compact','Compact list'],['cards','Cards']]){const b=this.button(density,label,()=>{this.projectLayout=key;this.draw();});b.setAttribute('aria-pressed',String((this.projectLayout||'compact')===key));}this.el(projectHeader,'span',String(d.projects.length),'bi-home-section-count');
   const searchable=[];
-  for(const p of d.projects){const row=this.el(projectSection,'div',undefined,'bi-home-project');searchable.push({el:row,text:p.title+' '+p.next});
-   const head=this.el(row,'div',undefined,'bi-project-head');this.gauge(head,p.goals.done,p.goals.total,'Goals with evidence');const title=this.el(head,'div');this.button(title,p.title,()=>this.open(`Generated/Dashboards/${p.id}`),'bi-home-project-title');this.el(title,'small',savedStamp(p.lastAt));this.el(row,'p',p.next);
-   this.el(row,'small',`${p.chatCount??0} included chats · ${p.updates14d??0} updates / 14 days`,'bi-project-facts');
-   const actions=this.el(row,'div',undefined,'bi-home-actions');this.el(actions,'small',`${p.ready} ready · ${p.waiting} waiting · ${p.goals.done}/${p.goals.total} goals with evidence`);
-   this.button(actions,'Open project',()=>this.open(`Generated/Dashboards/${p.id}`));this.button(actions,'Timeline',()=>this.open(`Generated/Timelines/${p.id}`));this.button(actions,'AI handover',()=>this.open(`Generated/Resume/${p.id}`));
+  for(const p of d.projects){const row=this.el(projectSection,'div',undefined,'bi-home-project');row.dataset.tone=String(Array.from(p.id).reduce((n,c)=>n+c.charCodeAt(0),0)%5);searchable.push({el:row,text:p.title+' '+p.next,kind:'project'});
+   const head=this.el(row,'div',undefined,'bi-project-head'),initials=p.title.split(/\s+/).filter(w=>/[a-z0-9]/i.test(w)).slice(0,2).map(w=>w[0]).join('').toUpperCase()||p.title.slice(0,2);this.el(head,'span',initials,'bi-project-mark').setAttribute('aria-hidden','true');const title=this.el(head,'div',undefined,'bi-project-title-copy');this.button(title,p.title,()=>this.open(`Generated/Dashboards/${p.id}`),'bi-home-project-title');this.el(title,'small',savedStamp(p.lastAt));const ready=this.el(head,'span',`${p.ready} ready`,'bi-project-ready');ready.dataset.active=String(p.ready>0);
+   this.el(row,'small','NEXT STEP','bi-project-next-label');const next=this.el(row,'p',p.next,'bi-project-next');next.title=p.next;
+   const progress=this.el(row,'div',undefined,'bi-project-progress');this.el(progress,'small',p.goals.total?`${p.goals.done} of ${p.goals.total} goals with evidence`:'No recorded goals yet');const meter=this.el(progress,'progress');meter.max=p.goals.total||1;meter.value=p.goals.done;meter.setAttribute('aria-label',`Goals with evidence: ${p.goals.done} of ${p.goals.total}`);
+   this.el(row,'small',`${p.chatCount??0} included chats · ${p.updates14d??0} updates / 14 days${p.waiting?' · '+p.waiting+' waiting':''}`,'bi-project-facts');
+   const actions=this.el(row,'div',undefined,'bi-home-actions');this.button(actions,'Open project',()=>this.open(`Generated/Dashboards/${p.id}`));this.button(actions,'Timeline',()=>this.open(`Generated/Timelines/${p.id}`));this.button(actions,'AI handover',()=>this.open(`Generated/Resume/${p.id}`));
   }
-  const chats=this.el(columns,'section',undefined,'bi-panel');this.el(chats,'h2',this.chatsOnly?`Saved chats · ${d.chatTotal??d.chats.length}`:'Recent chats');
-  if(!d.chats.length)this.el(chats,'p','Saved chats appear here once Branchi captures a source-chat ID. Your projects above are ready to open.');
-  for(const c of d.chats){const row=this.el(chats,'div',undefined,'bi-home-chat');searchable.push({el:row,text:c.projectTitle+' '+c.title+' '+(c.summary||'')+' '+(c.find||'')});this.el(row,'small',`${c.projectTitle} · ${savedStamp(c.at)}`);
-   this.button(row,c.title,()=>this.open(`Generated/Chats/${c.projectId}-${c.sessionId}`),'bi-home-chat-title');
-   this.el(row,'p',c.summary||'Open this chat’s saved work.','bi-chat-preview');this.el(row,'small',`${c.reportCount||0} saved reports · ${c.verifiedCount||0} verified outcomes linked · ${c.artifactCount||0} file/web links`);this.el(row,'small','Open chat overview →');if(c.provider==='codex'){const link=this.el(row,'a','Continue in Codex ↗','external-link');link.href=`codex://threads/${c.sessionId}`;}
-  }
-  const empty=this.el(root,'p','Nothing matches that search. Try a project name.','bi-muted');
-  const filter=()=>{let count=0;for(const entry of searchable){entry.el.hidden=!entry.text.toLowerCase().includes(this.search.toLowerCase());if(!entry.el.hidden)count++;}empty.hidden=count>0||!this.search;};
-  input.addEventListener('input',()=>{this.search=input.value;filter();});filter();
-  this.el(root,'p',`Local Home snapshot · ${new Date(d.at).toLocaleString()}. New work appears while the companion runs. Only chats with saved provenance are listed.`,'bi-caption');
+  const chats=this.el(columns,'section',undefined,'bi-panel bi-home-recent');const chatHeader=this.el(chats,'div',undefined,'bi-home-section-head');this.el(chatHeader,'h2',this.chatsOnly?'Saved chats':'Recent chats');if(!this.chatsOnly)this.button(chatHeader,'View all',()=>this.open('Generated/Chats/index'),'bi-home-view-all');
+  if(!d.chats.length)this.el(chats,'p','Saved chats appear here once Branchi captures a source-chat ID. Your projects are ready to open.','bi-muted');
+  for(const [index,c]of d.chats.entries()){const row=this.el(chats,'div',undefined,'bi-home-chat');searchable.push({el:row,text:c.projectTitle+' '+c.title+' '+(c.summary||'')+' '+(c.find||''),kind:'chat',index});const meta=this.el(row,'div',undefined,'bi-chat-meta');this.el(meta,'span',c.projectTitle);this.el(meta,'small',savedStamp(c.at));this.button(row,c.title,()=>this.open(`Generated/Chats/${c.projectId}-${c.sessionId}`),'bi-home-chat-title');this.el(row,'p',c.summary||'Open this chat’s saved work.','bi-chat-preview');const footer=this.el(row,'div',undefined,'bi-chat-card-footer'),sources=this.el(footer,'details',undefined,'bi-chat-source-meta');this.el(sources,'summary',`${c.reportCount||0} saved reports`);this.el(sources,'small',`${c.verifiedCount||0} verified outcomes linked · ${c.artifactCount||0} file/web links`);if(c.provider==='codex'){const link=this.el(footer,'a','Continue in Codex ↗','external-link');link.href=`codex://threads/${c.sessionId}`;}}
+  if(!this.chatsOnly&&d.chats.length>(this.chatLimit||4))this.button(chats,'Show more chats',()=>{this.chatLimit=(this.chatLimit||4)+4;this.draw();},'bi-home-view-all');
+  const empty=this.el(root,'p','Nothing matches that search. Try a project name.','bi-muted');const filter=()=>{let count=0,projects=0,chats=0;const query=this.search.toLowerCase().trim();for(const entry of searchable){const match=entry.text.toLowerCase().includes(query);entry.el.hidden=!match||(!this.chatsOnly&&!query&&entry.kind==='chat'&&entry.index>=(this.chatLimit||4));if(match&&(!this.chatsOnly||entry.kind==='chat')){count++;if(entry.kind==='project')projects++;else chats++;}}empty.hidden=count>0||!query;results.hidden=!query;results.textContent=this.chatsOnly?`${chats} matching chats`:`${projects} matching projects · ${chats} matching chats`;};input.addEventListener('input',()=>{this.search=input.value;filter();});filter();
+  this.el(root,'p',`Local Home snapshot · ${new Date(d.at).toLocaleString()}. New work appears while the companion runs. Only chats with saved provenance are listed.`,'bi-caption');if(restoreSearch){input.focus();if(selection)input.setSelectionRange?.(...selection);}
  }
 }
 class Chat extends Dashboard{
@@ -355,14 +364,14 @@ class Chat extends Dashboard{
  get path(){return `Generated/Interactive/chat-${this.id}-${this.sessionId}.json`;}
  async refresh(){try{const raw=await this.plugin.app.vault.adapter.read(this.path);if(this.dead)return;this.data=JSON.parse(raw);if(this.data.version!==1||this.data.sessionId!==this.sessionId||this.data.project.id!==this.id)throw Error('Unsupported chat');this.draw();}catch(e){if(!this.dead){this.containerEl.replaceChildren();this.el(this.containerEl,'p','This chat overview is waiting for the companion. Open the portable overview below.');}}}
  draw(){
-  const root=this.containerEl,d=this.data;this.mapObserver?.disconnect();this.svg=null;root.replaceChildren();root.classList.add('bi-chat');
+  const root=this.containerEl,d=this.data;this.mapObserver?.disconnect();this.svg=null;root.replaceChildren();root.classList.add('bi-chat','bi-project-v3');this.pageNavigation(root,'Saved chat');
   this.el(root,'small',`CHAT OVERVIEW · ${d.project.title}`);this.el(root,'h1',d.title);this.quickSwitch(root);this.el(root,'div',savedStamp(d.at),'bi-freshness');
-  const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,'← Back',()=>this.back());this.button(nav,'← Home',()=>this.open('Generated/Navigation/Home'));this.button(nav,'All chats',()=>this.open('Generated/Chats/index'));this.button(nav,'Project dashboard',()=>this.open(`Generated/Dashboards/${this.id}`));this.button(nav,'Source index',()=>this.open(`Generated/Chats/${this.id}-${this.sessionId}-index`));
+  const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,'All chats',()=>this.open('Generated/Chats/index'));this.button(nav,'Project dashboard',()=>this.open(`Generated/Dashboards/${this.id}`));this.button(nav,'Source index',()=>this.open(`Generated/Chats/${this.id}-${this.sessionId}-index`));
   if(d.provider==='codex'){const a=this.el(nav,'a','Resume this chat ↗','external-link');a.href=`codex://threads/${this.sessionId}`;}
   this.el(root,'p','Saved work from this chat, with a clear route back to the source. Reports describe what the assistant said; verified outcomes require separate evidence.','bi-muted');
   const cards=this.el(root,'div',undefined,'bi-cards');for(const [label,value]of [['Saved reports',d.reportCount],['Verified outcomes linked',d.verified.length],['AI suggestions to review',d.proposals.length],['File / web links',d.artifactTotal]]){const target=({'Saved reports':'.bi-chat-reports','Verified outcomes linked':'.bi-chat-outcomes','AI suggestions to review':'.bi-chat-choices','File / web links':'.bi-chat-artifacts'})[label];const card=this.button(cards,'',()=>{const section=root.querySelector(target);if(section?.tagName==='DETAILS')section.open=true;section?.scrollIntoView({block:'start',behavior:'smooth'});},'bi-card');this.el(card,'span',label);this.el(card,'strong',value);this.el(card,'small','Explore →');}
   this.renderChatMap(root);
-  this.renderNextStep(root,{label:'PICK UP THIS CHAT',text:d.next,action:'Chat handover →',onAction:()=>this.open(`Generated/Chats/${this.id}-${this.sessionId}-notes`),hint:'Opens this chat’s saved overview and source links. Resume this chat above returns to the original Codex conversation.'});
+  const next=this.renderNextStep(root,{label:'PICK UP THIS CHAT',text:d.next,action:'Chat handover →',onAction:()=>this.open(`Generated/Chats/${this.id}-${this.sessionId}-notes`),hint:'Opens this chat’s saved overview and source links. Resume this chat above returns to the original Codex conversation.'});
   root.insertBefore(next,cards);
   const latest=d.reports[0],summary=this.el(root,'section',undefined,'bi-panel');this.el(summary,'h2','What you worked on');
   if(latest?.request){this.el(summary,'h3','Latest captured request');this.el(summary,'p',latest.request,'bi-chat-request');}else this.el(summary,'p','The original user request was not captured for these older reports. Open the source chat for its full scope.','bi-muted');
@@ -430,7 +439,7 @@ function explorerModel(data){
  if(remaining.length)groups.push({id:'other',title:'Other saved records',nodeIds:remaining.map(n=>n.id)});
  const edges=(chat?data.map.edges||[]:data.edges).filter(e=>ids.has(e.from)&&ids.has(e.to));
  const linked=new Set(edges.flatMap(e=>[e.from,e.to]));
- return {title:chat?data.title:data.project.title,nodes,groups,edges,isolated:nodes.filter(n=>!linked.has(n.id))};
+ return {title:chat?data.title:data.project.title,scopeComplete:!chat&&data.dependencyScopeComplete===true,scopeMessage:chat?'This chat map shows only linked records. Open the project map to check complete prerequisites.':data.dependencyScopeComplete===false?'This view omits prerequisite context. Review the full authorized project record before assessing readiness.':'This older map has no complete prerequisite boundary. Regenerate it with the current companion before assessing readiness.',nodes,groups,edges,isolated:nodes.filter(n=>!linked.has(n.id))};
 }
 function explorerBox(n){
  const words=String(n.title||'Untitled').split(/\s+/),lines=[];let line='';
@@ -440,7 +449,8 @@ function explorerBox(n){
 }
 function explorerMindmap(model,expanded,query=''){
  const term=query.trim().toLowerCase(),byId=new Map(model.nodes.map(n=>[n.id,n]));
- const groups=model.groups.map(g=>({...g,nodeIds:g.nodeIds.filter(id=>!term||byId.get(id).title.toLowerCase().includes(term))})).filter(g=>g.nodeIds.length);
+ const matches=n=>!term||n.title.toLowerCase().includes(term)||n.id.toLowerCase().includes(term);
+ const groups=model.groups.map(g=>({...g,nodeIds:g.nodeIds.filter(id=>matches(byId.get(id)))})).filter(g=>g.nodeIds.length);
  const sides=[[],[]];groups.forEach((g,i)=>sides[i%2].push(g));
  const plans=sides.map(side=>side.map(g=>{const open=!!term||expanded.has(g.id),items=open?g.nodeIds.map(id=>explorerBox(byId.get(id))):[];return {g,open,items,height:Math.max(82,items.reduce((v,n)=>v+n.height+14,0)-14)};}));
  const height=Math.max(220,...plans.map(side=>side.reduce((v,g)=>v+g.height+40,0)))+60,boxes=[],links=[];
@@ -451,11 +461,11 @@ function explorerMindmap(model,expanded,query=''){
   }
  });
  const left=Math.min(...boxes.map(n=>n.x))-30,right=Math.max(...boxes.map(n=>n.x+n.width))+30;for(const n of boxes)n.x-=left;
- return {boxes,links,width:right-left,height,shown:boxes.filter(n=>!n.root&&!n.group).length,total:model.nodes.filter(n=>!term||n.title.toLowerCase().includes(term)).length};
+ return {boxes,links,width:right-left,height,shown:boxes.filter(n=>!n.root&&!n.group).length,total:model.nodes.filter(matches).length};
 }
 function explorerFlow(model,query='',focus=null){
  const term=query.trim().toLowerCase(),wanted=focus?new Set([focus,...model.edges.filter(e=>e.from===focus||e.to===focus).flatMap(e=>[e.from,e.to])]):null;
- const nodes=model.nodes.filter(n=>(!wanted||wanted.has(n.id))&&(!term||n.title.toLowerCase().includes(term))),ids=new Set(nodes.map(n=>n.id)),edges=model.edges.filter(e=>ids.has(e.from)&&ids.has(e.to));
+ const nodes=model.nodes.filter(n=>(!wanted||wanted.has(n.id))&&(!term||n.title.toLowerCase().includes(term)||n.id.toLowerCase().includes(term))),ids=new Set(nodes.map(n=>n.id)),edges=model.edges.filter(e=>ids.has(e.from)&&ids.has(e.to));
  // Iterative strongly connected components keep cycles finite and place the
  // condensed dependency DAG from left to right. No edge is dropped for layout.
  const outgoing=new Map(nodes.map(n=>[n.id,[]])),incoming=new Map(nodes.map(n=>[n.id,[]]));
@@ -470,54 +480,98 @@ function explorerFlow(model,query='',focus=null){
  const columns=new Map();for(const n of nodes){const col=rank[component.get(n.id)];if(!columns.has(col))columns.set(col,[]);columns.get(col).push(explorerBox(n));}
  const height=Math.max(180,...[...columns.values()].map(ns=>ns.reduce((v,n)=>v+n.height+26,0)))+140,boxes=[];
  for(const [col,ns]of columns){let y=(height-ns.reduce((v,n)=>v+n.height+26,0))/2;for(const n of ns){Object.assign(n,{x:30+col*360,y});boxes.push(n);y+=n.height+26;}}
- return {boxes,links:edges,width:Math.max(350,(Math.max(0,...columns.keys())+1)*360),height,shown:boxes.length,total:model.nodes.length,cycleEdges:edges.filter(e=>component.get(e.from)===component.get(e.to)).length};
+ const cyclic=edges.filter(e=>component.get(e.from)===component.get(e.to));
+ return {boxes,links:edges,width:Math.max(350,(Math.max(0,...columns.keys())+1)*360),height,shown:boxes.length,total:model.nodes.length,cycleEdges:cyclic.length,cycleNodeIds:[...new Set(cyclic.flatMap(e=>[e.from,e.to]))]};
+}
+// Scheduling uses only prerequisite -> dependent edges. Optional relationship
+// layers are drawn after ranks and diagnostics have been computed.
+function explorerDependencies(model,{query='',focus=null,upstream=1,downstream=1,layers=[]}={}){
+ const dependencies=model.edges.filter(e=>e.type==='depends_on'),byId=new Map(model.nodes.map(n=>[n.id,n]));
+ const incoming=new Map(model.nodes.map(n=>[n.id,[]])),outgoing=new Map(model.nodes.map(n=>[n.id,[]]));
+ for(const e of dependencies){incoming.get(e.to)?.push(e.from);outgoing.get(e.from)?.push(e.to);}
+ const walk=(id,graph,depth)=>{const found=new Set(),queue=[[id,0]],seen=new Set([id]);for(let i=0;i<queue.length;i++){const [key,d]=queue[i];if(d>=depth)continue;for(const next of graph.get(key)||[]){found.add(next);if(!seen.has(next)){seen.add(next);queue.push([next,d+1]);}}}found.delete(id);return found;};
+ const all=explorerFlow({...model,edges:dependencies}),cycles=new Set(all.cycleNodeIds);
+ const completed=n=>!!n&&(n.statusId||n.status)==='done'&&!n.proposal&&!n.needsReview&&n.type!=='source';
+ const states=Object.fromEntries(model.nodes.map(n=>{
+  const prerequisites=incoming.get(n.id)||[],ancestors=walk(n.id,incoming,Infinity),blocked=prerequisites.filter(id=>!completed(byId.get(id))),cycle=cycles.has(n.id),upstreamCycle=[...ancestors].some(id=>cycles.has(id));
+  const unresolvedAncestors=[...ancestors].filter(id=>!completed(byId.get(id)));
+  const scopeComplete=model.scopeComplete!==false,status=n.statusId||n.status,ready=scopeComplete&&!['source','goal','reply','request','file'].includes(n.type)&&prerequisites.length>0&&!unresolvedAncestors.length&&!cycle&&!upstreamCycle&&['planned','active'].includes(status)&&!n.proposal&&!n.needsReview;
+  return [n.id,{prerequisites,dependents:outgoing.get(n.id)||[],ancestors:[...ancestors],unresolvedAncestors,blocked,cycle,upstreamCycle,scopeComplete,ready,completed:completed(n)}];
+ }));
+ const wanted=focus&&byId.has(focus)?new Set([focus,...walk(focus,incoming,upstream),...walk(focus,outgoing,downstream)]):null;
+ const term=query.trim().toLowerCase(),nodes=model.nodes.filter(n=>(!wanted||wanted.has(n.id))&&(!term||String(n.title).toLowerCase().includes(term)||n.id.toLowerCase().includes(term))),ids=new Set(nodes.map(n=>n.id));
+ const plan=explorerFlow({...model,nodes,edges:dependencies.filter(e=>ids.has(e.from)&&ids.has(e.to))});
+ plan.links.push(...model.edges.filter(e=>e.type!=='depends_on'&&layers.includes(e.type)&&ids.has(e.from)&&ids.has(e.to)));
+ return {...plan,total:model.nodes.length,states,dependencyTotal:dependencies.length,dependencyCycles:all.cycleEdges,hiddenPrerequisites:focus?states[focus]?.ancestors.filter(id=>!ids.has(id)).length||0:0};
 }
 class MapExplorer extends Dashboard{
- constructor(el,plugin,id,sourcePath,sessionId){super(el,plugin,id,sourcePath);this.sessionId=sessionId;this.mode='mindmap';this.query='';this.expanded=null;this.selected=null;this.connectionFocus=null;this.fullPage=true;}
+ constructor(el,plugin,id,sourcePath,sessionId){super(el,plugin,id,sourcePath);this.sessionId=sessionId;this.mode='dependencies';this.query='';this.expanded=null;this.selected=null;this.connectionFocus=null;this.fullPage=true;this.upstream=1;this.downstream=1;this.layers=new Set();this.mapHistory=[];this.lineageOpen=false;this.containerEl.addEventListener('keydown',e=>{if(e.key==='Escape'&&this.selected){e.preventDefault();this.closeInspector();}});}
  get path(){return `Generated/Interactive/${this.sessionId?'chat-'+this.id+'-'+this.sessionId:this.id}.json`;}
+ closeInspector(){const id=this.selected;this.selected=null;this.draw();const target=[...(this.svg?.querySelectorAll('[data-id]')||[])].find(n=>n.dataset.id===id)||this.containerEl.querySelector('.bi-map-scroll');target?.focus({preventScroll:true});}
+ selectRecord(id){
+  if(this.selected!==id)this.mapHistory.push({selected:this.selected,connectionFocus:this.connectionFocus,upstream:this.upstream,downstream:this.downstream,mode:this.mode,query:this.query,zoom:this.zoom});
+  this.selected=id;if(this.mode==='dependencies'){this.connectionFocus=id;this.upstream=1;this.downstream=1;}this.inspectorVisible=true;this.openInspector=true;this.draw();
+ }
  draw(){
   const root=this.containerEl,d=this.data,m=explorerModel(d);this.model=m;this.mapObserver?.disconnect();this.svg=null;
-  const activeId=root.ownerDocument.activeElement?.getAttribute('data-id');
+  if(!this.initialSelection){this.initialSelection=true;this.selected=d.analytics?.ready?.[0]?.id||d.analytics?.waiting?.[0]?.id||m.nodes.find(n=>n.type==='task')?.id||null;this.connectionFocus=this.selected;}
+  const active=root.ownerDocument.activeElement,activeId=active?.getAttribute('data-id'),activeAction=active?.dataset?.action,searchFocused=active===root.querySelector('input');
   const old=root.querySelector('.bi-map-scroll'),offset=old?{left:old.scrollLeft,top:old.scrollTop}:null;
-  root.replaceChildren();root.classList.add('bi-explorer');this.expanded??=new Set(m.nodes.length<=40?m.groups.map(g=>g.id):[]);
-  const top=this.el(root,'div',undefined,'bi-top');this.el(top,'h1',m.title);this.el(top,'span',this.sessionId?'Full-page chat map':'Full-page project map','bi-muted');
-  const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,this.sessionId?'← Chat dashboard':'← Project dashboard',()=>this.open(this.sessionId?`Generated/Chats/${this.id}-${this.sessionId}`:`Generated/Dashboards/${this.id}`));this.button(nav,'Home',()=>this.open('Generated/Navigation/Home'));this.quickSwitch(nav);
+  root.replaceChildren();root.classList.add('bi-explorer','bi-focus-workspace');root.dataset.inspectorOpen=String(!!this.inspectorVisible);this.pageNavigation(root,this.sessionId?'Chat map':'Project map');this.expanded??=new Set(m.nodes.length<=40?m.groups.map(g=>g.id):[]);
+  const top=this.el(root,'div',undefined,'bi-top');this.el(top,'h1',m.title);this.el(top,'span',`Workspace revision ${d.revision}`,'bi-muted');
+  const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,this.sessionId?'← Chat dashboard':'← Project dashboard',()=>this.open(this.sessionId?`Generated/Chats/${this.id}-${this.sessionId}`:`Generated/Dashboards/${this.id}`));this.quickSwitch(nav);
   const tools=this.el(root,'div',undefined,'bi-explorer-tools');
-  for(const [key,label]of [['mindmap','Mindmap'],['flow','Flow / dependencies']]){const b=this.button(tools,label,()=>{this.mode=key;this.zoom=1;this.fitAll=false;this.draw();});b.setAttribute('aria-pressed',String(this.mode===key));}
+  for(const [key,label]of [['dependencies','Dependencies'],['flow','All connections'],['mindmap','Grouped overview']]){const b=this.button(tools,label,()=>{this.mode=key;this.zoom=1;this.fitAll=false;this.draw();});b.setAttribute('aria-pressed',String(this.mode===key));}
+  if(this.selected)this.button(tools,'Inspect selected record',()=>{this.inspectorVisible=true;this.openInspector=true;this.draw();});
   if(this.mode==='mindmap'){this.button(tools,'Expand all',()=>{this.expanded=new Set(m.groups.map(g=>g.id));this.draw();});this.button(tools,'Collapse all',()=>{this.expanded.clear();this.draw();});}
-  if(this.connectionFocus)this.button(tools,'Show whole map',()=>{this.connectionFocus=null;this.query='';this.draw();});
-  const form=this.el(tools,'form'),input=this.el(form,'input');input.type='search';input.placeholder='Find a saved item…';input.setAttribute('aria-label','Find map items');input.value=this.query;const search=this.el(form,'button','Find');search.type='submit';form.addEventListener('submit',e=>{e.preventDefault();this.query=input.value;this.zoom=1;this.draw();});if(this.query)this.button(tools,'Clear search',()=>{this.query='';this.draw();});
-  const diagnostics=this.el(root,'details',undefined,'bi-explorer-diagnostics');this.el(diagnostics,'summary',`${m.nodes.length} records · ${m.edges.length} saved connections · ${m.isolated.length} without connections`);
-  this.el(diagnostics,'p','Unconnected records may be useful source material, or work waiting to be linked. Group branches organise the mindmap; they are not dependencies. AI suggestions remain unverified.','bi-muted');
-  const isolated=this.el(diagnostics,'div',undefined,'bi-chips');for(const n of m.isolated)this.button(isolated,n.title,()=>{this.selected=n.id;this.query='';this.draw();});
-  this.el(root,'p',this.mode==='mindmap'?'Click a branch to expand or collapse it. Select a record for its details and recorded connections.':'Arrows follow saved relationships. Dashed arrows add context. Select a record to trace its connections.','bi-explorer-guide');
-  const layout=this.el(root,'div',undefined,'bi-explorer-layout'),panel=this.el(layout,'section',undefined,'bi-map bi-explorer-canvas');
-  const zoom=this.el(panel,'div',undefined,'bi-tools');this.button(zoom,'−',()=>this.scale(-.2)).setAttribute('aria-label','Zoom full map out');this.button(zoom,'Fit whole map',()=>{this.zoom=1;this.readable=false;this.fitAll=true;this.scale(0);});this.button(zoom,'Readable size',()=>{this.zoom=1;this.readable=true;this.fitAll=false;this.scale(0);});this.button(zoom,'+',()=>this.scale(.2)).setAttribute('aria-label','Zoom full map in');
-  const key=this.el(zoom,'div',undefined,'bi-key');for(const state of d.statusKey||[]){if(!m.nodes.some(n=>n.statusId===state.id))continue;const badge=this.el(key,'span',`${state.mark} ${state.label}`,'bi-badge');this.paintStatus(badge,state.id);badge.title=state.description;}
-  const scroll=this.el(panel,'div',undefined,'bi-map-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label','Full map. Scroll horizontally or vertically to explore.');
-  const plan=this.mode==='mindmap'?explorerMindmap(m,this.expanded,this.query):explorerFlow(m,this.query,this.connectionFocus);
-  const svg=this.diagram(scroll,plan);this.svg=svg;this.scale(0);this.mapObserver=new ResizeObserver(()=>this.scale(0));this.mapObserver.observe(scroll);if(offset){scroll.scrollLeft=offset.left;scroll.scrollTop=offset.top;}
-  if(activeId)[...svg.querySelectorAll('[data-id]')].find(n=>n.dataset.id===activeId)?.focus({preventScroll:true});
-  this.el(panel,'p',`${plan.shown} of ${plan.total} ${this.query?'matching ':''}records visible${this.mode==='mindmap'?' · expand a branch to reveal its items':''}. Scroll in either direction; Readable size keeps labels larger.${plan.cycleEdges?' Cyclic connections share a column.':''}`,'bi-caption');
-  if((!plan.shown&&!m.groups.length)||(this.query&&!plan.shown))this.el(panel,'p',this.query?'No matching saved items. Clear the search to return to the whole map.':'No saved records yet. Return to the dashboard to begin.','bi-muted');
-  const n=m.nodes.find(n=>n.id===this.selected);
-  if(n){const detail=this.el(layout,'aside',undefined,'bi-explorer-detail');const header=this.el(detail,'div',undefined,'bi-panel-head');this.el(header,'h2','Selected record');this.button(header,'Close',()=>{this.selected=null;this.draw();});this.el(detail,'h3',n.title);if(n.status)this.badge(detail,n);else this.el(detail,'small',n.type);if(n.detail)this.el(detail,'p',n.detail,'bi-snapshot');if(n.next)this.el(detail,'p','Next: '+n.next);if(n.quote)this.el(detail,'blockquote',n.quote);
-   if(n.recordId)this.button(detail,'Open record & evidence',()=>this.open('Generated/Items/'+n.recordId));
-   for(const source of n.sources||[])this.button(detail,'Open saved source · '+new Date(source.at).toLocaleString(),()=>this.open('Generated/'+source.logPath));
-   if(n.url&&/^(https?:\/\/|file:\/\/)/i.test(n.url)){const a=this.el(detail,'a','Open linked file / page ↗');a.href=n.url;}
-   const links=m.edges.filter(e=>e.from===n.id||e.to===n.id);this.el(detail,'h4',`${links.length} saved connections`);if(!links.length)this.el(detail,'p','No dependency or context connections recorded for this item.','bi-muted');
-   for(const e of links){const other=m.nodes.find(x=>x.id===(e.from===n.id?e.to:e.from));this.button(detail,`${e.from===n.id?'→':'←'} ${this.edgeLabel(e)} · ${other.title}`,()=>{this.selected=other.id;this.draw();});}
-   this.button(detail,'Focus connected records',()=>{this.mode='flow';this.query='';this.connectionFocus=n.id;this.draw();});
+  if(this.mapHistory.length)this.button(tools,'Back in map',()=>{Object.assign(this,this.mapHistory.pop());this.draw();});
+  if(this.connectionFocus)this.button(tools,'Show all records',()=>{this.connectionFocus=null;this.query='';this.draw();});
+  const form=this.el(tools,'form'),input=this.el(form,'input');input.type='search';input.placeholder='Find a saved item or ID';input.setAttribute('aria-label','Find map items');input.value=this.query;const search=this.el(form,'button','Find');search.type='submit';form.addEventListener('submit',e=>{e.preventDefault();this.query=input.value;this.connectionFocus=null;this.zoom=1;this.draw();});if(this.query)this.button(tools,'Clear search',()=>{this.query='';this.draw();});
+  const dependencyPlan=explorerDependencies(m,{query:this.query,focus:this.connectionFocus,upstream:this.upstream,downstream:this.downstream,layers:[...this.layers]}),state=dependencyPlan.states[this.selected];
+  if(this.mode==='dependencies'){
+   const trace=this.el(root,'div',undefined,'bi-trace-controls');
+   if(this.connectionFocus){this.button(trace,'Expand upstream',()=>{this.upstream++;this.draw();});this.button(trace,'Expand downstream',()=>{this.downstream++;this.draw();});this.button(trace,`All prerequisites (${dependencyPlan.states[this.connectionFocus]?.ancestors.length||0})`,()=>{this.upstream=Infinity;this.draw();});}
+   this.el(trace,'span','Prerequisite → dependent. Other relationships never block work.','bi-muted');
+   const layers=this.el(root,'details',undefined,'bi-context-layers');this.el(layers,'summary','Optional relationship layers within shown records');for(const [type,label]of [['informs','Context'],['branches_from','Offshoot lineage'],['implements','Goal to work']]){const b=this.button(layers,label,()=>{if(this.layers.has(type))this.layers.delete(type);else this.layers.add(type);this.draw();});b.setAttribute('aria-pressed',String(this.layers.has(type)));}
   }
+  const diagnostics=this.el(root,'details',undefined,'bi-explorer-diagnostics');this.el(diagnostics,'summary',`${m.nodes.length} records · ${dependencyPlan.dependencyTotal} prerequisites · ${m.edges.length} connections`);
+  this.el(diagnostics,'p',`${dependencyPlan.dependencyCycles} prerequisite edges are in cycles or self-loops across this project. Grouped overview is a category view, not branch lineage. No recorded prerequisites is not proof that none exist.`);
+  this.el(root,'p',this.mode==='dependencies'?'Select work to put its prerequisites on the left and dependents on the right. Inspect every prerequisite before resuming.':this.mode==='flow'?'All saved relation types affect this layout. Context loops here do not establish dependency cycles.':'Groups organise records by category. Use the branch navigator for actual saved offshoot relationships.','bi-explorer-guide');
+  const layout=this.el(root,'div',undefined,'bi-explorer-layout'),lineage=this.el(layout,'details',undefined,'bi-branch-navigator');lineage.open=this.lineageOpen;lineage.addEventListener('toggle',()=>this.lineageOpen=lineage.open);this.el(lineage,'summary','Branch navigator');
+  const branches=m.edges.filter(e=>e.type==='branches_from');if(!branches.length)this.el(lineage,'p','No offshoot relationships recorded.');for(const e of branches){const from=m.nodes.find(n=>n.id===e.from),to=m.nodes.find(n=>n.id===e.to);this.button(lineage,`${from.title} → ${to.title} [${to.id}]`,()=>this.selectRecord(to.id));}
+  const panel=this.el(layout,'section',undefined,'bi-map bi-explorer-canvas'),zoom=this.el(panel,'div',undefined,'bi-tools');this.button(zoom,'-',()=>this.scale(-.2)).setAttribute('aria-label','Zoom full map out');this.button(zoom,'Fit whole map',()=>{this.zoom=1;this.readable=false;this.fitAll=true;this.scale(0);});this.button(zoom,'Readable size',()=>{this.zoom=1;this.readable=true;this.fitAll=false;this.scale(0);});this.button(zoom,'+',()=>this.scale(.2)).setAttribute('aria-label','Zoom full map in');
+  const legend=this.el(panel,'p',undefined,'bi-relation-key');for(const [type,label]of [['depends_on','P · prerequisite'],['branches_from','B · offshoot'],['implements','G · goal to work'],['informs','i · context']]){const item=this.el(legend,'span',label);item.dataset.relation=type;}
+  const scroll=this.el(panel,'div',undefined,'bi-map-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label','Full map. Scroll horizontally or vertically to explore.');
+  const plan=this.mode==='mindmap'?explorerMindmap(m,this.expanded,this.query):this.mode==='dependencies'?dependencyPlan:explorerFlow(m,this.query,this.connectionFocus);
+  const svg=this.diagram(scroll,plan);this.svg=svg;this.scale(0);this.mapObserver=new ResizeObserver(()=>this.scale(0));this.mapObserver.observe(scroll);if(offset){scroll.scrollLeft=offset.left;scroll.scrollTop=offset.top;}
+  this.el(panel,'p',`${plan.shown} of ${m.nodes.length} records shown. ${this.mode==='dependencies'?`${plan.hiddenPrerequisites} upstream prerequisites outside this focus. Use All prerequisites to reveal them.`:this.mode==='mindmap'?'Expand a group to reveal its records.':''}${this.query?' Search is active.':''}`,'bi-caption');
+  if(!plan.shown)this.el(panel,'p','No matching records. Clear search or show all records.','bi-muted');
+  const list=this.el(panel,'details',undefined,'bi-map-text-list');this.el(list,'summary',`Text list · ${plan.shown} shown / ${m.nodes.length} total`);for(const box of plan.boxes){const n=m.nodes.find(n=>n.id===box.id);if(n)this.button(list,`${n.title} [${n.id}]`,()=>this.selectRecord(n.id));}
+  const n=m.nodes.find(n=>n.id===this.selected);
+  if(n){
+   const detail=this.el(layout,'aside',undefined,'bi-explorer-detail');detail.setAttribute('aria-label','Selected record inspector');const header=this.el(detail,'div',undefined,'bi-panel-head');this.el(header,'h2','Selected record');this.button(header,'Close inspector',()=>this.closeInspector()).title='Escape closes the inspector';this.el(detail,'h3',n.title);this.el(detail,'small',`Record ${n.id}`);if(n.external)this.el(detail,'p','External prerequisite from '+n.projectTitle,'bi-muted');if(n.status)this.badge(detail,n);if(n.detail)this.el(detail,'p',n.detail,'bi-snapshot');if(n.next)this.el(detail,'p','Next: '+n.next);if(n.quote)this.el(detail,'blockquote',n.quote);
+   if(n.recordId)this.button(detail,'Open record & evidence',()=>this.open('Generated/Items/'+n.recordId));for(const source of n.sources||[])this.button(detail,'Open saved source · '+new Date(source.at).toLocaleString(),()=>this.open('Generated/'+source.logPath));if(n.url&&/^(https?:\/\/|file:\/\/)/i.test(n.url)){const a=this.el(detail,'a','Open linked file / page');a.href=n.url;}
+   this.el(detail,'h4','Why blocked / prerequisite check');
+   const message=!state.scopeComplete?m.scopeMessage:state.cycle?'Dependency cycle: resolve the recorded cycle before treating this work as ready.':state.upstreamCycle?'An upstream dependency cycle needs review.':state.completed?'Recorded complete; inspect its evidence.':!state.prerequisites.length?'No prerequisites recorded. Verify missing dependencies before starting.':state.unresolvedAncestors.length?`${state.unresolvedAncestors.length} upstream prerequisites remain unresolved, including ${state.blocked.length} direct prerequisites. Reveal all prerequisites before resuming.`:state.ready?'Recorded visible prerequisites are satisfied; confirm scope and evidence before resuming.':'Prerequisites are satisfied, but this record’s status or review state does not establish readiness.';
+   this.el(detail,'p',message,'bi-readiness');
+   for(const id of state.prerequisites){const prerequisite=m.nodes.find(x=>x.id===id);this.button(detail,`${dependencyPlan.states[id].completed?'✓':'?'} ${prerequisite.title} [${id}]`,()=>this.selectRecord(id));}
+   this.button(detail,`Show all prerequisites (${state.ancestors.length})`,()=>{this.mode='dependencies';this.connectionFocus=n.id;this.upstream=Infinity;this.draw();});
+   this.el(detail,'h4','What this unblocks');if(!state.dependents.length)this.el(detail,'p','No dependents recorded in this view.');for(const id of state.dependents){const dependent=m.nodes.find(x=>x.id===id);this.button(detail,`${dependent.title} [${id}]`,()=>this.selectRecord(id));}
+   this.el(detail,'h4','Other recorded relationships');for(const e of m.edges.filter(e=>e.type!=='depends_on'&&(e.from===n.id||e.to===n.id))){const other=m.nodes.find(x=>x.id===(e.from===n.id?e.to:e.from));this.button(detail,`${e.from===n.id?'→':'←'} ${this.edgeLabel(e)} · ${other.title} [${other.id}]`,()=>this.selectRecord(other.id));}
+   this.button(detail,'Focus prerequisites and dependents',()=>{this.mode='dependencies';this.connectionFocus=n.id;this.upstream=1;this.downstream=1;this.query='';this.draw();});this.button(detail,'All connected relationships',()=>{this.mode='flow';this.connectionFocus=n.id;this.query='';this.draw();});
+  }
+  if(this.openInspector){this.openInspector=false;[...root.querySelectorAll('button')].find(b=>b.dataset.action==='Close inspector')?.focus({preventScroll:true});return;}
+  if(activeId)[...svg.querySelectorAll('[data-id]')].find(n=>n.dataset.id===activeId)?.focus({preventScroll:true});else if(searchFocused)input.focus();else if(activeAction)[...root.querySelectorAll('button')].find(b=>b.dataset.action===activeAction)?.focus({preventScroll:true});
  }
- edgeLabel(e){return ({depends_on:'Must precede',branches_from:'Offshoot',implements:'Goal to work',informs:'Context'})[e.type]||e.type||'Recorded connection';}
+ edgeLabel(e){return ({depends_on:'P · prerequisite',branches_from:'B · offshoot',implements:'G · goal to work',informs:'i · context'})[e.type]||e.type||'Recorded connection';}
  diagram(parent,plan){
-  const doc=parent.ownerDocument,ns='http://www.w3.org/2000/svg',make=(tag,attrs={},text)=>{const n=doc.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,String(v));if(text!==undefined)n.textContent=text;return n;},svg=make('svg',{viewBox:`0 0 ${plan.width} ${plan.height}`,role:'group','aria-label':this.mode==='mindmap'?'Expandable mindmap':'Recorded dependency map'});parent.append(svg);
+  const doc=parent.ownerDocument,ns='http://www.w3.org/2000/svg',make=(tag,attrs={},text)=>{const n=doc.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,String(v));if(text!==undefined)n.textContent=text;return n;},svg=make('svg',{viewBox:`0 0 ${plan.width} ${plan.height}`,role:'group','aria-label':this.mode==='mindmap'?'Grouped overview':this.mode==='flow'?'All recorded connections':'Recorded prerequisites'});parent.append(svg);
   const defs=make('defs'),marker=make('marker',{id:'bi-explorer-arrow',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'});marker.append(make('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'var(--bi-muted)'}));defs.append(marker);svg.append(defs);
   const boxes=new Map(plan.boxes.map(n=>[n.id,n]));
   for(const e of plan.links){const a=boxes.get(e.from),b=boxes.get(e.to);if(!a||!b)continue;const right=b.x>a.x,x=a.x+(right?a.width:0),end=b.x+(right?0:b.width),y=a.y+a.height/2,ey=b.y+b.height/2,bend=a.x===b.x?x-70:(x+end)/2;
    const curve=e.from===e.to?`M ${a.x+a.width-25} ${a.y} C ${a.x+a.width+70} ${a.y-60}, ${a.x+a.width+70} ${a.y+20}, ${a.x+a.width} ${a.y+25}`:`M ${x} ${y} C ${bend} ${y}, ${bend} ${ey}, ${end} ${ey}`;
-   const path=make('path',{d:curve,fill:'none',stroke:'var(--bi-muted)','stroke-width':1.6,...(e.category?{}:{'marker-end':'url(#bi-explorer-arrow)'}),...(e.type==='informs'?{'stroke-dasharray':'6 5'}:{})});path.append(make('title',{},e.category?'Mindmap grouping':this.edgeLabel(e)));svg.append(path);
+   const color=({depends_on:'var(--interactive-accent)',branches_from:'var(--color-purple)',implements:'var(--color-green)',informs:'var(--text-muted)'})[e.type]||'var(--bi-muted)';
+   const path=make('path',{d:curve,fill:'none',stroke:color,'data-relation':e.type||'group','stroke-width':e.type==='depends_on'?2.4:1.6,...(e.category?{}:{'marker-end':'url(#bi-explorer-arrow)'}),...(['informs','branches_from'].includes(e.type)?{'stroke-dasharray':e.type==='informs'?'3 5':'10 4'}:{})});path.append(make('title',{},e.category?'Category grouping':this.edgeLabel(e)));svg.append(path);
    if(!e.category&&plan.links.length<=24&&a.x!==b.x){const text=make('text',{x:(x+end)/2,y:(y+ey)/2-7,'text-anchor':'middle','font-size':11,fill:'var(--bi-muted)',class:'bi-edge-caption'},this.edgeLabel(e));svg.append(text);}
   }
   for(const n of plan.boxes){const group=make('g',{class:'pele-node bi-explorer-node'+(n.id===this.selected?' is-selected':''),'data-id':n.id,transform:`translate(${n.x},${n.y})`});if(n.group)group.dataset.category=n.group;
@@ -526,7 +580,7 @@ class MapExplorer extends Dashboard{
    if(n.status)group.append(make('text',{x:n.width/2,y:n.height-13,'text-anchor':'middle','font-size':11},`${n.proposal?'AI suggestion · ':''}${n.status}`));
    if(n.group){group.append(make('text',{x:n.width-15,y:18,'text-anchor':'middle','font-size':16},n.open?'−':'+'));group.setAttribute('aria-expanded',String(n.open));}
    if(n.statusId)this.paintStatus(group,n.statusId);
-   if(!n.root){group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label',n.title+(n.status?' · '+n.status:''));const action=()=>{if(n.group){if(this.expanded.has(n.group))this.expanded.delete(n.group);else this.expanded.add(n.group);}else this.selected=n.id;this.draw();if(!n.group)this.containerEl.querySelector('.bi-explorer-detail')?.scrollIntoView({block:'nearest',behavior:'smooth'});};group.addEventListener('click',action);group.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action();}});}
+   if(!n.root){group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label',n.title+(n.status?' · '+n.status:''));const action=()=>{if(n.group){if(this.expanded.has(n.group))this.expanded.delete(n.group);else this.expanded.add(n.group);}else{this.selectRecord(n.id);return;}this.draw();if(!n.group)this.containerEl.querySelector('.bi-explorer-detail')?.scrollIntoView({block:'nearest',behavior:'smooth'});};group.addEventListener('click',action);group.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action();}});}
    svg.append(group);
   }
   return svg;
@@ -543,5 +597,5 @@ class BranchaInteractive extends Plugin{
   const home=()=>new Dashboard(document.createElement('div'),this,'home','').open('Generated/Navigation/Home');
   this.addCommand({id:'open-home',name:'Open Branchi Home',callback:home});this.addRibbonIcon('house','Branchi Home',home);}
 }
-if(typeof module!=='undefined'){module.exports=BranchaInteractive;module.exports.safeSvg=safeSvg;module.exports.mapSize=mapSize;module.exports.renderers={Dashboard,Home,Chat,MapExplorer};module.exports.explorer={model:explorerModel,mindmap:explorerMindmap,flow:explorerFlow};}
+if(typeof module!=='undefined'){module.exports=BranchaInteractive;module.exports.safeSvg=safeSvg;module.exports.mapSize=mapSize;module.exports.renderers={Dashboard,Home,Chat,MapExplorer};module.exports.explorer={model:explorerModel,mindmap:explorerMindmap,flow:explorerFlow,dependencies:explorerDependencies};}
 else globalThis.BranchaRenderers={Dashboard,Home,Chat,MapExplorer,safeSvg};
