@@ -17,6 +17,14 @@ export function redactText(value=''){
 export const RELATIONS = ['depends_on','branches_from','implements','informs'];
 export const uid = () => 'b'+globalThis.crypto.randomUUID().replaceAll('-','');
 export const now = () => new Date().toISOString();
+export function validateExportPath(name){
+ if(typeof name!=='string'||!name||/[\\:\u0000-\u001f]/.test(name)||name.split('/').some(p=>!p||p==='.'||p==='..'||/[. ]$/.test(p)||/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(p)))throw Error('Invalid export path');
+ return name;
+}
+export function activityDate(value){
+ const date=new Date(value);if(!Number.isFinite(date.getTime()))throw Error('Invalid activity date');
+ const day=date.toISOString().slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(day))throw Error('Unsupported activity year');return day;
+}
 export const blank = () => ({schemaVersion:1,revision:0,demo:false,projects:[],nodes:[],edges:[],events:[]});
 export const label = x => x.replaceAll('_',' ');
 export const flowLabel = type => ({depends_on:'must precede',branches_from:'offshoot',implements:'goal to work',informs:'context'})[type]||label(type);
@@ -140,7 +148,7 @@ export function vaultFiles(w){
   files['START HERE.md']='# Branchi\n\n[[Dashboards/index|Open your project dashboards →]]\n\nYour exported workspace. Open `Brancha.canvas` for the map, `Projects.base` for project views, or a project note to resume.\n\n'+(w.demo?'These are fictional demonstration records.\n\n':'')+'This is a snapshot. Browser edits and Obsidian edits do not synchronise. Keep the JSON export as the portable source for the web tracker. Markdown and Canvas edits are not imported by the tracker.\n\n'+w.projects.map(p=>`- [[${ppath(p)}|${p.title}]]`).join('\n');
   for(const p of w.projects){const pr=progress(w,p);files[ppath(p)]=`---\nbrancha_type: project\nbrancha_id: ${json(p.id)}\ntitle: ${json(p.title)}\nverified_goals: ${pr.done}\ntotal_goals: ${pr.total}\ncreated: ${json(p.createdAt)}\n---\n# ${p.title}\n\n## Original request\n${p.prompt}\n\n## Goals\n${pr.criteria.map(c=>`- [${c.evidence.length?'x':' '}] ${c.text}`).join('\n')}\n\n## Work\n${w.nodes.filter(n=>n.projectId===p.id).map(n=>`- [[${npath(n)}|${n.title}]] — ${statusLabel(n.status)}`).join('\n')}\n\n## Flow\n\`\`\`mermaid\n${mermaid(w,p.id)}\n\`\`\`\n`;files[`Resume/${p.id}.md`]=contextBrief(w,p.id);}
   for(const n of w.nodes){files[npath(n)]=`---\ncssclasses: brancha-record\nbrancha_type: ${json(n.type)}\nbrancha_id: ${json(n.id)}\nstatus: ${json(n.status)}\nproject: ${json('[[Projects/'+n.projectId+']]')}\n---\n# ${n.title}\n\n**${statusLabel(n.status)}** · ${n.type}\n\n${n.detail||''}\n\n## Evidence\n${n.evidence||'Not recorded'}\n\n## Verification\n${n.verification?`Implementation: ${n.verification.implementation}; testing: ${n.verification.testing}; acceptance: ${n.verification.acceptance}`:'Not separately recorded.'}\n\n## Acceptance criteria\n${(n.acceptanceCriteria||[]).map(c=>`- ${c.text} — ${statusLabel(c.status)}; evidence: ${c.evidence||'Not recorded'}; source: ${c.source||'Not recorded'}`).join('\n')||'Not recorded'}\n\n${n.run?`## Improvement run\nPhase: ${n.run.phase}; outcome: ${n.run.outcome}; decision: ${n.run.decision}\n\nHypothesis: ${n.run.hypothesis}\n\nBaseline: ${n.run.baseline}\n\nObservation: ${n.run.observation}\n\nLesson: ${n.run.lesson}\n\n${n.run.artifacts.map(a=>`- ${a.label}: ${a.ref}`).join('\n')}\n\n`:''}## Next action\n${n.next||'Not recorded'}\n\n## Decision\nWhy: ${n.rationale||'Not recorded'}\n\nAlternatives: ${n.alternatives||'Not recorded'}\n\nConsequences: ${n.consequence||'Not recorded'}\n\n## Connections\n${w.edges.filter(e=>e.from===n.id||e.to===n.id).map(e=>{const o=w.nodes.find(x=>x.id===(e.from===n.id?e.to:e.from));return `- ${e.from===n.id?'Leads to':'Comes from'} [[${npath(o)}|${o.title}]] (${label(e.type)})`;}).join('\n')}\n`;}
-  const daily={};for(const e of w.events){const d=e.at.slice(0,10);(daily[d]??=[]).push(`- ${e.at} — [[Projects/${e.projectId}]]: ${e.text}`);}for(const [d,es]of Object.entries(daily))files[`Activity/${d}.md`]=`# ${d} (UTC)\n\n${es.join('\n')}`;
+  const daily={};for(const e of w.events){const d=activityDate(e.at);(daily[d]??=[]).push(`- ${e.at} — [[Projects/${e.projectId}]]: ${e.text}`);}for(const [d,es]of Object.entries(daily))files[`Activity/${d}.md`]=`# ${d} (UTC)\n\n${es.join('\n')}`;
   const color=n=>({done:'4',blocked:'1',active:'5',parked:'6'})[n.status]||'3';
   for(const p of w.projects){
     const positioned=layout(w,p.id),ids=new Set(positioned.map(n=>n.id));
@@ -158,7 +166,7 @@ export function vaultFiles(w){
   files['Templates/Check-in.md']='# Project check-in\n\nProject: \nDate: \n\n## What changed\n\n## Evidence or source\n\n## Still uncertain\n\n## Next concrete action\n\nUse the Branchi skill or connected tools to record this checkpoint. Keep manual notes in Notes.\n';
   files['Templates/Decision.md']='# Decision\n\nProject: \n\n## Choice\n\n## Why\n\n## Alternatives\n\n## Evidence\n\n## Consequences and next action\n';
   files['Templates/Evidence review.md']='# Evidence review\n\nProject: \nSource checkpoint: \n\n## Reported claim\n\n## Acceptance criterion\n\n## What was actually checked\n\n## Result and evidence reference\n\n## What remains unverified\n\n## Decision and next action\n';
-  files['brancha.json']=JSON.stringify(w,null,2);return files;
+  files['brancha.json']=JSON.stringify(w,null,2);Object.keys(files).forEach(validateExportPath);return files;
 }
 export const PROJECT_TEMPLATES = [
  {id:'general',title:'Everyday project',description:'Keep the goal, choices and next action together.',stages:['Clarify','Work','Review','Finish'],prompts:['What changed since the last session?','Which decision needs evidence?','What is the next concrete action?']},

@@ -1,3 +1,4 @@
+import {acquireLock} from '../skills/brancha/scripts/locking.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -112,12 +113,12 @@ export class ConversationMapper{
 export function applyMappedProposals(config,job,result,projectId){
  if(!sessionAllowed(config,job.sessionId))return {excluded:true,items:0};
  validateExtraction(result,{messages:job.messages});
- const file=paths(config).file;let fd;try{fd=fs.openSync(file+'.lock','wx');}catch(e){if(e.code==='EEXIST')return {retry:true};throw e;}
+ const file=paths(config).file;let release;try{release=acquireLock(file+'.lock');}catch(e){if(e.code==='EEXIST')return {retry:true};throw e;}
  try{
   const w=validate(read(file)),marker='mapper_'+job.id.slice(0,24);
   if(w.events.some(e=>e.mapperJobId===job.id))return {duplicate:true};
   if(!w.projects.some(p=>p.id===projectId))throw Error('Mapped project no longer exists.');
-  const source=job.sourceNodeId||'codex_'+hash(job.sessionId).slice(0,24),goal=w.nodes.find(n=>n.projectId===projectId&&n.type==='goal');
+  const source=job.sourceNodeId||w.nodes.find(n=>n.projectId===projectId&&n.capture?.sessionId===job.sessionId&&n.capture?.turnId===job.turnId)?.id,goal=w.nodes.find(n=>n.projectId===projectId&&n.type==='goal');
   const mapped=new Map();
   for(const item of result.items){
    const id=marker+'_'+item.key;mapped.set(item.key,id);
@@ -129,5 +130,5 @@ export function applyMappedProposals(config,job,result,projectId){
   validate(w);const raw=JSON.stringify(w,null,2);if(Buffer.byteLength(raw)>8*1024*1024)throw Error('Mapped workspace exceeds 8 MB.');
   const backups=path.join(paths(config).state,'backups');fs.mkdirSync(backups,{recursive:true});fs.copyFileSync(file,path.join(backups,'mapper-'+Date.now()+'-'+crypto.randomUUID()+'.json'));atomic(file,w);
   return {revision:w.revision,items:result.items.length};
- }finally{fs.closeSync(fd);fs.unlinkSync(file+'.lock');}
+ }finally{release();}
 }

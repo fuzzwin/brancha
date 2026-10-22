@@ -1,6 +1,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {validateExportPath} from './core.mjs';
+
+// Validate both the portable name and existing filesystem components. Generated
+// output must not follow a pre-existing symlink/junction out of its root.
+export function containedPath(root,name) {
+  validateExportPath(name);const base=path.resolve(root),dest=path.resolve(base,...name.split('/'));
+  if(!dest.startsWith(base+path.sep))throw Error('Invalid export destination');
+  let current=base;
+  for(const part of ['',...name.split('/')]) {
+    if(part)current=path.join(current,part);
+    try{if(fs.lstatSync(current).isSymbolicLink())throw Error('Export destination contains a symbolic link');}catch(e){if(e.code!=='ENOENT')throw e;}
+  }
+  return dest;
+}
 
 // Antivirus, editors and sync clients can briefly hold a Windows file open.
 // Never remove the destination as a fallback: an unsuccessful save keeps it intact.

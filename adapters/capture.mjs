@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {observeGit} from './git-context.mjs';
-import {chatAllowed,chatPermissions} from './chat-privacy.mjs';
+import {chatAllowed,chatPermissions,captureBoundary} from './chat-privacy.mjs';
 import {validate,event,uid,blank,redactText} from '../dist/core.mjs';
 import {atomic} from '../skills/brancha/scripts/storage.mjs';
+import {acquireLock} from '../skills/brancha/scripts/locking.mjs';
 export {atomic} from '../skills/brancha/scripts/storage.mjs';
 export const digest=s=>crypto.createHash('sha256').update(s).digest('hex');
 export function redact(text=''){
@@ -32,8 +33,12 @@ export function capture(config,input){
  if(controls(config).paused)return {captured:false,reason:'paused'};
  const text=redact(input.message);if(!text||text.length<20)return {captured:false,reason:'empty'};
  if(!input.sessionId||!input.turnId)throw Error('Capture requires session and turn IDs.');
- fs.mkdirSync(p.vault,{recursive:true});let fd;try{fd=fs.openSync(p.file+'.lock','wx');}catch(e){if(e.code==='EEXIST')return {captured:false,retry:true,reason:'locked'};throw e;}
+ fs.mkdirSync(p.vault,{recursive:true});let release;try{release=acquireLock(p.file+'.lock');}catch(e){if(e.code==='EEXIST')return {captured:false,retry:true,reason:'locked'};throw e;}
  try{
+  if(!sessionAllowed(config,input.sessionId))return {captured:false,reason:'excluded'};
+  const boundary=captureBoundary(config,input.sessionId);
+  if((input.adapter==='codex-session-watch'||Object.hasOwn(input,'permissionEpoch'))&&(input.permissionEpoch??null)!==(boundary?.epoch??null))return {captured:false,reason:'before-consent'};
+  if(boundary&&input.at&&(!Number.isFinite(Date.parse(input.at))||Date.parse(input.at)<Date.parse(boundary.since)))return {captured:false,reason:'before-consent'};
   let w=fs.existsSync(p.file)?validate(JSON.parse(fs.readFileSync(p.file,'utf8'))):blank();
   if(w.demo)w=blank();
   const captureId=digest('codex:'+input.sessionId+':'+input.turnId);
@@ -44,7 +49,9 @@ export function capture(config,input){
   const title=first.replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/[*`_]/g,'').split(/(?<=[.!?])\s/)[0].slice(0,100);
   const next=(text.match(/(?:^|\n)(?:#{1,3}\s*)?(?:next(?: steps?| actions?)?|continue from here)\s*[:—-]?\s*\n?([^\n]+)/i)?.[1]||'Review this captured report, then choose the next action.').slice(0,500);
   const git=input.git===undefined?observeGit(config,input):input.git;
-  const nodeId='codex_'+digest(input.sessionId).slice(0,24);let node=w.nodes.find(n=>n.id===nodeId);
+  const legacyId='codex_'+digest(input.sessionId).slice(0,24),scopedId=legacyId+'_'+digest(projectId).slice(0,12);
+  let node=w.nodes.find(n=>n.id===scopedId)||w.nodes.find(n=>n.id===legacyId&&n.projectId===projectId);
+  const nodeId=node?.id||(w.nodes.some(n=>n.id===legacyId)?scopedId:legacyId);
   const data={id:nodeId,projectId,title:'Codex · '+title.slice(0,140),type:'source',status:'active',detail:'AUTOMATIC CHECKPOINT — assistant-reported; task completion and evidence are not independently verified.\n\n'+text.slice(0,12000)+(text.length>12000?'\n[abridged; open the Codex chat for the full result]':''),evidence:`Codex completed turn at ${at}. Session ${input.sessionId}; turn ${input.turnId}. Adapter: ${input.adapter||'hook'}.`,next,criteria:[],rationale:'',alternatives:'',consequence:'',capture:{provider:'codex',sessionId:input.sessionId,turnId:input.turnId,at,...(git?{git}:{}),...(input.request?{request:redact(input.request).slice(0,6000)}:{}),...(typeof input.cwd==='string'?{cwd:input.cwd.slice(0,1000)}:{})}};
   if(node)Object.assign(node,data);else{w.nodes.push(data);node=data;const goal=w.nodes.find(n=>n.projectId===projectId&&n.type==='goal');if(goal)w.edges.push({id:uid(),from:goal.id,to:node.id,type:'informs'});}
   event(w,projectId,'Codex checkpoint: '+title,node.id);Object.assign(w.events.at(-1),{at,captureId,capture:structuredClone(data)});
@@ -53,5 +60,5 @@ export function capture(config,input){
   atomic(p.file,w);
   status(config,{enabled:true,lastCaptureAt:at,lastProjectId:projectId,lastTitle:title,lastCaptureId:captureId,error:null});
   return {captured:true,projectId,nodeId,revision:w.revision};
- }finally{fs.closeSync(fd);fs.unlinkSync(p.file+'.lock');}
+ }finally{release();}
 }

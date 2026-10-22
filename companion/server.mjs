@@ -7,10 +7,11 @@ import {atomic,controls,paths as capturePaths} from '../adapters/capture.mjs';
 import {validate} from '../dist/core.mjs';
 import {obsidianFiles} from './obsidian.mjs';
 import {navigationFiles} from './navigation.mjs';
-import {atomicText} from '../skills/brancha/scripts/storage.mjs';
+import {atomicText,containedPath} from '../skills/brancha/scripts/storage.mjs';
+import {acquireLock} from '../skills/brancha/scripts/locking.mjs';
 import {loadConfig} from '../scripts/config.mjs';
 import {chatTitles} from '../adapters/chat-titles.mjs';
-import {privacyView,chatPermissions,mergePrivateRecords,chatPrivacySummary} from '../adapters/chat-privacy.mjs';
+import {privacyView,chatPermissions,mergePrivateRecords,chatPrivacySummary,workspaceEtag} from '../adapters/chat-privacy.mjs';
 const base=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 export function startServer(options={}){
 const vault=path.resolve(options.vault||path.join(base,'vault'));
@@ -23,7 +24,7 @@ function captureStatus(){if(!captureConfig)return null;let latest={};try{latest=
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 let lastHash='',lastDay='',lastError='',lastNavigation='',viewNames=new Set(),navigationNames=new Set();
 const identity={name:path.basename(vault),vault,localUrl:listen?'http://127.0.0.1:'+port:null,obsidianHome:'obsidian://open?path='+encodeURIComponent(path.join(vault,'Generated/Navigation/Home.md').split(path.sep).join('/'))};
-function read(){const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');const canonical=validate(JSON.parse(raw)),w=captureConfig?privacyView(captureConfig,canonical):canonical;return {raw,canonical,w,etag:hash(raw),viewKey:hash(raw+JSON.stringify(captureConfig?chatPermissions(captureConfig):{}))};}
+function read(locked=false){const release=locked?null:acquireLock(file+'.lock');try{const raw=fs.readFileSync(file,'utf8');if(raw.length>8*1024*1024)throw Error('Workspace too large');const canonical=validate(JSON.parse(raw)),w=captureConfig?privacyView(captureConfig,canonical):canonical;const etag=workspaceEtag(captureConfig,raw);return {raw,canonical,w,etag,viewKey:etag};}finally{release?.();}}
 function refreshNavigation(r){
  const guide=fs.existsSync(path.join(vault,'Notes','Brancha guide.md')),names=fs.existsSync(path.join(vault,'Notes','Brancha name ideas.md'));
  const hasIndex=fs.existsSync(path.join(vault,'Notes','Project index.md'));
@@ -34,10 +35,10 @@ function refreshNavigation(r){
  const recapManifest=path.join(vault,'.brancha/generated-recaps.json');let oldRecaps=[];
  try{oldRecaps=JSON.parse(fs.readFileSync(recapManifest,'utf8')).files||[];}catch{}
  const recaps=Object.keys(pages).filter(name=>/^Recaps\/(?:index|\d{4}-\d{2}-\d{2})\.md$/.test(name));
- for(const name of oldRecaps)if(/^Recaps\/(?:index|\d{4}-\d{2}-\d{2})\.md$/.test(name)&&!recaps.includes(name)){try{fs.unlinkSync(path.join(vault,'Generated',name));}catch(e){if(e.code!=='ENOENT')throw e;}}
+ for(const name of oldRecaps)if(/^Recaps\/(?:index|\d{4}-\d{2}-\d{2})\.md$/.test(name)&&!recaps.includes(name)){try{fs.unlinkSync(containedPath(path.join(vault,'Generated'),name));}catch(e){if(e.code!=='ENOENT')throw e;}}
  atomic(recapManifest,{version:1,files:recaps});
  for(const [name,content] of Object.entries(pages)){
-  const target=path.join(vault,'Generated',name);
+  const target=containedPath(path.join(vault,'Generated'),name);
   if(!fs.existsSync(target)||fs.readFileSync(target,'utf8')!==content)atomicText(target,content);
  }
  lastNavigation=key;
@@ -54,12 +55,12 @@ function refresh(){const r=read(),day=new Date().toLocaleDateString('en-CA');if(
   if(captureConfig)oldPages=Object.keys(obsidianFiles(r.canonical));
  }
  try{const previous=JSON.parse(fs.readFileSync(assetManifest,'utf8'));if(previous.version===1&&Array.isArray(previous.files))priorAssets=previous.files.filter(name=>typeof name==='string'&&assetPattern.test(name));}catch{}
- for(const [name,original]of Object.entries(views).sort(([a],[b])=>Number(!a.endsWith('.svg'))-Number(!b.endsWith('.svg')))){if(name==='brancha.json')continue;let content=name.endsWith('.md')?original.replaceAll('[[','[[Generated/'):original;if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}const target=path.join(generated,name);if(name.endsWith('.md')&&content.includes('```brancha-')&&fs.existsSync(target)&&fs.readFileSync(target,'utf8')===content)continue;atomicText(target,content);}
- atomicText(path.join(generated,'START HERE.md'),'---\ncssclasses: [brancha-page, brancha-dashboard]\n---\n# Pick up the thread\n\n[[Generated/Navigation/Home|Open Branchi Home →]]\n\n[[Generated/Navigation/Today|Today and yesterday]] · [[Generated/Dashboards/index|All projects]] · [[Generated/Navigation/Review|Needs a look]] · [[Generated/Navigation/Connections|Connections and freshness]] · [[Generated/Navigation/How to use|How to use]]\n\nHome brings together the goal, next action, dashboards, maps and resume briefs. These pages update while the companion runs. Keep personal writing in Notes; generated pages are refreshed.');
- const retained=[];for(const name of priorAssets)if(!assets.includes(name)){try{fs.unlinkSync(path.join(generated,name));}catch(e){if(e.code!=='ENOENT')retained.push(name);}}
+ for(const [name,original]of Object.entries(views).sort(([a],[b])=>Number(!a.endsWith('.svg'))-Number(!b.endsWith('.svg')))){if(name==='brancha.json')continue;let content=name.endsWith('.md')?original.replaceAll('[[','[[Generated/'):original;if(name.endsWith('.canvas')){const canvas=JSON.parse(original);canvas.nodes.forEach(n=>{if(n.file)n.file='Generated/'+n.file;if(n.text)n.text=n.text.replaceAll('[[','[[Generated/')});content=JSON.stringify(canvas,null,2);}const target=containedPath(generated,name);if(name.endsWith('.md')&&content.includes('```brancha-')&&fs.existsSync(target)&&fs.readFileSync(target,'utf8')===content)continue;atomicText(target,content);}
+ atomicText(containedPath(generated,'START HERE.md'),'---\ncssclasses: [brancha-page, brancha-dashboard]\n---\n# Pick up the thread\n\n[[Generated/Navigation/Home|Open Branchi Home →]]\n\n[[Generated/Navigation/Today|Today and yesterday]] · [[Generated/Dashboards/index|All projects]] · [[Generated/Navigation/Review|Needs a look]] · [[Generated/Navigation/Connections|Connections and freshness]] · [[Generated/Navigation/How to use|How to use]]\n\nHome brings together the goal, next action, dashboards, maps and resume briefs. These pages update while the companion runs. Keep personal writing in Notes; generated pages are refreshed.');
+ const retained=[];for(const name of priorAssets)if(!assets.includes(name)){try{fs.unlinkSync(containedPath(generated,name));}catch(e){if(e.code!=='ENOENT')retained.push(name);}}
  atomic(assetManifest,{version:1,files:[...new Set([...assets,...retained])]});
  const names=Object.keys(views).filter(n=>n!=='brancha.json'),retainedPages=[];
- for(const name of oldPages)if(typeof name==='string'&&!name.includes('..')&&!path.isAbsolute(name)&&name!=='brancha.json'&&!names.includes(name)){try{fs.unlinkSync(path.join(generated,name));}catch(e){if(e.code!=='ENOENT')retainedPages.push(name);}}
+ for(const name of oldPages)if(typeof name==='string'&&!name.includes('..')&&!path.isAbsolute(name)&&name!=='brancha.json'&&!names.includes(name)){try{fs.unlinkSync(containedPath(generated,name));}catch(e){if(e.code!=='ENOENT')retainedPages.push(name);}}
  atomic(pageManifest,{version:1,files:[...new Set([...names,...retainedPages])]});
  fs.mkdirSync(path.join(vault,'Notes'),{recursive:true});refreshNavigation(r);lastHash=r.viewKey;lastDay=day;lastError='';return r;
 }
@@ -93,14 +94,14 @@ const server=http.createServer(async(req,res)=>{res.setHeader('Cache-Control','n
    if(req.method==='GET'){const r=refresh();return send(200,{workspace:r.w,etag:r.etag,vault,viewError:lastError,capture:captureStatus()});}
    if(req.method!=='PUT')return send(405,{error:'Method not allowed'});
    let body='';for await(const chunk of req){body+=chunk;if(body.length>8*1024*1024)return send(413,{error:'Workspace too large'});}
-   const next=validate(JSON.parse(body));let fd;const lock=file+'.lock';
-   try{fd=fs.openSync(lock,'wx');}catch{return send(409,{error:'Workspace is being updated. Try again after the other update finishes.'});}
-   try{const current=read();if(req.headers['if-match']!==current.etag)return send(409,{error:'New changes arrived. Close the form, refresh and apply your change again.'});
+   const next=validate(JSON.parse(body));let release;
+   try{release=acquireLock(file+'.lock');}catch(e){if(e.code==='EEXIST')return send(409,{error:'Workspace is being updated. Try again after the other update finishes.'});throw e;}
+   try{const current=read(true);if(req.headers['if-match']!==current.etag)return send(409,{error:'New changes arrived. Close the form, refresh and apply your change again.'});
     for(const p of current.w.projects){const found=next.projects.find(x=>x.id===p.id);if(!found||found.prompt!==p.prompt)throw Error('Live updates must preserve projects and original prompts. Use a separate workspace for replacement imports.');}
     if(next.revision<=current.w.revision)throw Error('Revision must advance');
     const backups=path.join(vault,'.brancha-backups');fs.mkdirSync(backups,{recursive:true});fs.writeFileSync(path.join(backups,Date.now()+'-'+crypto.randomUUID()+'.json'),current.raw,{flag:'wx'});
     atomic(file,validate(mergePrivateRecords(current.canonical,current.w,next)));
-   }finally{fs.closeSync(fd);fs.unlinkSync(lock);}
+   }finally{release();}
    let r;try{r=refresh();}catch(e){lastError=e.message;r=read();}
    return send(200,{workspace:r.w,etag:r.etag,vault,viewError:lastError,capture:captureStatus()});
   }
