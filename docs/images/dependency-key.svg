@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="500" viewBox="0 0 1040 500" role="img" aria-labelledby="title desc">
+<title id="title">What Branchi relationships mean</title><desc id="desc">Prerequisite arrows go from measure to build to test. An offshoot is a saved alternative branch, not an OR prerequisite. A saved report gives context to the build task, not verified completion. Only depends_on relations determine prerequisite ordering.</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10" fill="none" stroke="#6552bf" stroke-width="2"/></marker></defs>
+<rect width="1040" height="500" rx="16" fill="#f8fafc"/>
+<g font-family="system-ui,sans-serif" fill="#172033" text-anchor="middle">
+<text x="40" y="48" text-anchor="start" font-size="26" font-weight="700">Read the map without confusing its relationships</text>
+<text x="40" y="77" text-anchor="start" font-size="15">Illustrated key · fictional example · saved graph semantics, not a new OR/alternative dependency model.</text>
+<g stroke="#6552bf" stroke-width="2" fill="#fff"><rect x="40" y="125" width="240" height="82" rx="12"/><rect x="400" y="125" width="240" height="82" rx="12"/><rect x="760" y="125" width="240" height="82" rx="12"/></g>
+<text x="160" y="159" font-size="18" font-weight="600">Measure the space</text><text x="160" y="186" font-size="14">Evidence recorded</text>
+<text x="520" y="159" font-size="18" font-weight="600">Build the tray</text><text x="520" y="186" font-size="14">Selected next work</text>
+<text x="880" y="159" font-size="18" font-weight="600">Test drainage</text><text x="880" y="186" font-size="14">Waiting on the build</text>
+<path d="M282 166H395M642 166H755" stroke="#6552bf" stroke-width="3" marker-end="url(#a)"/>
+<text x="340" y="114" font-size="13">P · prerequisite</text><text x="700" y="114" font-size="13">P · prerequisite</text>
+<rect x="40" y="315" width="240" height="68" rx="12" fill="#f4f0ff" stroke="#8262b5" stroke-dasharray="9 4"/>
+<text x="160" y="344" font-size="17">Offshoot: wall planters</text><text x="160" y="366" font-size="13">A saved idea, not an OR condition</text>
+<path d="M160 210V307" stroke="#8262b5" stroke-width="2" stroke-dasharray="9 4" marker-end="url(#a)"/><text x="240" y="263" font-size="13">B · offshoot</text>
+<rect x="760" y="315" width="240" height="68" rx="12" fill="#edf0f4" stroke="#64748b"/>
+<text x="880" y="344" font-size="17">Saved prototype report</text><text x="880" y="366" font-size="13">A source to inspect, not acceptance</text>
+<path d="M755 349H520V212" stroke="#64748b" stroke-width="2" stroke-dasharray="3 5" fill="none" marker-end="url(#a)"/><text x="634" y="332" font-size="13">i · context</text>
+<text x="40" y="434" text-anchor="start" font-size="16" font-weight="600">Only prerequisite edges block work. Context, goal-to-work and offshoot links remain separate.</text>
+<text x="40" y="462" text-anchor="start" font-size="14">Show all prerequisites; check cycles, unresolved status and evidence. No recorded dependency is not proof none exists.</text>
+</g></svg>

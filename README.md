@@ -17,7 +17,68 @@ With supported capture and AI mapping set up, Branchi builds that picture as you
 
 Your next session can start with the project, instead of reconstructing the story from scattered messages.
 
-## See Branchi in action
+## Choose Desktop, ChatGPT, or both
+
+Branchi has two independent setups. Use either alone, or use both with their
+different storage and connection boundaries.
+
+| Setup | Where you work | Where Branchi saves | Your dashboard |
+| --- | --- | --- | --- |
+| **Desktop** | Local Codex and supported local integrations | Your local Branchi record | **Localhost, Obsidian, or both**, chosen by you |
+| **ChatGPT** | An activated conversation using Branchi Connect | Owner-private hosted workspace | The private Site and connected tools |
+| **Both** | Each setup independently | Separate local and cloud stores | Each keeps its own views |
+
+**Available:** local capture/checkpoints, your choice of reading surface, ChatGPT
+project resume/checkpoints, and an optional approved **cloud-to-desktop additive
+bridge**. That bridge copies **all eligible cloud-origin records** from the
+connected workspace; it has no project allowlist or continuous local upload.
+A one-time seed into an empty cloud workspace is a separate setup action.
+
+**Planned:** exact project pairing, origin-owned immutable checkpoint/result
+exchange, explicit execution handoffs and optional **Luna Sync** briefs/triage.
+Deterministic code will handle delivery. A model will not silently resolve
+conflicting decisions, grant permission or run a synced task. Shared edits/deletes,
+notifications and new in-chat cards are deferred.
+
+Desktop needs neither Obsidian nor a cloud account. ChatGPT needs no running PC.
+Local storage does not mean local-only AI processing: fresh setup enables the
+signed-in model mapper/reviewer unless `--no-ai` is selected. Existing preferences
+are preserved. A plugin or Site cannot passively read every conversation.
+
+**Start here:** [Desktop](docs/another-computer.md) · [Choose your view](docs/reading-surfaces.md)
+· [ChatGPT](cloud/README.md) · [Two setups, first use and sync plan](docs/two-setups-and-sync.md)
+· [What is what?](docs/two-setups-and-sync.md#what-is-what)
+
+## Version 0.21: see the two setups
+
+These are real browser captures of **fictional fixtures**, not screenshots of a
+user's PC or a live hosted workspace. Desktop uses the shared localhost/Obsidian
+renderer. The ChatGPT image is the private Site frontend in a local repository
+fixture, not an invented ChatGPT conversation UI. Package 0.21.0, renderer/plugin
+0.14.0 and cloud source 0.8.0 have separate version numbers.
+
+**Desktop: choose a project and its next action.** Compact list or optional cards;
+recent chats stay beside projects on a wide pane.
+
+![Branchi 0.21 Desktop Home, real fictional browser capture](docs/images/desktop-0.21-home.png)
+
+**Desktop: inspect prerequisites and evidence.** Only prerequisite links determine
+dependency order; context and offshoots have distinct labels and optional layers.
+
+![Branchi 0.21 dependency focus with selected record inspector](docs/images/desktop-0.21-dependencies.png)
+
+**ChatGPT: resume through connected tools and inspect the private Site.** The cloud
+store works independently of Desktop. [First use and boundaries](docs/two-setups-and-sync.md#chatgpt-first-useful-session).
+
+![Branchi Connect 0.8 Site source rendered with fictional data, not a live deployment](docs/images/chatgpt-site-0.8.png)
+
+[Release notes and automated comparison](docs/release-0.21.md) ·
+[Image provenance and reproduction](docs/images/release-0.21-images.md)
+
+<details>
+<summary>Previous 0.18 example images for comparison</summary>
+
+### Previous 0.18 example images
 
 These screenshots use **Branchi — fictional example**, a made-up project about planning Branchi itself. Every goal, decision, result and progress count is sample data. No real user projects or captured conversations are shown.
 
@@ -34,6 +95,9 @@ These screenshots use **Branchi — fictional example**, a made-up project about
 ![Fictional Branchi decision showing its reason, alternatives, consequences and next action](docs/images/branchi-decision.jpg)
 
 [How the example images were made](docs/images/README.md) · [Download the fictional example record](examples/branchi-demo.json)
+
+
+</details>
 
 ## What could I use it for?
 
@@ -67,17 +131,17 @@ Previously called Brancha. Existing installations continue to use the `brancha` 
 
 ## Technical setup and integration details
 
-**Automatic mapping is the main workflow:** work in an enabled chat → supported capture → Luna decisions/tasks/branches → source-linked Obsidian maps. Twice-daily incremental High catch-up is the safety net; the skill is the manual fallback. [Set up automatic mapping](docs/automatic-mapping.md). Local Codex is automatic; GPT/Claude coverage depends on a tested client integration.
+**Optional automatic mapping:** work in an enabled chat → supported capture → Luna decisions/tasks/branches → source-linked Obsidian maps. Twice-daily incremental High catch-up is the safety net; the skill is the manual fallback. [Set up automatic mapping](docs/automatic-mapping.md). Local Codex is automatic; GPT/Claude coverage depends on a tested client integration.
 
 Keep the thread across AI projects: goals, decisions, branches, evidence, next steps and a visual map you can return to.
 
-Obsidian is the primary project workspace. Branchi generates a dashboard, a Pele mindmap, evidence notes and reusable templates for every project; its local browser is a companion view of the same record.
+Choose localhost, Obsidian or both as your local workspace view. Branchi generates dashboards, maps, evidence notes and reusable templates from the same local record. The private ChatGPT setup has a separate hosted record.
 
 Branchi is a local Node.js companion, browser workspace and portable skill. It renders diagrams with [Pele](https://pele.run/) and generates linked notes, project maps, a Canvas overview, a Bases table and resume briefs for Obsidian.
 
 ## Desktop first
 
-Use Branchi alongside local Codex work and Obsidian. No browser extension is required for that workflow. Run `npm run desktop-hook` for local-only ChatGPT Work/Codex hooks, then review and trust their exact definitions; ordinary Chat mode currently has explicit connector checkpoints, not a verified passive listener. [Desktop setup and exact coverage](docs/desktop-workflow.md). Web capture and ChatGPT Sites are optional entry points.
+Use Branchi alongside local Codex work with localhost, Obsidian or both. No browser extension is required for that workflow. Run `npm run desktop-hook` for local-only ChatGPT Work/Codex hooks, then review and trust their exact definitions; ordinary Chat mode currently has explicit connector checkpoints, not a verified passive listener. [Desktop setup and exact coverage](docs/desktop-workflow.md). Web capture and ChatGPT Sites are optional entry points.
 
 ## One live workspace
 
@@ -88,7 +152,7 @@ Open the configured Obsidian vault or http://127.0.0.1:51207/ for the same live 
 - **Portable Local MCP:** shared resume/checkpoint tools for compatible AI clients, using the local record without a cloud service or Codex session folder.
 - **Checkpoint CLI:** a versioned receipt format for trusted hooks, test tools and other integrations.
 - **Codex Local:** automatic local completion capture, the browser map and live generated Obsidian views.
-- **Branchi Connect for ChatGPT:** a private cloud MCP service and skill for resuming projects and saving checkpoints during an activated task. It stays available while the Mac is off; it cannot passively watch every ChatGPT chat.
+- **Branchi Connect for ChatGPT:** a private cloud MCP service and skill for resuming projects and saving checkpoints during an activated task. It stays available while the desktop is off; it cannot passively watch every ChatGPT chat.
 
 An optional approved bridge appends new ChatGPT checkpoints to the local map and Obsidian. Local Codex captures stay local. See [ChatGPT setup and connection boundaries](cloud/README.md).
 
@@ -114,7 +178,7 @@ npm run quickstart
 
 For other AI tools, run setup with `--no-codex`. Then run `npm run doctor` to inspect the configuration. See [portable setup](docs/portable-setup.md) for MCP connection snippets and [checkpoint protocol](docs/checkpoint-protocol.md) for optional Harness²/ARTEMIS receipts.
 
-Moving to a new Mac or PC? Follow [Branchi on another computer](docs/another-computer.md) for the Obsidian-first setup, bringing your real projects, ChatGPT activation and cross-computer limits.
+Moving to a new Mac or PC? Follow [Branchi on another computer](docs/another-computer.md) for setup choices, bringing your real projects, ChatGPT activation and cross-computer limits.
 
 Open http://127.0.0.1:51207. In Obsidian, open the configured vault folder (default `~/Documents/Branchi`) and then `Generated/START HERE.md` or `Generated/Dashboards/index.md`. `Generated/Brancha.canvas` provides a visual entrance to the same dashboards. Each project links to a clean dependency mindmap, with a compact editable Canvas and full evidence in linked notes.
 
@@ -209,7 +273,7 @@ Plugins containing lifecycle hooks are for manual desktop distribution, not the 
 
 ## Local data and sharing
 
-The service binds only to loopback and uses a per-start token plus origin checks for browser writes. It does not upload captured chats. The local app uses bundled assets and system font fallbacks; its capture adapter and local MCP server make no network calls. The separately configured cloud bridge makes authenticated network requests. A separately hosted browser copy is a snapshot and does not automatically sync with your local vault.
+The service binds only to loopback and uses a per-start token plus origin checks for browser writes. Capture alone does not upload completed chats. Optional AI mapping/review sends selected visible text to the signed-in model service; fresh setup enables it unless --no-ai is selected. The local app uses bundled assets and system font fallbacks; its capture adapter and local MCP server make no network calls. The separately configured cloud bridge makes authenticated network requests. A separately hosted browser copy is a snapshot and does not automatically sync with your local vault.
 
 This repository contains reusable code and fictional examples. Keep private configs, vaults, actual project history, credentials and hosting metadata out of commits. The included `.gitignore` covers common runtime locations; review files before publishing your own fork.
 

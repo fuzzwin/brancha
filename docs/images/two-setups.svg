@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="620" viewBox="0 0 1040 620" role="img" aria-labelledby="title desc">
+<title id="title">Branchi Desktop and ChatGPT: current boundaries and planned exchange</title>
+<desc id="desc">Desktop has a local record with localhost or optional Obsidian views. ChatGPT uses a separate owner-private Site. The optional implemented bridge imports all eligible cloud-origin records into Desktop. Selected pairing, two-way receipt exchange and execution handoff are planned, not active.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10" fill="none" stroke="#475569" stroke-width="2"/></marker></defs>
+<rect width="1040" height="620" rx="16" fill="#f8fafc"/>
+<g font-family="system-ui,sans-serif" fill="#172033">
+<text x="40" y="48" font-size="26" font-weight="700">Choose Desktop, ChatGPT, or both</text>
+<text x="40" y="76" font-size="15">Architecture guide · implemented paths are solid; future exchange is labelled planned.</text>
+<rect x="40" y="110" width="420" height="290" rx="14" fill="#fff" stroke="#6552bf" stroke-width="2"/>
+<text x="65" y="148" font-size="23" font-weight="700">Desktop / Codex</text>
+<text x="65" y="181" font-size="16">Supported, individually enabled local sources</text>
+<path d="M250 195V225" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="65" y="235" width="370" height="55" rx="8" fill="#eeebfa"/>
+<text x="250" y="268" text-anchor="middle" font-size="18" font-weight="600">One local canonical record</text>
+<text x="65" y="326" font-size="17">Dashboard: localhost, Obsidian, or both</text>
+<text x="65" y="353" font-size="14">Same record. Obsidian is optional.</text>
+<text x="65" y="377" font-size="14">AI processing is a separate choice, not local-only.</text>
+<rect x="580" y="110" width="420" height="290" rx="14" fill="#fff" stroke="#285c46" stroke-width="2"/>
+<text x="605" y="148" font-size="23" font-weight="700">ChatGPT / Branchi Connect</text>
+<text x="605" y="181" font-size="16">Explicitly activated conversation and live tools</text>
+<path d="M790 195V225" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="605" y="235" width="370" height="55" rx="8" fill="#e8f1eb"/>
+<text x="790" y="268" text-anchor="middle" font-size="18" font-weight="600">Owner-private Site + cloud record</text>
+<text x="605" y="326" font-size="17">Available while the desktop is off</text>
+<text x="605" y="353" font-size="14">No passive access to every chat or local files.</text>
+<text x="605" y="377" font-size="14">Owner-private hosting is required, not multi-tenant.</text>
+<path d="M575 257H468" stroke="#475569" stroke-width="3" marker-end="url(#arrow)"/>
+<text x="520" y="232" text-anchor="middle" font-size="12" font-weight="600">Cloud → local</text>
+<rect x="40" y="425" width="960" height="64" rx="10" fill="#e9eef4"/>
+<text x="60" y="450" font-size="16" font-weight="600">Optional current bridge: all eligible cloud-origin records from the connected workspace</text>
+<text x="60" y="475" font-size="14">Additive import only. No project allowlist, continuous local upload, shared deletion or execution controller.</text>
+<rect x="40" y="513" width="960" height="76" rx="10" fill="#f4f0ff" stroke="#6552bf" stroke-dasharray="8 5"/>
+<text x="60" y="542" font-size="17" font-weight="700">PLANNED · selected project pairing and acknowledged checkpoint/result receipts</text>
+<text x="60" y="568" font-size="14">Luna may propose a brief. Running work needs separate consent. This diagram does not activate any sharing or agent.</text>
+</g></svg>
