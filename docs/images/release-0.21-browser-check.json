@@ -1,0 +1,1029 @@
+{
+  "label": "Automated fictional renderer A/B comparison; not a human A/B test; cloud is a local repository-worker fixture, not live ChatGPT.",
+  "assertionsPassed": true,
+  "pages": [
+    {
+      "label": "B-map-smoke",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 884,
+        "height": 302
+      },
+      "inspector": {
+        "x": 1079,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "A-home-1280x800-light",
+      "width": 1280,
+      "height": 800,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "A-map-1280x800-light",
+      "width": 1280,
+      "height": 800,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1203,
+        "height": 315
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-stress-1280x800-light",
+      "width": 1280,
+      "height": 800,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1203,
+        "height": 306
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-home-1280x800-dark",
+      "width": 1280,
+      "height": 800,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "A-map-1280x800-dark",
+      "width": 1280,
+      "height": 800,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1203,
+        "height": 315
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-stress-1280x800-dark",
+      "width": 1280,
+      "height": 800,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1203,
+        "height": 306
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-home-1440x900-light",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "A-map-1440x900-light",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1363,
+        "height": 415
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-stress-1440x900-light",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1378,
+        "height": 306
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-home-1440x900-dark",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "A-map-1440x900-dark",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1363,
+        "height": 415
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-stress-1440x900-dark",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1378,
+        "height": 306
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-home-1920x1080-light",
+      "width": 1920,
+      "height": 1080,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "A-map-1920x1080-light",
+      "width": 1920,
+      "height": 1080,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1858,
+        "height": 516
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-stress-1920x1080-light",
+      "width": 1920,
+      "height": 1080,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1858,
+        "height": 306
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-home-1920x1080-dark",
+      "width": 1920,
+      "height": 1080,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "A-map-1920x1080-dark",
+      "width": 1920,
+      "height": 1080,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1858,
+        "height": 516
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-stress-1920x1080-dark",
+      "width": 1920,
+      "height": 1080,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 436,
+        "width": 1858,
+        "height": 306
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-home-520x900-light",
+      "width": 520,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "A-map-520x900-light",
+      "width": 520,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 583,
+        "width": 443,
+        "height": 268
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-stress-520x900-light",
+      "width": 520,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 623,
+        "width": 443,
+        "height": 240
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-home-520x900-dark",
+      "width": 520,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "A-map-520x900-dark",
+      "width": 520,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 583,
+        "width": 443,
+        "height": 268
+      },
+      "inspector": null
+    },
+    {
+      "label": "A-stress-520x900-dark",
+      "width": 520,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 623,
+        "width": 443,
+        "height": 240
+      },
+      "inspector": null
+    },
+    {
+      "label": "B-home-1280x800-light",
+      "width": 1280,
+      "height": 800,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "B-map-1280x800-light",
+      "width": 1280,
+      "height": 800,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 724,
+        "height": 262
+      },
+      "inspector": {
+        "x": 919,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "B-stress-1280x800-light",
+      "width": 1280,
+      "height": 800,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 724,
+        "height": 262
+      },
+      "inspector": {
+        "x": 919,
+        "y": 387,
+        "width": 330,
+        "height": 981
+      }
+    },
+    {
+      "label": "B-home-1280x800-dark",
+      "width": 1280,
+      "height": 800,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "B-map-1280x800-dark",
+      "width": 1280,
+      "height": 800,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 724,
+        "height": 262
+      },
+      "inspector": {
+        "x": 919,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "B-stress-1280x800-dark",
+      "width": 1280,
+      "height": 800,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 724,
+        "height": 262
+      },
+      "inspector": {
+        "x": 919,
+        "y": 387,
+        "width": 330,
+        "height": 981
+      }
+    },
+    {
+      "label": "B-home-1440x900-light",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "B-map-1440x900-light",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 884,
+        "height": 302
+      },
+      "inspector": {
+        "x": 1079,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "B-stress-1440x900-light",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 884,
+        "height": 302
+      },
+      "inspector": {
+        "x": 1079,
+        "y": 387,
+        "width": 330,
+        "height": 981
+      }
+    },
+    {
+      "label": "B-home-1440x900-dark",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "B-map-1440x900-dark",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 884,
+        "height": 302
+      },
+      "inspector": {
+        "x": 1079,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "B-stress-1440x900-dark",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 884,
+        "height": 302
+      },
+      "inspector": {
+        "x": 1079,
+        "y": 387,
+        "width": 330,
+        "height": 981
+      }
+    },
+    {
+      "label": "B-home-1920x1080-light",
+      "width": 1920,
+      "height": 1080,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "B-map-1920x1080-light",
+      "width": 1920,
+      "height": 1080,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 1364,
+        "height": 346
+      },
+      "inspector": {
+        "x": 1559,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "B-stress-1920x1080-light",
+      "width": 1920,
+      "height": 1080,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 1364,
+        "height": 346
+      },
+      "inspector": {
+        "x": 1559,
+        "y": 387,
+        "width": 330,
+        "height": 981
+      }
+    },
+    {
+      "label": "B-home-1920x1080-dark",
+      "width": 1920,
+      "height": 1080,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "B-map-1920x1080-dark",
+      "width": 1920,
+      "height": 1080,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 1364,
+        "height": 346
+      },
+      "inspector": {
+        "x": 1559,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "B-stress-1920x1080-dark",
+      "width": 1920,
+      "height": 1080,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 1364,
+        "height": 346
+      },
+      "inspector": {
+        "x": 1559,
+        "y": 387,
+        "width": 330,
+        "height": 981
+      }
+    },
+    {
+      "label": "B-home-520x900-light",
+      "width": 520,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "B-map-520x900-light",
+      "width": 520,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 728,
+        "width": 443,
+        "height": 240
+      },
+      "inspector": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "label": "B-stress-520x900-light",
+      "width": 520,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 786,
+        "width": 443,
+        "height": 240
+      },
+      "inspector": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "label": "B-home-520x900-dark",
+      "width": 520,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "B-map-520x900-dark",
+      "width": 520,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 728,
+        "width": 443,
+        "height": 240
+      },
+      "inspector": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "label": "B-stress-520x900-dark",
+      "width": 520,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 31,
+        "y": 786,
+        "width": 443,
+        "height": 240
+      },
+      "inspector": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "label": "B-map-reduced-motion-light",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": true,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 884,
+        "height": 302
+      },
+      "inspector": {
+        "x": 1079,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "B-map-zoom200-light",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 2,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 62,
+        "y": 1171,
+        "width": 1301,
+        "height": 480
+      },
+      "inspector": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "label": "B-map-reduced-motion-dark",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "motion": true,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 168,
+        "y": 489,
+        "width": 884,
+        "height": 302
+      },
+      "inspector": {
+        "x": 1079,
+        "y": 387,
+        "width": 330,
+        "height": 811
+      }
+    },
+    {
+      "label": "B-map-zoom200-dark",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "motion": false,
+      "cssZoom": 2,
+      "horizontalOverflow": false,
+      "sourceUnchanged": true,
+      "map": {
+        "x": 62,
+        "y": 1171,
+        "width": 1301,
+        "height": 480
+      },
+      "inspector": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "label": "cloud-REPOSITORY-FIXTURE-1440x900",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "map": null,
+      "inspector": null
+    },
+    {
+      "label": "cloud-REPOSITORY-FIXTURE-520x900",
+      "width": 520,
+      "height": 900,
+      "dark": false,
+      "motion": false,
+      "cssZoom": 1,
+      "horizontalOverflow": false,
+      "map": null,
+      "inspector": null
+    }
+  ],
+  "actions": [
+    {
+      "label": "initial selected next action",
+      "pass": true,
+      "value": {
+        "selected": "prototype",
+        "text": "Selected record\nClose inspector\nBuild the watering tray\nRecord prototype\n▶ Active\nTask\n\nFictional demonstration record. No real project or chat data.\n\nNext: Review the saved evidence before continuing.\n\nOpen record & evidence\nWhy blocked / prerequisite check\n\nRecorded visible prerequisites are satisfied; confirm scope and evidence before resuming.\n\n✓ Measure the available space [measure]\nShow all prerequisites (1)\nWhat this unblocks\nTest drainage before planting [test]\nOther recorded relationships\n← i · context · Choose removable pots [decision]\n← i · context · Saved prototype report [report]\nFocus prerequisites and dependents\nAll connected relationships"
+      }
+    },
+    {
+      "label": "two-step downstream trace + blocker",
+      "pass": true,
+      "value": {
+        "selected": "test",
+        "readiness": "1 upstream prerequisites remain unresolved, including 1 direct prerequisites. Reveal all prerequisites before resuming.",
+        "ancestorButton": "Show all prerequisites (2)",
+        "focus": "Close inspector",
+        "unchanged": true
+      }
+    },
+    {
+      "label": "all prerequisites reveals two-step source",
+      "pass": true,
+      "value": {
+        "records": [
+          "measure",
+          "prototype",
+          "test"
+        ],
+        "unchanged": true
+      }
+    },
+    {
+      "label": "relation type context layer",
+      "pass": true,
+      "value": {
+        "types": [
+          "depends_on",
+          "depends_on",
+          "informs"
+        ],
+        "unchanged": true
+      }
+    },
+    {
+      "label": "evidence opens expected record",
+      "pass": true,
+      "value": {
+        "opened": "Generated/Items/test",
+        "selected": "test",
+        "unchanged": true
+      }
+    },
+    {
+      "label": "Escape returns focus to originating record",
+      "pass": true,
+      "value": {
+        "selected": null,
+        "inspector": false,
+        "focusId": "test",
+        "unchanged": true
+      }
+    },
+    {
+      "label": "narrow inspector keyboard open and close",
+      "pass": true,
+      "value": {
+        "focusedOnOpen": "Close inspector",
+        "selected": null,
+        "focusId": "test",
+        "unchanged": true
+      }
+    }
+  ],
+  "errors": []
+}

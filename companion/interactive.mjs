@@ -4,21 +4,28 @@ import {statusKey,statusSvg} from './status.mjs';
 import {workstreamProgress} from './workstreams.mjs';
 import {projectTimeline} from './timeline.mjs';
 import {chatCatalog} from './chats.mjs';
+import {software} from './build-info.mjs';
+import {dependencyScope} from '../adapters/chat-privacy.mjs';
 
 const label=s=>String(s).replace(/["<>\[\]{}()\r\n]/g,' ').replaceAll('&','and').slice(0,74);
 export function interactiveProject(w,p,overview,{chatTitles={}}={}){
- const nodes=w.nodes.filter(n=>n.projectId===p.id),ids=new Set(nodes.map(n=>n.id));
+ const projectNodes=w.nodes.filter(n=>n.projectId===p.id),ids=new Set(projectNodes.map(n=>n.id)),queue=[...ids];
+ // Keep upstream cross-project prerequisites explicit. A scoped map must not
+ // turn an omitted external blocker into a claim of readiness.
+ for(let i=0;i<queue.length;i++)for(const e of w.edges)if(e.type==='depends_on'&&e.to===queue[i]&&!ids.has(e.from)){ids.add(e.from);queue.push(e.from);}
+ const nodes=w.nodes.filter(n=>ids.has(n.id));
  const edges=w.edges.filter(e=>ids.has(e.from)&&ids.has(e.to));
  const work=n=>!['source','goal','decision','branch'].includes(n.type);
  const groups=[
-  ['goals','The goal',nodes.filter(n=>n.type==='goal')],
-  ['work','Work in motion',nodes.filter(n=>work(n)&&!['done','parked'].includes(n.status))],
-  ['decisions','Decisions',nodes.filter(n=>n.type==='decision')],
-  ['branches','Offshoots',nodes.filter(n=>n.type==='branch')],
-  ['outputs','Results',nodes.filter(n=>work(n)&&n.status==='done')],
-  ['sources','Evidence and reports',nodes.filter(n=>n.type==='source')],
+  ['goals','The goal',projectNodes.filter(n=>n.type==='goal')],
+  ['work','Work in motion',projectNodes.filter(n=>work(n)&&!['done','parked'].includes(n.status))],
+  ['decisions','Decisions',projectNodes.filter(n=>n.type==='decision')],
+  ['branches','Offshoots',projectNodes.filter(n=>n.type==='branch')],
+  ['outputs','Results',projectNodes.filter(n=>work(n)&&n.status==='done')],
+  ['sources','Evidence and reports',projectNodes.filter(n=>n.type==='source')],
+  ['external','Prerequisites from other projects',nodes.filter(n=>n.projectId!==p.id)],
  ];
- const clean=n=>({id:n.id,title:n.title,type:n.type,status:statusLabel(n.status),statusId:n.status,proposal:!!n.mapper,needsReview:!!n.mapper?.needsReview,reviewReason:n.mapper?.reviewReason||'',detail:n.detail||'',next:n.next||''});
+ const clean=n=>({id:n.id,title:n.title,type:n.type,status:statusLabel(n.status),statusId:n.status,external:n.projectId!==p.id,projectTitle:w.projects.find(x=>x.id===n.projectId)?.title,proposal:!!n.mapper,needsReview:!!n.mapper?.needsReview,reviewReason:n.mapper?.reviewReason||'',detail:n.detail||'',next:n.next||''});
  const views={};
  const make=(key,title,seeds)=>{
   const seed=new Set(seeds.map(n=>n.id)),near=edges.filter(e=>seed.has(e.from)||seed.has(e.to));
@@ -38,7 +45,7 @@ export function interactiveProject(w,p,overview,{chatTitles={}}={}){
  const compactOverview=render(compactSource.join('\n'),{fontSize:18,padding:24,images:false,links:false,responsive:true}).svg;
  const workstreams=workstreamProgress(w,p.id);
  for(const stream of workstreams){const selected=new Set([stream.rootId,...stream.nodeIds]);make(stream.key,stream.title,nodes.filter(n=>selected.has(n.id)));}
- return {version:1,project:{id:p.id,title:p.title},revision:w.revision,analytics:projectAnalytics(w,p.id),
+ return {version:1,software,dependencyScopeComplete:w[dependencyScope]!==false,generatedAt:new Date().toISOString(),project:{id:p.id,title:p.title},revision:w.revision,analytics:projectAnalytics(w,p.id),
   statusKey,nodes:nodes.map(clean),edges,groups:groups.filter(g=>g[2].length).map(([id,title,ns])=>({id,title,nodeIds:ns.map(n=>n.id)})),
   chats:chatCatalog(w,{chatTitles}).filter(c=>c.projectId===p.id).map(c=>({title:c.title,path:c.path,reportCount:c.reportCount,summary:c.summary})),compactOverview,overview,shown:projectMindmap(w,p.id).shown,views,workstreams,timeline:projectTimeline(w,p.id)};
 }

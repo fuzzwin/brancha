@@ -3,6 +3,7 @@ import {statusLabel} from '../dist/core.mjs';
 import {projectTimeline} from './timeline.mjs';
 import {chatMindmap,receiptPath} from './chat-map.mjs';
 import {statusKey} from './status.mjs';
+import {software} from './build-info.mjs';
 const valid=s=>typeof s==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(s);
 const text=(s,max=400)=>String(s||'').replace(/(?:^|\n)\s*(?:<small>?\s*)?[*_]*(?:Usage\b|Tokens:)[\s\S]*$/i,'').replace(/<[^>\n]+>/g,'').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/[*`#>]/g,'').replace(/\s+/g,' ').trim().slice(0,max);
 const reportBody=s=>String(s||'').replace(/^AUTOMATIC CHECKPOINT[^\n]*\n*/,'').trim();
@@ -38,7 +39,7 @@ export function chatData(w,c,{at=new Date().toISOString()}={}){
  const eventIds=new Set(c.reports.map(r=>r.eventId).filter(Boolean));
  const associated=e=>eventIds.has(e.id)||[e.capture,e.after,e.before].some(n=>provenance(n)?.sessionId===c.sessionId)||e.mapperJobId&&c.records.some(n=>n.id===e.nodeId);
  const timeline=projectTimeline({...w,events:w.events.filter(e=>e.projectId===c.projectId&&associated(e))},c.projectId,{at});
- return {version:1,statusKey,project:{id:c.projectId,title:c.projectTitle},sessionId:c.sessionId,provider:c.provider,title:c.title,at:c.at,summary:c.summary,next:c.next,reportCount:c.reportCount,map:chatMindmap(w,c),reports:c.reports.slice(-80).reverse().map(r=>({...r,logPath:receiptPath(c,r)})),reportsTruncated:c.reports.length>80,records:c.records,verified:c.verified,proposals:c.proposals,artifacts:c.artifacts.slice(0,100),artifactTotal:c.artifacts.length,timeline};
+ return {version:1,software,revision:w.revision,generatedAt:at,statusKey,project:{id:c.projectId,title:c.projectTitle},sessionId:c.sessionId,provider:c.provider,title:c.title,at:c.at,summary:c.summary,next:c.next,reportCount:c.reportCount,map:chatMindmap(w,c),reports:c.reports.slice(-80).reverse().map(r=>({...r,logPath:receiptPath(c,r)})),reportsTruncated:c.reports.length>80,records:c.records,verified:c.verified,proposals:c.proposals,artifacts:c.artifacts.slice(0,100),artifactTotal:c.artifacts.length,timeline};
 }
 const md=s=>String(s||'').replace(/[\r\n|\[\]]/g,' ');
 export function chatFiles(w,options={}){
