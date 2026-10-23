@@ -1,12 +1,13 @@
 const {Plugin,MarkdownRenderChild,Notice}=globalThis.BranchaHost||require('obsidian');
-const PLUGIN_VERSION='0.14.0';
+const PLUGIN_VERSION='0.15.0';
 // Work in CSS pixels; never magnify a small diagram just to fill a wide note.
 // Very narrow or dense maps keep an 11px label floor and can scroll.
-function mapSize({width,height,availableWidth,availableHeight,zoom=1,readable=false,fullWidth=false,fullPage=false,fitAll=false}){
+function mapSize({width,height,availableWidth,availableHeight,zoom=1,readable=false,fullWidth=false,fullPage=false,fitAll=false,adaptive=false}){
  if(![width,height,availableWidth,availableHeight].every(n=>Number.isFinite(n)&&n>0))return null;
- const frame=fullPage?Math.max(240,Math.floor(availableHeight)):fullWidth?Math.floor(Math.min(560,Math.max(300,availableHeight*.62))):Math.min(430,Math.max(260,availableHeight*.5));
- const fit=Math.min(1,availableWidth/width,frame/height);
+ let frame=fullPage?Math.max(240,Math.floor(availableHeight)):fullWidth?Math.floor(Math.min(560,Math.max(300,availableHeight*.62))):Math.min(430,Math.max(260,availableHeight*.5));
+ const fit=Math.min(adaptive?1.2:1,availableWidth/width,frame/height);
  const scale=(readable?1:fullPage&&fitAll?fit:Math.max(fullPage?11/15:11/18,fit))*Math.max(.25,Math.min(3,zoom));
+ if(adaptive)frame=Math.min(frame,Math.max(180,Math.ceil(height*scale)+16));
  return {width:Math.round(width*scale),height:Math.round(height*scale),frame,scale};
 }
 function savedStamp(value){
@@ -35,7 +36,7 @@ class Dashboard extends MarkdownRenderChild{
   this.registerEvent(this.plugin.app.vault.on('modify',file=>{if(file.path===this.path){clearTimeout(this.timer);this.timer=setTimeout(()=>this.refresh(),250);}}));
   this.refresh();
  }
- onunload(){clearTimeout(this.timer);this.mapObserver?.disconnect();this.dead=true;}
+ onunload(){clearTimeout(this.timer);this.mapObserver?.disconnect();this.projectMap?.onunload();this.dead=true;}
  get path(){return `Generated/Interactive/${this.id}.json`;}
  async refresh(){
   try{const raw=await this.plugin.app.vault.adapter.read(this.path);if(this.dead)return;this.data=JSON.parse(raw);if(this.data.version!==1||this.data.project.id!==this.id)throw Error('Unsupported dashboard');
@@ -87,7 +88,7 @@ class Dashboard extends MarkdownRenderChild{
    if(state?.type==='markdown'&&app.workspace.getActiveFile()?.path===path.replace(/\.md$/,'')+'.md')await leaf.setViewState({...state,state:{...state.state,mode:'preview'}});
   }
  }
- select(key){if(key==='mm_root'){this.focus=null;this.history=[];}else{if(key.startsWith('more_'))key=key.replace('more_','group_');if(!this.data.views[key])return;if(key!==this.focus)this.history.push(this.focus);this.focus=key;}this.zoom=1;this.readable=false;this.draw();this.containerEl.querySelector('.bi-map')?.scrollIntoView({block:'start',behavior:'smooth'});}
+ select(key){if(this.projectMap){const map=this.projectMap;if(key.startsWith('item_')){map.selectRecord(key.slice(5));}else{map.mode='mindmap';map.query='';map.connectionFocus=null;if(key==='mm_root')map.expanded=new Set(map.data.groups.map(g=>g.id));else if(key.startsWith('group_'))map.expanded.add(key.slice(6));else{const stream=this.data.workstreams?.find(s=>s.key===key);if(stream)map.selectRecord(stream.rootId);}map.draw();}this.containerEl.querySelector('.bi-dedicated-map')?.scrollIntoView({block:'start',behavior:'smooth'});return;}if(key==='mm_root'){this.focus=null;this.history=[];}else{if(key.startsWith('more_'))key=key.replace('more_','group_');if(!this.data.views[key])return;if(key!==this.focus)this.history.push(this.focus);this.focus=key;}this.zoom=1;this.readable=false;this.draw();this.containerEl.querySelector('.bi-map')?.scrollIntoView({block:'start',behavior:'smooth'});}
  pageNavigation(root,label){
   root.classList.add('bi-page-v3');
   const nav=this.el(root,'nav',undefined,'bi-page-navigation');nav.setAttribute('aria-label','Page navigation');
@@ -123,8 +124,8 @@ class Dashboard extends MarkdownRenderChild{
   for(const text of ['Look at the cards and map to see where this project stands.','Click a map box to explore. Use Previous map or Whole project to return.','Read “Your next step” below, then open the handover when you want to continue with AI.','Choose another project at the top whenever you switch work.'])this.el(steps,'li',text);
   this.el(help,'p','New saved work appears here while Branchi’s local companion is running. Opening a box only changes your view; it does not complete work or accept an AI suggestion.','bi-muted');
   const glance=this.el(root,'section',undefined,'bi-glance');
-  this.el(glance,'h2','At a glance');
-  this.el(glance,'p','Your progress and project map, together. Click a card or box to explore.','bi-intro');
+  this.el(glance,'h2','Project map and progress');
+  this.el(glance,'p','Select a map item for its details on the right. Project totals and activity are below.','bi-intro');
   const cards=this.el(glance,'div',undefined,'bi-cards');
   for(const [title,value,desc,key]of [
    ['Goals with evidence',a.originalGoals.total?`${a.originalGoals.done} / ${a.originalGoals.total}`:'Not set','Original recorded goals','group_goals'],
@@ -225,9 +226,21 @@ class Dashboard extends MarkdownRenderChild{
   const recent=this.el(root,'details',undefined,'bi-panel');this.el(recent,'summary','Recent updates & review prompts');
   for(const e of a.recent)this.el(recent,'p',`${new Date(e.at).toLocaleString()} · ${e.text}`);
   for(const prompt of a.template.prompts)this.el(recent,'p',prompt);
+  this.projectWorkspace({glance,workspace,panel,side,todo,chatSection,cards,lower,overviewLayout});
   const more=this.el(root,'details',undefined,'bi-more');this.el(more,'summary','More views & update details');
   for(const [title,path]of [['All notes & chat maps',`Dashboards/${this.id}-static`],['Canvas board',`Maps/${this.id}.canvas`],['Connection status','Navigation/Connections']])this.button(more,title,()=>this.open('Generated/'+path));
   this.el(more,'p',`Local record · revision ${d.revision} · ${a.template.title} · generated ${new Date(a.at).toLocaleString()}`,'bi-muted');
+ }
+ projectWorkspace({glance,workspace,panel,side,todo,chatSection,cards,lower,overviewLayout}){
+  const prior=this.projectMap,remember=prior?Object.fromEntries(['mode','query','expanded','selected','connectionFocus','upstream','downstream','zoom','readable','fitAll','inspectorVisible','mapHeight','groupFocus','groupPage','trackerFocus','trackerChoices'].map(k=>[k,prior[k]])):null;
+  prior?.onunload();this.mapObserver?.disconnect();this.svg=null;panel.replaceChildren();panel.classList.add('bi-dedicated-map');
+  const host=this.el(panel,'div',undefined,'bi bi-embedded-map'),map=new MapExplorer(host,this.plugin,this.id,this.sourcePath,undefined,{embedded:true});
+  map.data=this.data;map.initialSelection=true;map.expanded=new Set(this.data.groups.map(g=>g.id));map.mode='mindmap';if(remember)Object.assign(map,remember);this.projectMap=map;
+  if(this.focus?.startsWith('item_')){map.selected=this.focus.slice(5);map.inspectorVisible=true;}
+  map.draw();side.remove();workspace.after(overviewLayout);overviewLayout.classList.add('bi-project-metrics');
+  const fold=(node,title,key)=>{if(!node)return;const wrapper=this.el(glance,'details',undefined,'bi-fold');wrapper.open=this.sections?.[key]!==false;this.el(wrapper,'summary',title);wrapper.append(node);wrapper.addEventListener('toggle',()=>{this.sections??={};this.sections[key]=wrapper.open;if(wrapper.open)this.projectMap?.scale(0);});return wrapper;};
+  fold(overviewLayout,'Project totals','totals');fold(lower,'Status, activity and workstreams','analytics');fold(glance.querySelector('.bi-timeline'),'Project timeline','timeline');fold(todo,'Tasks and waiting work','queue');fold(chatSection,'Chats behind this project','chats');
+  const records=this.containerEl.querySelector('.bi-records');if(records)records.remove();
  }
  renderTimeline(parent){
   const d=this.data,t=d.timeline||{items:[],points:[],chats:[],total:0,loaded:0},zone=d.analytics?.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -316,9 +329,9 @@ class Dashboard extends MarkdownRenderChild{
  }
  scale(delta){
   this.zoom=Math.max(.25,Math.min(3,this.zoom+delta));if(!this.svg)return;
-  const scroll=this.svg.parentElement,box=this.svg.viewBox.baseVal,pane=this.containerEl.closest('.workspace-leaf-content');
-  const size=mapSize({width:box.width,height:box.height,availableWidth:scroll.clientWidth,availableHeight:this.fullPage?Math.max(240,(pane?.getBoundingClientRect().bottom||this.containerEl.ownerDocument.defaultView.innerHeight)-scroll.getBoundingClientRect().top-48):(pane?.clientHeight||this.containerEl.ownerDocument.defaultView.innerHeight),fullPage:!!this.fullPage,fitAll:!!this.fitAll,zoom:this.zoom,readable:this.readable,fullWidth:!!this.data.compactOverview||!!this.data.map});
-  if(!size)return;this.svg.style.width=size.width+'px';this.svg.style.minWidth='0';this.svg.style.height=size.height+'px';scroll.style.maxHeight=size.frame+'px';
+  const scroll=this.svg.parentElement,box=this.svg.viewBox.baseVal,pane=this.containerEl.closest('.workspace-leaf-content'),view=this.containerEl.ownerDocument.defaultView,style=view.getComputedStyle?.(scroll),inset=keys=>keys.reduce((sum,key)=>sum+(parseFloat(style?.[key])||0),0),paddingX=inset(['paddingLeft','paddingRight']),paddingY=inset(['paddingTop','paddingBottom','borderTopWidth','borderBottomWidth']);
+  const size=mapSize({width:box.width,height:box.height,availableWidth:Math.max(1,scroll.clientWidth-paddingX),availableHeight:Math.max(180,(this.embedded?(this.mapHeight||Math.max(220,Math.min(900,this.containerEl.ownerDocument.defaultView.innerHeight*.72))):this.fullPage?Math.max(240,(pane?.getBoundingClientRect().bottom||this.containerEl.ownerDocument.defaultView.innerHeight)-scroll.getBoundingClientRect().top-48):(pane?.clientHeight||this.containerEl.ownerDocument.defaultView.innerHeight))-paddingY),fullPage:!!this.fullPage||!!this.embedded,adaptive:!!this.fullPage&&!this.mapHeight,fitAll:!!this.fitAll,zoom:this.zoom,readable:this.readable,fullWidth:!!this.data.compactOverview||!!this.data.map});
+  if(!size)return;this.svg.style.width=size.width+'px';this.svg.style.minWidth='0';this.svg.style.height=size.height+'px';scroll.style.maxHeight=(size.frame+paddingY)+'px';if(this.fullPage){scroll.style.height=(size.frame+paddingY)+'px';this.containerEl.style.setProperty('--bi-map-frame',(size.frame+paddingY)+'px');}this.scaledWidth=scroll.clientWidth;
  }
 }
 class Home extends Dashboard{
@@ -442,17 +455,17 @@ function explorerModel(data){
  return {title:chat?data.title:data.project.title,scopeComplete:!chat&&data.dependencyScopeComplete===true,scopeMessage:chat?'This chat map shows only linked records. Open the project map to check complete prerequisites.':data.dependencyScopeComplete===false?'This view omits prerequisite context. Review the full authorized project record before assessing readiness.':'This older map has no complete prerequisite boundary. Regenerate it with the current companion before assessing readiness.',nodes,groups,edges,isolated:nodes.filter(n=>!linked.has(n.id))};
 }
 function explorerBox(n){
- const words=String(n.title||'Untitled').split(/\s+/),lines=[];let line='';
+ const words=String(n.title||'Untitled').split(/\s+/).flatMap(word=>{const parts=[];while(word.length>28){let cut=word.slice(0,29).search(/[_/\\.-][^_/\\.-]*$/)+1;if(cut<12)cut=28;parts.push(word.slice(0,cut));word=word.slice(cut);}if(word)parts.push(word);return parts;}),lines=[];let line='';
  for(const word of words){if(line&&(line+' '+word).length>31){lines.push(line);line='';}line+=(line?' ':'')+word;}
  if(line)lines.push(line);if(lines.length>4){lines.length=4;lines[3]=lines[3].slice(0,29)+'…';}
  return {...n,lines,width:250,height:Math.max(66,lines.length*18+(n.status?36:24))};
 }
-function explorerMindmap(model,expanded,query=''){
+function explorerMindmap(model,expanded,query='',{limit=Infinity,group=null,page=0,pageSize=8}={}){
  const term=query.trim().toLowerCase(),byId=new Map(model.nodes.map(n=>[n.id,n]));
  const matches=n=>!term||n.title.toLowerCase().includes(term)||n.id.toLowerCase().includes(term);
- const groups=model.groups.map(g=>({...g,nodeIds:g.nodeIds.filter(id=>matches(byId.get(id)))})).filter(g=>g.nodeIds.length);
+ const groups=model.groups.filter(g=>!group||g.id===group).map(g=>({...g,nodeIds:g.nodeIds.filter(id=>matches(byId.get(id)))})).filter(g=>g.nodeIds.length);
  const sides=[[],[]];groups.forEach((g,i)=>sides[i%2].push(g));
- const plans=sides.map(side=>side.map(g=>{const open=!!term||expanded.has(g.id),items=open?g.nodeIds.map(id=>explorerBox(byId.get(id))):[];return {g,open,items,height:Math.max(82,items.reduce((v,n)=>v+n.height+14,0)-14)};}));
+ const plans=sides.map(side=>side.map(g=>{const open=!!group||!!term||expanded.has(g.id),start=group?Math.max(0,Math.min(page,Math.ceil(g.nodeIds.length/pageSize)-1))*pageSize:0,ids=g.nodeIds.slice(start,group?start+pageSize:limit),items=open?ids.map(id=>explorerBox(byId.get(id))):[];if(open&&!group&&ids.length<g.nodeIds.length)items.push(explorerBox({id:'more_'+g.id,title:`Open branch · ${g.nodeIds.length-ids.length} more records`,moreGroup:g.id}));return {g,open,items,height:Math.max(82,items.reduce((v,n)=>v+n.height+14,0)-14)};}));
  const height=Math.max(220,...plans.map(side=>side.reduce((v,g)=>v+g.height+40,0)))+60,boxes=[],links=[];
  const root={id:'explorer_root',title:model.title,lines:explorerBox({title:model.title}).lines,x:640,y:height/2-46,width:220,height:92,root:true};boxes.push(root);
  plans.forEach((side,i)=>{let y=(height-side.reduce((v,g)=>v+g.height+40,0))/2;
@@ -461,7 +474,7 @@ function explorerMindmap(model,expanded,query=''){
   }
  });
  const left=Math.min(...boxes.map(n=>n.x))-30,right=Math.max(...boxes.map(n=>n.x+n.width))+30;for(const n of boxes)n.x-=left;
- return {boxes,links,width:right-left,height,shown:boxes.filter(n=>!n.root&&!n.group).length,total:model.nodes.filter(matches).length};
+ return {boxes,links,width:right-left,height,shown:boxes.filter(n=>!n.root&&!n.group&&!n.moreGroup).length,total:model.nodes.filter(matches).length};
 }
 function explorerFlow(model,query='',focus=null){
  const term=query.trim().toLowerCase(),wanted=focus?new Set([focus,...model.edges.filter(e=>e.from===focus||e.to===focus).flatMap(e=>[e.from,e.to])]):null;
@@ -504,8 +517,29 @@ function explorerDependencies(model,{query='',focus=null,upstream=1,downstream=1
  plan.links.push(...model.edges.filter(e=>e.type!=='depends_on'&&layers.includes(e.type)&&ids.has(e.from)&&ids.has(e.to)));
  return {...plan,total:model.nodes.length,states,dependencyTotal:dependencies.length,dependencyCycles:all.cycleEdges,hiddenPrerequisites:focus?states[focus]?.ancestors.filter(id=>!ids.has(id)).length||0:0};
 }
+// Crop unused layout coordinates without clipping same-column or cyclic paths.
+function explorerBounds(plan){
+ if(!plan.boxes.length)return {...plan,width:350,height:180};
+ const byId=new Map(plan.boxes.map(n=>[n.id,n])),loop=plan.links.some(e=>byId.get(e.from)?.x===byId.get(e.to)?.x),padding=loop?90:24;
+ const left=Math.min(...plan.boxes.map(n=>n.x))-padding,top=Math.min(...plan.boxes.map(n=>n.y))-padding,right=Math.max(...plan.boxes.map(n=>n.x+n.width))+padding,bottom=Math.max(...plan.boxes.map(n=>n.y+n.height))+padding;
+ return {...plan,boxes:plan.boxes.map(n=>({...n,x:n.x-left,y:n.y-top})),width:right-left,height:bottom-top};
+}
+// One explicit prerequisite route, with alternatives disclosed at every join.
+// Context, grouping and offshoot links never become scheduling dependencies.
+function explorerTracker(model,focus,choices={}){
+ const dep=explorerDependencies(model),byId=new Map(model.nodes.map(n=>[n.id,n])),selected=byId.has(focus)?focus:null;
+ if(!selected)return {boxes:[],links:[],width:350,height:220,shown:0,total:model.nodes.length,choices:[],cycle:false,offPath:[],states:dep.states};
+ const route=[selected],seen=new Set(route),branches=[];let cycle=false;
+ let id=selected;
+ while(true){const options=dep.states[id].prerequisites;if(!options.length)break;const key='up:'+id,chosen=options.includes(choices[key])?choices[key]:options.find(n=>!dep.states[n].completed)||options[0];if(options.length>1)branches.push({key,at:id,direction:'Prerequisite',options,chosen});if(seen.has(chosen)){cycle=true;break;}route.unshift(chosen);seen.add(chosen);id=chosen;}
+ id=selected;
+ while(true){const options=dep.states[id].dependents;if(!options.length)break;const key='down:'+id,chosen=options.includes(choices[key])?choices[key]:options.length===1?options[0]:null;if(options.length>1)branches.push({key,at:id,direction:'Continue to',options,chosen});if(!chosen)break;if(seen.has(chosen)){cycle=true;break;}route.push(chosen);seen.add(chosen);id=chosen;}
+ const boxes=route.map((key,i)=>({...explorerBox(byId.get(key)),x:30+i*340,y:60})),height=Math.max(220,...boxes.map(n=>n.height+120));for(const n of boxes)n.y=(height-n.height)/2;
+ const links=route.slice(1).map((to,i)=>model.edges.find(e=>e.type==='depends_on'&&e.from===route[i]&&e.to===to));
+ return {boxes,links,width:Math.max(350,route.length*340),height,shown:route.length,total:model.nodes.length,choices:branches,cycle,states:dep.states,offPath:dep.states[selected].ancestors.filter(key=>!seen.has(key)),firstUnresolved:route.find(key=>!dep.states[key].completed)||null};
+}
 class MapExplorer extends Dashboard{
- constructor(el,plugin,id,sourcePath,sessionId){super(el,plugin,id,sourcePath);this.sessionId=sessionId;this.mode='dependencies';this.query='';this.expanded=null;this.selected=null;this.connectionFocus=null;this.fullPage=true;this.upstream=1;this.downstream=1;this.layers=new Set();this.mapHistory=[];this.lineageOpen=false;this.containerEl.addEventListener('keydown',e=>{if(e.key==='Escape'&&this.selected){e.preventDefault();this.closeInspector();}});}
+ constructor(el,plugin,id,sourcePath,sessionId,options={}){super(el,plugin,id,sourcePath);this.embedded=!!options.embedded;this.sessionId=sessionId;this.mode='dependencies';this.query='';this.expanded=null;this.selected=null;this.connectionFocus=null;this.fullPage=true;this.upstream=1;this.downstream=1;this.layers=new Set();this.mapHistory=[];this.lineageOpen=false;this.groupFocus=null;this.groupPage=0;this.trackerFocus=null;this.trackerChoices={};this.containerEl.addEventListener('keydown',e=>{if(e.key==='Escape'&&this.selected){e.preventDefault();this.closeInspector();}});}
  get path(){return `Generated/Interactive/${this.sessionId?'chat-'+this.id+'-'+this.sessionId:this.id}.json`;}
  closeInspector(){const id=this.selected;this.selected=null;this.draw();const target=[...(this.svg?.querySelectorAll('[data-id]')||[])].find(n=>n.dataset.id===id)||this.containerEl.querySelector('.bi-map-scroll');target?.focus({preventScroll:true});}
  selectRecord(id){
@@ -517,16 +551,21 @@ class MapExplorer extends Dashboard{
   if(!this.initialSelection){this.initialSelection=true;this.selected=d.analytics?.ready?.[0]?.id||d.analytics?.waiting?.[0]?.id||m.nodes.find(n=>n.type==='task')?.id||null;this.connectionFocus=this.selected;}
   const active=root.ownerDocument.activeElement,activeId=active?.getAttribute('data-id'),activeAction=active?.dataset?.action,searchFocused=active===root.querySelector('input');
   const old=root.querySelector('.bi-map-scroll'),offset=old?{left:old.scrollLeft,top:old.scrollTop}:null;
-  root.replaceChildren();root.classList.add('bi-explorer','bi-focus-workspace');root.dataset.inspectorOpen=String(!!this.inspectorVisible);this.pageNavigation(root,this.sessionId?'Chat map':'Project map');this.expanded??=new Set(m.nodes.length<=40?m.groups.map(g=>g.id):[]);
-  const top=this.el(root,'div',undefined,'bi-top');this.el(top,'h1',m.title);this.el(top,'span',`Workspace revision ${d.revision}`,'bi-muted');
-  const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,this.sessionId?'← Chat dashboard':'← Project dashboard',()=>this.open(this.sessionId?`Generated/Chats/${this.id}-${this.sessionId}`:`Generated/Dashboards/${this.id}`));this.quickSwitch(nav);
+  root.replaceChildren();root.classList.add('bi-explorer','bi-focus-workspace');root.dataset.inspectorOpen=String(!!this.inspectorVisible);if(!this.embedded)this.pageNavigation(root,this.sessionId?'Chat map':'Project map');this.expanded??=new Set(m.nodes.length<=40?m.groups.map(g=>g.id):[]);
+  const top=this.el(root,'div',undefined,'bi-top');this.el(top,this.embedded?'h2':'h1',this.embedded?'Project map':m.title);this.el(top,'span',`Workspace revision ${d.revision}`,'bi-muted');
+  if(this.embedded){this.button(top,'Full-page map ↗',()=>this.open(`Generated/Explorers/${this.id}`));const label=this.el(top,'label','Map height '),height=this.el(label,'select');height.setAttribute('aria-label','Map height');for(const [value,text]of [['','Auto · fit contents'],['450','450 px'],['650','650 px'],['850','850 px']]){const option=this.el(height,'option',text);option.value=value;option.selected=String(this.mapHeight||'')===value;}height.addEventListener('change',()=>{this.mapHeight=Number(height.value)||null;root.style.setProperty('--bi-map-height',this.mapHeight?this.mapHeight+'px':'auto');this.scale(0);});if(this.mapHeight)root.style.setProperty('--bi-map-height',this.mapHeight+'px');}
+  else{const nav=this.el(root,'nav',undefined,'bi-nav');this.button(nav,this.sessionId?'← Chat dashboard':'← Project dashboard',()=>this.open(this.sessionId?`Generated/Chats/${this.id}-${this.sessionId}`:`Generated/Dashboards/${this.id}`));this.quickSwitch(nav);}
   const tools=this.el(root,'div',undefined,'bi-explorer-tools');
-  for(const [key,label]of [['dependencies','Dependencies'],['flow','All connections'],['mindmap','Grouped overview']]){const b=this.button(tools,label,()=>{this.mode=key;this.zoom=1;this.fitAll=false;this.draw();});b.setAttribute('aria-pressed',String(this.mode===key));}
+  for(const [key,label]of [['dependencies','Dependencies'],['flow','All connections'],['mindmap','Grouped overview'],['tracker','Dependency tracker']]){const b=this.button(tools,label,()=>{this.mode=key;if(key==='tracker'){this.trackerFocus=this.selected||m.nodes.find(n=>m.edges.some(e=>e.type==='depends_on'&&e.to===n.id))?.id||m.nodes[0]?.id;this.query='';}this.zoom=1;this.fitAll=false;this.draw();});b.setAttribute('aria-pressed',String(this.mode===key));}
   if(this.selected)this.button(tools,'Inspect selected record',()=>{this.inspectorVisible=true;this.openInspector=true;this.draw();});
   if(this.mode==='mindmap'){this.button(tools,'Expand all',()=>{this.expanded=new Set(m.groups.map(g=>g.id));this.draw();});this.button(tools,'Collapse all',()=>{this.expanded.clear();this.draw();});}
+  if(this.mode==='mindmap'){
+   const label=this.el(tools,'label','Browse branch '),select=this.el(label,'select');select.setAttribute('aria-label','Browse branch');for(const [id,title]of [['','All categories · previews'],...m.groups.map(g=>[g.id,`${g.title} · ${g.nodeIds.length}`])]){const opt=this.el(select,'option',title);opt.value=id;opt.selected=id===(this.groupFocus||'');}select.addEventListener('change',()=>{this.groupFocus=select.value||null;this.groupPage=0;this.draw();});
+   if(this.groupFocus){const g=m.groups.find(g=>g.id===this.groupFocus),term=this.query.toLowerCase(),count=(g?.nodeIds||[]).filter(id=>{const n=m.nodes.find(n=>n.id===id);return !term||n?.title.toLowerCase().includes(term)||id.toLowerCase().includes(term);}).length,pages=Math.max(1,Math.ceil(count/8));this.groupPage=Math.min(this.groupPage||0,pages-1);const prev=this.button(tools,'Previous records',()=>{this.groupPage--;this.draw();});prev.disabled=!this.groupPage;this.el(tools,'span',`Page ${this.groupPage+1} / ${pages} · ${count} records`);const next=this.button(tools,'Next records',()=>{this.groupPage++;this.draw();});next.disabled=this.groupPage+1>=pages;}
+  }
   if(this.mapHistory.length)this.button(tools,'Back in map',()=>{Object.assign(this,this.mapHistory.pop());this.draw();});
   if(this.connectionFocus)this.button(tools,'Show all records',()=>{this.connectionFocus=null;this.query='';this.draw();});
-  const form=this.el(tools,'form'),input=this.el(form,'input');input.type='search';input.placeholder='Find a saved item or ID';input.setAttribute('aria-label','Find map items');input.value=this.query;const search=this.el(form,'button','Find');search.type='submit';form.addEventListener('submit',e=>{e.preventDefault();this.query=input.value;this.connectionFocus=null;this.zoom=1;this.draw();});if(this.query)this.button(tools,'Clear search',()=>{this.query='';this.draw();});
+  const form=this.el(tools,'form'),input=this.el(form,'input');input.type='search';input.placeholder='Find a saved item or ID';input.setAttribute('aria-label','Find map items');input.value=this.query;const search=this.el(form,'button','Find');search.type='submit';form.addEventListener('submit',e=>{e.preventDefault();this.query=input.value;this.groupPage=0;if(this.mode==='tracker'){this.mode='mindmap';this.groupFocus=null;}this.connectionFocus=null;this.zoom=1;this.draw();});if(this.query)this.button(tools,'Clear search',()=>{this.query='';this.draw();});
   const dependencyPlan=explorerDependencies(m,{query:this.query,focus:this.connectionFocus,upstream:this.upstream,downstream:this.downstream,layers:[...this.layers]}),state=dependencyPlan.states[this.selected];
   if(this.mode==='dependencies'){
    const trace=this.el(root,'div',undefined,'bi-trace-controls');
@@ -534,24 +573,34 @@ class MapExplorer extends Dashboard{
    this.el(trace,'span','Prerequisite → dependent. Other relationships never block work.','bi-muted');
    const layers=this.el(root,'details',undefined,'bi-context-layers');this.el(layers,'summary','Optional relationship layers within shown records');for(const [type,label]of [['informs','Context'],['branches_from','Offshoot lineage'],['implements','Goal to work']]){const b=this.button(layers,label,()=>{if(this.layers.has(type))this.layers.delete(type);else this.layers.add(type);this.draw();});b.setAttribute('aria-pressed',String(this.layers.has(type)));}
   }
+  let trackerPlan;
+  if(this.mode==='tracker'){
+   trackerPlan=explorerTracker(m,this.trackerFocus||this.selected,this.trackerChoices);const trace=this.el(root,'section',undefined,'bi-tracker-controls');this.el(trace,'h3','One dependency path · source → selected work → next step');
+   const label=this.el(trace,'label','Track item '),select=this.el(label,'select');select.setAttribute('aria-label','Track item');for(const n of m.nodes){const o=this.el(select,'option',n.title+' ['+n.id+']');o.value=n.id;o.selected=n.id===(this.trackerFocus||this.selected);}select.addEventListener('change',()=>{this.trackerFocus=select.value;this.selected=select.value;this.query='';this.draw();});
+   for(const branch of trackerPlan.choices){const at=m.nodes.find(n=>n.id===branch.at),label=this.el(trace,'label',`${branch.direction} at ${at.title} (${branch.options.length} paths) `),pick=this.el(label,'select');pick.setAttribute('aria-label',branch.direction+' at '+at.title);if(!branch.chosen){const o=this.el(pick,'option','Choose next branch…');o.value='';}for(const id of branch.options){const n=m.nodes.find(n=>n.id===id),o=this.el(pick,'option',n.title+' ['+id+']');o.value=id;o.selected=id===branch.chosen;}pick.addEventListener('change',()=>{this.trackerChoices[branch.key]=pick.value;this.draw();});}
+   const first=m.nodes.find(n=>n.id===trackerPlan.firstUnresolved);this.el(trace,'p',first?'First unresolved record on this path: '+first.title:'This path has no unresolved records; check evidence and other prerequisites.','bi-readiness');
+   this.el(trace,'p',`${trackerPlan.offPath.length} other upstream prerequisites outside this line. A chosen path does not replace checking every prerequisite. ${!m.scopeComplete?m.scopeMessage:''}${trackerPlan.cycle?' Dependency cycle detected; the path stops at the repeat.':''}`,'bi-muted');
+   if(this.trackerFocus)this.button(trace,'View every prerequisite',()=>{this.mode='dependencies';this.connectionFocus=this.trackerFocus;this.upstream=Infinity;this.query='';this.draw();});
+  }
   const diagnostics=this.el(root,'details',undefined,'bi-explorer-diagnostics');this.el(diagnostics,'summary',`${m.nodes.length} records · ${dependencyPlan.dependencyTotal} prerequisites · ${m.edges.length} connections`);
   this.el(diagnostics,'p',`${dependencyPlan.dependencyCycles} prerequisite edges are in cycles or self-loops across this project. Grouped overview is a category view, not branch lineage. No recorded prerequisites is not proof that none exist.`);
-  this.el(root,'p',this.mode==='dependencies'?'Select work to put its prerequisites on the left and dependents on the right. Inspect every prerequisite before resuming.':this.mode==='flow'?'All saved relation types affect this layout. Context loops here do not establish dependency cycles.':'Groups organise records by category. Use the branch navigator for actual saved offshoot relationships.','bi-explorer-guide');
+  this.el(root,'p',this.mode==='dependencies'?'Select work to put its prerequisites on the left and dependents on the right. Inspect every prerequisite before resuming.':this.mode==='tracker'?'Follow the recorded prerequisite path from left to right. Select any step for its source, evidence and status. Branch choices show alternative paths.':this.mode==='flow'?'All saved relation types affect this layout. Context loops here do not establish dependency cycles.':'Groups organise records by category. Use the branch navigator for actual saved offshoot relationships.','bi-explorer-guide');
   const layout=this.el(root,'div',undefined,'bi-explorer-layout'),lineage=this.el(layout,'details',undefined,'bi-branch-navigator');lineage.open=this.lineageOpen;lineage.addEventListener('toggle',()=>this.lineageOpen=lineage.open);this.el(lineage,'summary','Branch navigator');
+  if(this.embedded)root.insertBefore(lineage,layout);
   const branches=m.edges.filter(e=>e.type==='branches_from');if(!branches.length)this.el(lineage,'p','No offshoot relationships recorded.');for(const e of branches){const from=m.nodes.find(n=>n.id===e.from),to=m.nodes.find(n=>n.id===e.to);this.button(lineage,`${from.title} → ${to.title} [${to.id}]`,()=>this.selectRecord(to.id));}
   const panel=this.el(layout,'section',undefined,'bi-map bi-explorer-canvas'),zoom=this.el(panel,'div',undefined,'bi-tools');this.button(zoom,'-',()=>this.scale(-.2)).setAttribute('aria-label','Zoom full map out');this.button(zoom,'Fit whole map',()=>{this.zoom=1;this.readable=false;this.fitAll=true;this.scale(0);});this.button(zoom,'Readable size',()=>{this.zoom=1;this.readable=true;this.fitAll=false;this.scale(0);});this.button(zoom,'+',()=>this.scale(.2)).setAttribute('aria-label','Zoom full map in');
   const legend=this.el(panel,'p',undefined,'bi-relation-key');for(const [type,label]of [['depends_on','P · prerequisite'],['branches_from','B · offshoot'],['implements','G · goal to work'],['informs','i · context']]){const item=this.el(legend,'span',label);item.dataset.relation=type;}
   const scroll=this.el(panel,'div',undefined,'bi-map-scroll');scroll.tabIndex=0;scroll.setAttribute('aria-label','Full map. Scroll horizontally or vertically to explore.');
-  const plan=this.mode==='mindmap'?explorerMindmap(m,this.expanded,this.query):this.mode==='dependencies'?dependencyPlan:explorerFlow(m,this.query,this.connectionFocus);
-  const svg=this.diagram(scroll,plan);this.svg=svg;this.scale(0);this.mapObserver=new ResizeObserver(()=>this.scale(0));this.mapObserver.observe(scroll);if(offset){scroll.scrollLeft=offset.left;scroll.scrollTop=offset.top;}
-  this.el(panel,'p',`${plan.shown} of ${m.nodes.length} records shown. ${this.mode==='dependencies'?`${plan.hiddenPrerequisites} upstream prerequisites outside this focus. Use All prerequisites to reveal them.`:this.mode==='mindmap'?'Expand a group to reveal its records.':''}${this.query?' Search is active.':''}`,'bi-caption');
+  const plan=explorerBounds(this.mode==='mindmap'?explorerMindmap(m,this.expanded,this.query,{limit:6,group:this.groupFocus,page:this.groupPage}):this.mode==='tracker'?trackerPlan:this.mode==='dependencies'?dependencyPlan:explorerFlow(m,this.query,this.connectionFocus));
+  const svg=this.diagram(scroll,plan);this.svg=svg;this.scale(0);this.mapObserver=new ResizeObserver(()=>{if(Math.abs(scroll.clientWidth-this.scaledWidth)>1)this.scale(0);});this.mapObserver.observe(scroll);if(offset){scroll.scrollLeft=offset.left;scroll.scrollTop=offset.top;}else if(this.embedded&&this.mode==='mindmap'){const center=plan.boxes.find(n=>n.root);if(center){const ratio=parseFloat(svg.style.height)/plan.height||1;scroll.scrollLeft=Math.max(0,(center.x+center.width/2)*ratio-scroll.clientWidth/2);scroll.scrollTop=Math.max(0,(center.y+center.height/2)*ratio-scroll.clientHeight/2);}}
+  this.el(panel,'p',`${plan.shown} of ${m.nodes.length} records shown. ${this.mode==='dependencies'?`${plan.hiddenPrerequisites} upstream prerequisites outside this focus. Use All prerequisites to reveal them.`:this.mode==='mindmap'?'Each category previews six records. Open a branch to browse eight at a time; all records remain saved.':''}${this.query?' Search is active.':''}`,'bi-caption');
   if(!plan.shown)this.el(panel,'p','No matching records. Clear search or show all records.','bi-muted');
   const list=this.el(panel,'details',undefined,'bi-map-text-list');this.el(list,'summary',`Text list · ${plan.shown} shown / ${m.nodes.length} total`);for(const box of plan.boxes){const n=m.nodes.find(n=>n.id===box.id);if(n)this.button(list,`${n.title} [${n.id}]`,()=>this.selectRecord(n.id));}
   const n=m.nodes.find(n=>n.id===this.selected);
   if(n){
    const detail=this.el(layout,'aside',undefined,'bi-explorer-detail');detail.setAttribute('aria-label','Selected record inspector');const header=this.el(detail,'div',undefined,'bi-panel-head');this.el(header,'h2','Selected record');this.button(header,'Close inspector',()=>this.closeInspector()).title='Escape closes the inspector';this.el(detail,'h3',n.title);this.el(detail,'small',`Record ${n.id}`);if(n.external)this.el(detail,'p','External prerequisite from '+n.projectTitle,'bi-muted');if(n.status)this.badge(detail,n);if(n.detail)this.el(detail,'p',n.detail,'bi-snapshot');if(n.next)this.el(detail,'p','Next: '+n.next);if(n.quote)this.el(detail,'blockquote',n.quote);
    if(n.recordId)this.button(detail,'Open record & evidence',()=>this.open('Generated/Items/'+n.recordId));for(const source of n.sources||[])this.button(detail,'Open saved source · '+new Date(source.at).toLocaleString(),()=>this.open('Generated/'+source.logPath));if(n.url&&/^(https?:\/\/|file:\/\/)/i.test(n.url)){const a=this.el(detail,'a','Open linked file / page');a.href=n.url;}
-   this.el(detail,'h4','Why blocked / prerequisite check');
+   this.button(detail,'Track dependency path',()=>{this.mode='tracker';this.trackerFocus=n.id;this.query='';this.draw();});this.el(detail,'h4','Why blocked / prerequisite check');
    const message=!state.scopeComplete?m.scopeMessage:state.cycle?'Dependency cycle: resolve the recorded cycle before treating this work as ready.':state.upstreamCycle?'An upstream dependency cycle needs review.':state.completed?'Recorded complete; inspect its evidence.':!state.prerequisites.length?'No prerequisites recorded. Verify missing dependencies before starting.':state.unresolvedAncestors.length?`${state.unresolvedAncestors.length} upstream prerequisites remain unresolved, including ${state.blocked.length} direct prerequisites. Reveal all prerequisites before resuming.`:state.ready?'Recorded visible prerequisites are satisfied; confirm scope and evidence before resuming.':'Prerequisites are satisfied, but this record’s status or review state does not establish readiness.';
    this.el(detail,'p',message,'bi-readiness');
    for(const id of state.prerequisites){const prerequisite=m.nodes.find(x=>x.id===id);this.button(detail,`${dependencyPlan.states[id].completed?'✓':'?'} ${prerequisite.title} [${id}]`,()=>this.selectRecord(id));}
@@ -580,7 +629,7 @@ class MapExplorer extends Dashboard{
    if(n.status)group.append(make('text',{x:n.width/2,y:n.height-13,'text-anchor':'middle','font-size':11},`${n.proposal?'AI suggestion · ':''}${n.status}`));
    if(n.group){group.append(make('text',{x:n.width-15,y:18,'text-anchor':'middle','font-size':16},n.open?'−':'+'));group.setAttribute('aria-expanded',String(n.open));}
    if(n.statusId)this.paintStatus(group,n.statusId);
-   if(!n.root){group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label',n.title+(n.status?' · '+n.status:''));const action=()=>{if(n.group){if(this.expanded.has(n.group))this.expanded.delete(n.group);else this.expanded.add(n.group);}else{this.selectRecord(n.id);return;}this.draw();if(!n.group)this.containerEl.querySelector('.bi-explorer-detail')?.scrollIntoView({block:'nearest',behavior:'smooth'});};group.addEventListener('click',action);group.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action();}});}
+   if(!n.root){group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label',n.title+(n.status?' · '+n.status:''));const action=()=>{if(n.moreGroup){this.groupFocus=n.moreGroup;this.groupPage=0;this.draw();return;}if(n.group){if(this.expanded.has(n.group))this.expanded.delete(n.group);else this.expanded.add(n.group);}else{this.selectRecord(n.id);return;}this.draw();if(!n.group)this.containerEl.querySelector('.bi-explorer-detail')?.scrollIntoView({block:'nearest',behavior:'smooth'});};group.addEventListener('click',action);group.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action();}});}
    svg.append(group);
   }
   return svg;
@@ -597,5 +646,5 @@ class BranchaInteractive extends Plugin{
   const home=()=>new Dashboard(document.createElement('div'),this,'home','').open('Generated/Navigation/Home');
   this.addCommand({id:'open-home',name:'Open Branchi Home',callback:home});this.addRibbonIcon('house','Branchi Home',home);}
 }
-if(typeof module!=='undefined'){module.exports=BranchaInteractive;module.exports.safeSvg=safeSvg;module.exports.mapSize=mapSize;module.exports.renderers={Dashboard,Home,Chat,MapExplorer};module.exports.explorer={model:explorerModel,mindmap:explorerMindmap,flow:explorerFlow,dependencies:explorerDependencies};}
+if(typeof module!=='undefined'){module.exports=BranchaInteractive;module.exports.safeSvg=safeSvg;module.exports.mapSize=mapSize;module.exports.renderers={Dashboard,Home,Chat,MapExplorer};module.exports.explorer={model:explorerModel,mindmap:explorerMindmap,flow:explorerFlow,dependencies:explorerDependencies,tracker:explorerTracker,box:explorerBox,bounds:explorerBounds};}
 else globalThis.BranchaRenderers={Dashboard,Home,Chat,MapExplorer,safeSvg};

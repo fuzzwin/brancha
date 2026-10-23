@@ -1,0 +1,36 @@
+{
+  "dateSydney": "2026-10-23",
+  "data": "Fictional fixtures only; no real vault or live cloud records",
+  "desktopPackage": "0.22.0",
+  "renderer": "0.15.0",
+  "repositoryCloudWorker": "0.9.0",
+  "viewport": { "width": 1280, "height": 720 },
+  "smallMap": {
+    "clientHeight": 226,
+    "scrollHeight": 226,
+    "clientWidth": 1175,
+    "scrollWidth": 1175,
+    "svgHeight": 186,
+    "unnecessaryScrollbars": false,
+    "fixedHeightChoiceWorked": true,
+    "automaticHeightRestored": true
+  },
+  "denseMap": {
+    "recordsShown": 120,
+    "recordsTotal": 120,
+    "connectionsInFixture": 471,
+    "frameHeight": 264,
+    "svgHeight": 8209,
+    "readableOverflowRetained": true,
+    "pageHorizontalOverflow": false
+  },
+  "cloudFixture": {
+    "fullPageOpenAndBack": true,
+    "dependencyTracker": true,
+    "pathRecords": 3,
+    "frameHeight": 204,
+    "lightAndDarkStatusPalettePresent": true,
+    "readableInspectorHeading": true
+  },
+  "verificationBoundary": "Actual browser checks of fictional shared-renderer and portable cloud fixtures; native Obsidian and a deployed private Site are separate installation checks."
+}

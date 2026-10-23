@@ -6,7 +6,9 @@ import {execFileSync} from 'node:child_process';
 // Read-only local observations: no remote URLs, diffs, hooks, commits or uploads.
 export function gitContext(cwd){
  if(typeof cwd!=='string'||!path.isAbsolute(cwd)||!fs.existsSync(cwd))return null;
- const read=args=>execFileSync('git',['--no-optional-locks','-c','core.fsmonitor=false','-C',cwd,...args],{encoding:'utf8',timeout:1000,maxBuffer:16384,stdio:['ignore','pipe','ignore'],env:{...process.env,GIT_TERMINAL_PROMPT:'0'}}).trim();
+ // Keep observations bounded while allowing Windows process-start overhead.
+ const timeout=process.platform==='win32'?3000:1000;
+ const read=args=>execFileSync('git',['--no-optional-locks','-c','core.fsmonitor=false','-C',cwd,...args],{encoding:'utf8',timeout,maxBuffer:16384,stdio:['ignore','pipe','ignore'],env:{...process.env,GIT_TERMINAL_PROMPT:'0'}}).trim();
  try{
   const root=read(['rev-parse','--show-toplevel']);let branch=null,commit=null;
   try{branch=read(['symbolic-ref','--quiet','--short','HEAD']);}catch{}

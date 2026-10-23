@@ -1,6 +1,6 @@
 {
   "name": "branchi",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "private": true,
   "description": "Local project memory, visual maps and automatic Codex checkpoints with Obsidian views",
   "type": "module",
@@ -26,7 +26,8 @@
     "claude-hook": "node scripts/install-claude-hook.mjs",
     "desktop-hook": "node scripts/install-desktop-hook.mjs",
     "views": "node scripts/views.mjs",
-    "quickstart": "node scripts/quickstart.mjs"
+    "quickstart": "node scripts/quickstart.mjs",
+    "maps:audit": "node scripts/map-layout-audit.mjs"
   },
   "license": "MIT"
 }

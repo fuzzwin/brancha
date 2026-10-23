@@ -3,3 +3,6 @@
 
 body:has(.bi-explorer) .live-nav { display:none; }
 #view.bi-explorer { max-width:none; padding:16px 2vw; }
+
+#view{width:100%;max-width:none;padding:20px clamp(12px,2vw,40px)}
+#view.bi-project-v3,#view.bi-explorer{max-width:none;width:100%}
