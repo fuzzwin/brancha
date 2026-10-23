@@ -74,3 +74,12 @@
 /* The program overview stays at a readable overview size, with Canvas for exploration. */
 .brancha-program .image-embed { display:flex;justify-content:center; }
 .brancha-program .image-embed img[src*="how-brancha-works"] { min-width:0!important;width:auto!important;max-width:100%!important;max-height:560px!important;object-fit:contain; }
+
+/* Branchi generated workspaces use their own full-width reading canvas. */
+.markdown-preview-view.brancha-interactive,.markdown-source-view.brancha-interactive { --file-line-width:100%; --file-margins:20px; }
+.markdown-preview-view.brancha-interactive.is-readable-line-width .markdown-preview-sizer,
+.markdown-preview-view.brancha-interactive .markdown-preview-sizer,
+.markdown-source-view.brancha-interactive .cm-sizer,
+.markdown-source-view.brancha-interactive .cm-contentContainer { width:100%!important;max-width:none!important; }
+.markdown-preview-view.brancha-interactive .markdown-preview-section>div:has(>p>a[data-href*="Generated/Navigation/Home"]):not(:has(.bi)),
+.markdown-preview-view.brancha-interactive .markdown-preview-section>div:has(>p>a[data-href*="Generated/Branches/"]):not(:has(.bi)) { display:none; }

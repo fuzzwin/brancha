@@ -49,7 +49,14 @@ are preserved. A plugin or Site cannot passively read every conversation.
 · [ChatGPT](cloud/README.md) · [Two setups, first use and sync plan](docs/two-setups-and-sync.md)
 · [What is what?](docs/two-setups-and-sync.md#what-is-what)
 
-## Version 0.21: see the two setups
+## Version 0.22: maps that fit the work
+
+Project maps adapt to their visible content, with a dedicated map area, a
+right-hand record inspector and expanded dashboard sections below. Browse large
+categories in pages and follow a recorded prerequisite route using **Dependency
+tracker**. [Release details and local layout checks](docs/release-0.22.md).
+
+## Version 0.21 comparison captures
 
 These are real browser captures of **fictional fixtures**, not screenshots of a
 user's PC or a live hosted workspace. Desktop uses the shared localhost/Obsidian

@@ -766,3 +766,27 @@
  .bi .bi-quick-switch select { max-width:100%;min-width:0; }
 }
 @media (prefers-reduced-motion:reduce) { .bi,.bi * { scroll-behavior:auto!important;animation:none!important;transition:none!important; } }
+
+/* 23 October 2026: map-first workspace shared by Web and Obsidian. */
+.bi-project-v3 { width:100%;max-width:none;min-width:0; }
+.bi-project-workspace { display:block;grid-template-columns:none; }
+.bi-project-workspace>.bi-map { padding:12px;margin:0;width:100%; }
+.bi-dedicated-map .bi-embedded-map { width:100%;min-width:0; }
+.bi-embedded-map .bi-top h2 { margin:0!important;font-size:19px; }
+.bi-embedded-map .bi-top label { margin-left:auto;font-size:12px; }
+.bi-embedded-map .bi-map-scroll { height:var(--bi-map-height,auto);min-height:180px;max-height:90vh!important;resize:vertical; }
+.bi-embedded-map .bi-explorer-layout { min-height:0;height:auto; }
+.bi-embedded-map .bi-explorer-canvas { min-width:0;flex:1; }
+.bi-embedded-map[data-inspector-open=false] .bi-explorer-detail { display:none; }
+.bi-embedded-map .bi-explorer-detail { max-height:var(--bi-map-height,65vh);overflow:auto; }
+.bi-fold { clear:both;margin:16px 0;border:1px solid var(--bi-line);border-radius:10px;background:var(--background-primary);padding:12px; }
+.bi-fold>summary { cursor:pointer;font-weight:650;padding:5px 2px;margin-bottom:10px; }
+.bi-fold>.bi-panel,.bi-fold>.bi-overview-grid { margin:0; }
+.bi-project-metrics { width:100%; }
+@container brancha-page (max-width:900px) { .bi-embedded-map .bi-explorer-detail { top:130px;max-height:65vh; } .bi-embedded-map .bi-top { flex-wrap:wrap; } }
+
+/* Focused branch browsing and linear dependency tracking. */
+.bi-tracker-controls{padding:12px;border:1px solid var(--bi-line);border-radius:12px;margin:10px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center}.bi-tracker-controls h3,.bi-tracker-controls p{flex-basis:100%;margin:3px 0}.bi-tracker-controls label{display:flex;flex-direction:column;gap:5px;max-width:100%;min-width:180px}.bi-tracker-controls select,.bi-explorer-tools select{max-width:min(440px,100%);text-overflow:ellipsis}.bi-explorer-node text{pointer-events:none}
+
+/* Auto height follows the visible graph instead of reserving an empty viewport. */
+.bi-embedded-map{scroll-margin-top:76px}.bi-embedded-map .bi-map-scroll{min-height:180px}.bi-embedded-map .bi-explorer-detail{max-height:max(340px,var(--bi-map-frame,65vh))}
